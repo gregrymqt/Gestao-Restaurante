@@ -1,0 +1,58 @@
+# ==============================================================================
+# Manual Canónico de Engenharia de Dados: PostgreSQL 16
+# Infraestrutura Containerizada de Banco de Dados com WAL Segregado
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: restaurante_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: restaurante_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_seguro_123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_INITDB_WALDIR: /var/lib/postgresql/wal
+      POSTGRES_INITDB_ARGS: "--data-checksums --encoding=UTF8"
+    command: >
+      postgres
+      -c shared_buffers=768MB
+      -c effective_cache_size=2304MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track_utility=off
+      -c pg_stat_statements.save=on
+      -c wal_level=replica
+      -c archive_mode=on
+      -c archive_command='test ! -f /var/lib/postgresql/backups/wal_archive/%f && cp %p /var/lib/postgresql/backups/wal_archive/%f'
+      -c archive_timeout=900
+    volumes:
+      - postgres-prod-data:/var/lib/postgresql/data
+      - postgres-prod-wal:/var/lib/postgresql/wal
+      - postgres-prod-backup:/var/lib/postgresql/backups
+    shm_size: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3072M
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - internal_backend_net
+
+volumes:
+  postgres-prod-data:
+    driver: local
+  postgres-prod-wal:
+    driver: local
+  postgres-prod-backup:
+    driver: local
+
+networks:
+  internal_backend_net:
+    driver: bridge
