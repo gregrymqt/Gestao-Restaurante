@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
@@ -5,6 +6,7 @@ using RestauranteInteligente.Domain.Common.Interfaces;
 namespace RestauranteInteligente.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/events")]
 public sealed class EventsController : ControllerBase
 {

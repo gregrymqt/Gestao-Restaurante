@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+import contextlib
 import logging
 from typing import AsyncGenerator
 from fastapi import FastAPI
@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger("RestauranteInteligente.ML.Main")
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Iniciando serviço %s...", settings.PROJECT_NAME)
     await init_redis_pool()

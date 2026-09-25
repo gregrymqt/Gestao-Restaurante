@@ -1,8 +1,8 @@
 namespace RestauranteInteligente.Infrastructure.Redis;
 
 /// <summary>
-/// Utilitário canônico para padronização de chaves Redis multi-tenant utilizando Hash Tags ({tenantId}).
-/// Garante isolamento estrito e compatibilidade com Redis Cluster.
+/// Utilitário canônico para padronização de chaves Redis multi-tenant utilizando Hash Tags ({tenantId})
+/// e chaves globais de segurança (Blacklist, Rate Limiting e Refresh Tokens).
 /// </summary>
 public static class RedisKeyHelper
 {
@@ -17,4 +17,16 @@ public static class RedisKeyHelper
 
     public static string BuildTenantStreamChannel(Guid tenantId)
         => $"{{{tenantId}}}:events:stream";
+
+    public static string BuildBlacklistKey(string jti)
+        => $"blacklist:jti:{jti.Trim()}";
+
+    public static string BuildRateLimitKey(string clientKey)
+        => $"ratelimit:{clientKey.Trim()}";
+
+    public static string BuildRefreshTokenKey(string tokenHash)
+        => $"refreshtoken:{tokenHash.Trim()}";
+
+    public static string BuildTokenFamilyKey(string familyId)
+        => $"tokenfamily:{familyId.Trim()}";
 }

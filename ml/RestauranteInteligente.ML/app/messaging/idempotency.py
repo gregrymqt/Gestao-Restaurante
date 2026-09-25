@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import asynccontextmanager
+import contextlib
 import logging
 import random
 import uuid
@@ -58,7 +58,7 @@ async def release_idempotency(tenant_id: str, operation_key: str) -> None:
     logger.debug("Chave de idempotência liberada para '%s'.", key)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def distributed_lock(
     tenant_id: str,
     resource_key: str,

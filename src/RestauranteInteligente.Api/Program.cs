@@ -12,8 +12,8 @@ builder.Services.AddOpenApi();
 // Camada de Aplicação: Contexto de Tenant escopado
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 
-// Camada de Infraestrutura: Redis Resiliente (SafeCache, Idempotência, Distributed Lock, SSE Stream)
-builder.Services.AddRedisInfrastructure(builder.Configuration);
+// Camada de Infraestrutura: Redis Resiliente, JWT, Blacklist e Rate Limiting
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -24,7 +24,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Registro do Middleware de Multi-Tenancy
+// 1. Autenticação JWT (Valida assinatura e checa Blacklist no Redis via OnTokenValidated)
+app.UseAuthentication();
+
+// 2. Autorização baseada em Roles e Policies
+app.UseAuthorization();
+
+// 3. Rate Limiting Distribuído (Sliding Window via Script Lua no Redis)
+app.UseMiddleware<RateLimitingMiddleware>();
+
+// 4. Registro do Middleware de Multi-Tenancy (Claim restaurante_id do JWT ou X-Tenant-Id)
 app.UseMiddleware<TenantMiddleware>();
 
 app.MapControllers();
