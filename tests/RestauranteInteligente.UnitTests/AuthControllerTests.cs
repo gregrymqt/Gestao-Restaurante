@@ -16,18 +16,27 @@ public sealed class AuthControllerTests
     private readonly Mock<IJwtTokenGenerator> _tokenGeneratorMock;
     private readonly Mock<ITokenBlacklistService> _blacklistServiceMock;
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
+    private readonly Mock<IPasswordHasher> _passwordHasherMock;
+    private readonly Mock<IAuthUserService> _authUserServiceMock;
     private readonly AuthController _controller;
+
+    private readonly Guid _defaultUserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private readonly Guid _defaultTenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     public AuthControllerTests()
     {
         _tokenGeneratorMock = new Mock<IJwtTokenGenerator>();
         _blacklistServiceMock = new Mock<ITokenBlacklistService>();
         _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
+        _passwordHasherMock = new Mock<IPasswordHasher>();
+        _authUserServiceMock = new Mock<IAuthUserService>();
 
         _controller = new AuthController(
             _tokenGeneratorMock.Object,
             _blacklistServiceMock.Object,
             _refreshTokenServiceMock.Object,
+            _passwordHasherMock.Object,
+            _authUserServiceMock.Object,
             NullLogger<AuthController>.Instance
         );
     }
@@ -39,17 +48,31 @@ public sealed class AuthControllerTests
         var expectedExpires = DateTimeOffset.UtcNow.AddMinutes(15);
         var expectedRefreshToken = "ref-token-xyz-123";
 
+        var user = new UserAccount(
+            UserId: _defaultUserId,
+            RestauranteId: _defaultTenantId,
+            Email: "admin@teste.com",
+            PasswordHash: "hashed_password",
+            Role: "Manager"
+        );
+
+        _authUserServiceMock.Setup(u => u.FindByEmailAsync("admin@teste.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _passwordHasherMock.Setup(h => h.VerifyPassword("senha123", "hashed_password"))
+            .Returns(true);
+
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
+            _defaultUserId,
+            _defaultTenantId,
             "admin@teste.com",
             "Manager",
             It.IsAny<TimeSpan?>()
         )).Returns(new JwtTokenResult("jwt.token.mock", expectedJti, expectedExpires));
 
         _refreshTokenServiceMock.Setup(r => r.CreateRefreshTokenAsync(
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
+            _defaultUserId,
+            _defaultTenantId,
             It.IsAny<string?>(),
             It.IsAny<TimeSpan?>(),
             It.IsAny<CancellationToken>()
@@ -64,14 +87,45 @@ public sealed class AuthControllerTests
         response.Token.Should().Be("jwt.token.mock");
         response.RefreshToken.Should().Be(expectedRefreshToken);
         response.Jti.Should().Be(expectedJti);
+        response.RestauranteId.Should().Be(_defaultTenantId);
+        response.UserId.Should().Be(_defaultUserId);
     }
 
     [Fact]
     public async Task Login_ComCredenciaisInvalidas_DeveRetornarUnauthorized()
     {
+        _authUserServiceMock.Setup(u => u.FindByEmailAsync("admin@teste.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserAccount?)null);
+
         var result = await _controller.Login(new LoginRequest("admin@teste.com", "senha_errada"), CancellationToken.None);
 
         result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task Login_QuandoUsuarioTentaAutenticarEmOutroTenant_DeveRetornar403ForbiddenAntiBOLA()
+    {
+        var outroTenantId = Guid.Parse("bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var user = new UserAccount(
+            UserId: _defaultUserId,
+            RestauranteId: _defaultTenantId,
+            Email: "admin@teste.com",
+            PasswordHash: "hashed_password",
+            Role: "Manager"
+        );
+
+        _authUserServiceMock.Setup(u => u.FindByEmailAsync("admin@teste.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _passwordHasherMock.Setup(h => h.VerifyPassword("senha123", "hashed_password"))
+            .Returns(true);
+
+        var requestComTenantDivergente = new LoginRequest("admin@teste.com", "senha123", outroTenantId);
+        var result = await _controller.Login(requestComTenantDivergente, CancellationToken.None);
+
+        result.Should().BeOfType<ObjectResult>();
+        var objectResult = (ObjectResult)result;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
     }
 
     [Fact]

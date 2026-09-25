@@ -1,7 +1,11 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RestauranteInteligente.Domain.Common.Interfaces;
+using RestauranteInteligente.Infrastructure.Security;
 
 namespace RestauranteInteligente.Api.Controllers;
 
@@ -9,18 +13,20 @@ namespace RestauranteInteligente.Api.Controllers;
 [Route("api/v1/webhooks")]
 public sealed class WebhooksController : ControllerBase
 {
-    private const string DefaultWebhookSecret = "mp_secret_webhook_key_2026_segura!#";
     private readonly IWebhookSignatureValidator _signatureValidator;
     private readonly IIdempotencyService _idempotencyService;
+    private readonly SecurityOptions _securityOptions;
     private readonly ILogger<WebhooksController> _logger;
 
     public WebhooksController(
         IWebhookSignatureValidator signatureValidator,
         IIdempotencyService idempotencyService,
+        IOptions<SecurityOptions> securityOptions,
         ILogger<WebhooksController> logger)
     {
         _signatureValidator = signatureValidator;
         _idempotencyService = idempotencyService;
+        _securityOptions = securityOptions.Value;
         _logger = logger;
     }
 
@@ -50,10 +56,17 @@ public sealed class WebhooksController : ControllerBase
         Request.Body.Position = 0;
 
         // 3. Validação Criptográfica HMAC-SHA256 com proteção contra timing attack e replay
+        var secret = _securityOptions.MercadoPagoWebhookSecret;
+        if (string.IsNullOrWhiteSpace(secret))
+        {
+            _logger.LogError("Segredo de webhook do Mercado Pago ('Security:MercadoPagoWebhookSecret') não configurado.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Configuração de webhook incompleta no servidor." });
+        }
+
         var isValid = _signatureValidator.ValidateSignature(
             payload: rawBody,
             signatureHeader: signatureHeader,
-            secretKey: DefaultWebhookSecret,
+            secretKey: secret,
             maxDrift: TimeSpan.FromMinutes(5)
         );
 

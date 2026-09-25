@@ -2,22 +2,30 @@ using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using RestauranteInteligente.Api.Middlewares;
 using RestauranteInteligente.Application.Common.Interfaces;
+using RestauranteInteligente.Infrastructure.Security;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
 
 public sealed class TenantMiddlewareTests
 {
+    private const string ValidApiKey = "secret_service_api_key_test_12345";
     private readonly Guid _tenantA = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly Guid _tenantB = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly IOptions<SecurityOptions> _securityOptions;
 
     public TenantMiddlewareTests()
     {
         _tenantContextMock = new Mock<ITenantContext>();
+        _securityOptions = Options.Create(new SecurityOptions
+        {
+            InternalServiceApiKey = ValidApiKey
+        });
     }
 
     [Fact]
@@ -30,7 +38,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -55,7 +63,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -79,7 +87,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -92,7 +100,7 @@ public sealed class TenantMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_QuandoAnonimoEComHeader_DeveAssumirTenantDoHeader()
+    public async Task InvokeAsync_QuandoAnonimoEComHeaderSemApiKey_DeveRetornar401Unauthorized()
     {
         var nextCalled = false;
         RequestDelegate next = _ =>
@@ -101,10 +109,57 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
 
         var context = new DefaultHttpContext();
         context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();
+
+        await middleware.InvokeAsync(context, _tenantContextMock.Object);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        context.Response.ContentType.Should().Contain("application/problem+json");
+        nextCalled.Should().BeFalse("chamadores anônimos sem X-API-Key não podem definir o tenant");
+        _tenantContextMock.Verify(t => t.SetTenantId(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_QuandoAnonimoEComHeaderComApiKeyInvalida_DeveRetornar401Unauthorized()
+    {
+        var nextCalled = false;
+        RequestDelegate next = _ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+
+        var context = new DefaultHttpContext();
+        context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();
+        context.Request.Headers[TenantMiddleware.ApiKeyHeaderName] = "chave_invalida_hack";
+
+        await middleware.InvokeAsync(context, _tenantContextMock.Object);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        nextCalled.Should().BeFalse();
+        _tenantContextMock.Verify(t => t.SetTenantId(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_QuandoAnonimoEComHeaderComApiKeyValida_DeveDefinirTenantEChamarProximo()
+    {
+        var nextCalled = false;
+        RequestDelegate next = _ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+
+        var context = new DefaultHttpContext();
+        context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();
+        context.Request.Headers[TenantMiddleware.ApiKeyHeaderName] = ValidApiKey;
 
         await middleware.InvokeAsync(context, _tenantContextMock.Object);
 

@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Domain.Common.Interfaces;
 
 namespace RestauranteInteligente.Api.Controllers;
@@ -13,22 +15,29 @@ public sealed class AuthController : ControllerBase
     private readonly IJwtTokenGenerator _tokenGenerator;
     private readonly ITokenBlacklistService _blacklistService;
     private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly IAuthUserService _authUserService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IJwtTokenGenerator tokenGenerator,
         ITokenBlacklistService blacklistService,
         IRefreshTokenService refreshTokenService,
+        IPasswordHasher passwordHasher,
+        IAuthUserService authUserService,
         ILogger<AuthController> logger)
     {
         _tokenGenerator = tokenGenerator;
         _blacklistService = blacklistService;
         _refreshTokenService = refreshTokenService;
+        _passwordHasher = passwordHasher;
+        _authUserService = authUserService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Endpoint de autenticação: emite Access Token curto (15 min) e Refresh Token rotativo persistido no Redis.
+    /// Endpoint de autenticação: valida credenciais com hash criptográfico, vincula o inquilino legítimo
+    /// e emite Access Token curto (15 min) e Refresh Token rotativo no Redis.
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
@@ -39,20 +48,38 @@ public sealed class AuthController : ControllerBase
             return BadRequest(new { error = "Email e Senha são obrigatórios." });
         }
 
-        // Validação das credenciais (mock para fluxo do monorepo)
-        if (request.Password != "senha123" && request.Password != "admin123")
+        // Validação segura contra a base de usuários e verificação PBKDF2
+        var user = await _authUserService.FindByEmailAsync(request.Email, ct);
+        if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
+            _logger.LogWarning("Tentativa de login falhou: credenciais inválidas para '{Email}'.", request.Email);
             return Unauthorized(new { error = "Credenciais inválidas." });
         }
 
-        var userId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        var restauranteId = request.RestauranteId ?? Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        // Validação anti-BOLA: impede que o chamador force um RestauranteId que não pertence à sua conta
+        if (request.RestauranteId.HasValue && request.RestauranteId.Value != user.RestauranteId)
+        {
+            _logger.LogCritical(
+                "VIOLAÇÃO DE SEGURANÇA (BOLA): Usuário '{Email}' vinculado ao restaurante '{UserTenant}' tentou autenticar para '{RequestedTenant}'.",
+                user.Email, user.RestauranteId, request.RestauranteId.Value);
+
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
+                title = "Acesso Negado ao Inquilino",
+                status = StatusCodes.Status403Forbidden,
+                detail = "O usuário autenticado não possui vínculo com o restaurante informado."
+            });
+        }
+
+        var userId = user.UserId;
+        var restauranteId = user.RestauranteId;
 
         var tokenResult = _tokenGenerator.GenerateToken(
             userId: userId,
             restauranteId: restauranteId,
-            email: request.Email,
-            role: "Manager",
+            email: user.Email,
+            role: user.Role,
             lifetime: TimeSpan.FromMinutes(15) // Access Token higiênico e curto
         );
 
@@ -63,7 +90,7 @@ public sealed class AuthController : ControllerBase
         );
 
         _logger.LogInformation("Sessão iniciada com sucesso para '{Email}' (Tenant: {TenantId}, Jti: {Jti}).",
-            request.Email, restauranteId, tokenResult.Jti);
+            user.Email, restauranteId, tokenResult.Jti);
 
         return Ok(new LoginResponse(
             Token: tokenResult.Token,
@@ -141,7 +168,7 @@ public sealed class AuthController : ControllerBase
 
         // Extrai o timestamp de expiração (exp) do token
         var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
-        var remainingTtl = TimeSpan.FromMinutes(15); // Padrão
+        var remainingTtl = TimeSpan.Zero;
 
         if (long.TryParse(expClaim, out var expSeconds))
         {
@@ -153,7 +180,15 @@ public sealed class AuthController : ControllerBase
             }
         }
 
-        await _blacklistService.RevokeTokenAsync(jti, remainingTtl, ct);
+        // Se o token já expirou, a inclusão na blacklist é desnecessária
+        if (remainingTtl > TimeSpan.Zero)
+        {
+            await _blacklistService.RevokeTokenAsync(jti, remainingTtl, ct);
+        }
+        else
+        {
+            _logger.LogDebug("Token '{Jti}' já expirado. Inclusão na Blacklist dispensada.", jti);
+        }
 
         // Se informou o Refresh Token no logout, invalida também a família correspondente
         if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
@@ -165,7 +200,7 @@ public sealed class AuthController : ControllerBase
             }
         }
 
-        _logger.LogInformation("Token '{Jti}' revogado e adicionado à Blacklist com sucesso.", jti);
+        _logger.LogInformation("Token '{Jti}' processado para logout com sucesso.", jti);
 
         return Ok(new
         {
