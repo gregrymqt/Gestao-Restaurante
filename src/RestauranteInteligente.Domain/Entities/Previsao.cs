@@ -49,4 +49,18 @@ public sealed class Previsao : IRestauranteEntity
         ModeloVersao = modeloVersao.Trim();
         CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
     }
+
+    public void AtualizarPrevisao(decimal quantidadePrevista, string modeloVersao, DateTimeOffset? criadoEm = null)
+    {
+        if (quantidadePrevista < 0m)
+            throw new ArgumentOutOfRangeException(nameof(quantidadePrevista), "A quantidade prevista de demanda não pode ser negativa.");
+
+        if (string.IsNullOrWhiteSpace(modeloVersao))
+            throw new ArgumentException("A versão do modelo de ML é obrigatória.", nameof(modeloVersao));
+
+        QuantidadePrevista = quantidadePrevista;
+        ModeloVersao = modeloVersao.Trim();
+        CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
+    }
 }
+

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Caixa.DTOs;
 using RestauranteInteligente.Application.Common.Events;
 using RestauranteInteligente.Application.Common.Interfaces;
+using RestauranteInteligente.Application.Common.Messages;
 
 namespace RestauranteInteligente.Application.Caixa.UseCases;
 
@@ -55,13 +56,13 @@ public sealed class FecharCaixaUseCase
 
         // 3. Coleta de histórico dos últimos 14 dias de vendas para o pipeline de ML
         var dataLimiteInicio = dataFechamento.Date.AddDays(-14);
-        var datasVendas = await _dbContext.Vendas
+        var vendasRecentes = await _dbContext.Vendas
             .Where(v => v.Status == "CONCLUIDA" && v.DataHora >= dataLimiteInicio)
-            .Select(v => v.DataHora)
+            .Include(v => v.Itens)
             .ToListAsync(ct);
 
-        var historicoVendas = datasVendas
-            .GroupBy(d => DateOnly.FromDateTime(d.Date))
+        var historicoVendas = vendasRecentes
+            .GroupBy(v => DateOnly.FromDateTime(v.DataHora.Date))
             .Select(g => new HistoricoVendaPontoPayloadDto(g.Key, g.Count()))
             .OrderBy(h => h.Data)
             .ToList();
@@ -71,33 +72,67 @@ public sealed class FecharCaixaUseCase
             .OrderByDescending(d => d.Data)
             .FirstOrDefaultAsync(ct);
 
-        var climaPayload = climaRecente != null
-            ? new ParametroMeteorologicoPayloadDto(climaRecente.Temperatura, climaRecente.Precipitacao, climaRecente.Umidade)
-            : new ParametroMeteorologicoPayloadDto(25.0m, 0.0m, 60.0m);
+        var temp = climaRecente?.Temperatura ?? 25.0m;
+        var precip = climaRecente?.Precipitacao ?? 0.0m;
+        var umidade = climaRecente?.Umidade ?? 60.0m;
+        var climaPayload = new ParametroMeteorologicoPayloadDto(temp, precip, umidade);
 
         // 5. Coleta do catálogo de produtos ativos
         var produtosAtivos = await _dbContext.Produtos
             .Where(p => p.Ativo)
-            .Select(p => new ProdutoPrevisaoItemPayloadDto(p.Id, p.Preco))
             .ToListAsync(ct);
+
+        var produtosPayload = produtosAtivos
+            .Select(p => new ProdutoPrevisaoItemPayloadDto(p.Id, p.Preco))
+            .ToList();
 
         // 6. Publicação de Mensageria assíncrona (RabbitMQ / MassTransit Raw JSON)
         var correlationId = Guid.NewGuid();
         var dataAlvo = DateOnly.FromDateTime(dataFechamento.Date.AddDays(1));
 
+        // 6.1 Publicação granular por produto (Fase 4 - fila previsao.demanda.solicitada)
+        var datasUltimos14Dias = Enumerable.Range(0, 14)
+            .Select(offset => dataFechamento.Date.AddDays(-14 + offset))
+            .ToList();
+
+        foreach (var prod in produtosAtivos)
+        {
+            var serie14Dias = datasUltimos14Dias.Select(dia =>
+            {
+                var vendasDoDia = vendasRecentes.Where(v => v.DataHora.Date == dia);
+                return vendasDoDia
+                    .SelectMany(v => v.Itens)
+                    .Where(i => i.ProdutoId == prod.Id)
+                    .Sum(i => i.Quantidade);
+            }).ToList();
+
+            var eventoPorProduto = new PrevisaoDemandaSolicitadaEvent(
+                SolicitacaoId: Guid.NewGuid(),
+                RestauranteId: tenantId,
+                ProdutoId: prod.Id,
+                DataAlvo: dataAlvo,
+                HistoricoVendasRecentes: serie14Dias,
+                TemperaturaPrevista: temp,
+                PrecipitacaoPrevista: precip
+            );
+
+            await _eventPublisher.PublishAsync(eventoPorProduto, ct);
+        }
+
+        // 6.2 Publicação consolidada v1 para retrocompatibilidade
         var eventoPrevisao = new PrevisaoDemandaSolicitadaEvent_v1(
             CorrelationId: correlationId,
             RestauranteId: tenantId,
             DataAlvo: dataAlvo,
-            Produtos: produtosAtivos,
+            Produtos: produtosPayload,
             Clima: climaPayload,
             HistoricoVendas: historicoVendas
         );
 
         await _eventPublisher.PublishAsync(eventoPrevisao, ct);
 
-        _logger.LogInformation("Evento PrevisaoDemandaSolicitadaEvent_v1 publicado via RabbitMQ com CorrelationId {CorrelationId}.",
-            correlationId);
+        _logger.LogInformation("Eventos de previsão disparados para {QtdProdutos} produtos no restaurante {TenantId}.",
+            produtosAtivos.Count, tenantId);
 
         return new FecharCaixaOutputDto(
             caixaAberto.Id,

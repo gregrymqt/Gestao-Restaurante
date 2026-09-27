@@ -10,7 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using MassTransit;
+using RestauranteInteligente.Application.Common.Messages;
 using RestauranteInteligente.Infrastructure.Messaging;
+using RestauranteInteligente.Infrastructure.Messaging.Consumers;
 using RestauranteInteligente.Infrastructure.Persistence;
 using RestauranteInteligente.Infrastructure.Persistence.Interceptors;
 using RestauranteInteligente.Infrastructure.Persistence.Repositories;
@@ -147,6 +149,8 @@ public static class DependencyInjection
         // 8. Mensageria RabbitMQ com MassTransit e Serialização Raw JSON (interoperável com Python Pydantic V2)
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<PrevisaoDemandaConcluidaConsumer>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 var rabbitHost = configuration["RabbitMQ:Host"] ?? "localhost";
@@ -161,6 +165,15 @@ public static class DependencyInjection
 
                 // CLÁUSULA INEGOCIÁVEL: Serialização Raw JSON pura para interoperabilidade total com Python Pydantic V2
                 cfg.UseRawJsonSerializer();
+
+                // Mapeia publicação do evento para a fila/exchange previsao.demanda.solicitada
+                cfg.Message<PrevisaoDemandaSolicitadaEvent>(m => m.SetEntityName("previsao.demanda.solicitada"));
+
+                // Endpoint receptor do resultado processado pelo Worker Python
+                cfg.ReceiveEndpoint("previsao.demanda.concluida", e =>
+                {
+                    e.ConfigureConsumer<PrevisaoDemandaConcluidaConsumer>(context);
+                });
             });
         });
 
