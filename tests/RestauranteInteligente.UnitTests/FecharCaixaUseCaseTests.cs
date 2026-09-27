@@ -16,6 +16,7 @@ public sealed class FecharCaixaUseCaseTests
 {
     private readonly Mock<ITenantContext> _tenantContextMock = new();
     private readonly Mock<IEventPublisher> _eventPublisherMock = new();
+    private readonly Mock<IWeatherClient> _weatherClientMock = new();
     private readonly Mock<IAppDbContext> _dbContextMock = new();
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
@@ -23,6 +24,12 @@ public sealed class FecharCaixaUseCaseTests
     {
         _tenantContextMock.Setup(t => t.HasTenant).Returns(true);
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
+        _weatherClientMock.Setup(w => w.ObterPrevisaoClimaAsync(
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>(),
+            It.IsAny<DateOnly>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WeatherData(26.5m, 55.0m, 0.0m));
     }
 
     private AppDbContext CreateInMemoryDbContext()
@@ -45,6 +52,7 @@ public sealed class FecharCaixaUseCaseTests
             _dbContextMock.Object,
             _tenantContextMock.Object,
             _eventPublisherMock.Object,
+            _weatherClientMock.Object,
             NullLogger<FecharCaixaUseCase>.Instance
         );
 
@@ -101,6 +109,7 @@ public sealed class FecharCaixaUseCaseTests
             _dbContextMock.Object,
             _tenantContextMock.Object,
             _eventPublisherMock.Object,
+            _weatherClientMock.Object,
             NullLogger<FecharCaixaUseCase>.Instance
         );
 
@@ -167,10 +176,14 @@ public sealed class FecharCaixaUseCaseTests
             .Callback<PrevisaoDemandaSolicitadaEvent, CancellationToken>((evt, _) => eventosPublicados.Add(evt))
             .Returns(Task.CompletedTask);
 
+        _weatherClientMock.Setup(w => w.ObterPrevisaoClimaAsync(It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WeatherData(28.0m, 50.0m, 2.5m));
+
         var useCase = new FecharCaixaUseCase(
             _dbContextMock.Object,
             _tenantContextMock.Object,
             _eventPublisherMock.Object,
+            _weatherClientMock.Object,
             NullLogger<FecharCaixaUseCase>.Instance
         );
 
@@ -193,4 +206,116 @@ public sealed class FecharCaixaUseCaseTests
         evtProd2!.RestauranteId.Should().Be(_tenantId);
         evtProd2.HistoricoVendasRecentes.Should().HaveCount(14);
     }
+
+    [Fact]
+    public async Task ExecutarAsync_ComSucesso_DeveConsultarWeatherClient_E_PersistirDadosClimaticosParaDataAlvo()
+    {
+        // Arrange
+        using var inMemDb = CreateInMemoryDbContext();
+        var restaurante = new Restaurante(
+            _tenantId,
+            "Restaurante Sabor & Arte",
+            "12.345.678/0001-90",
+            "São Paulo",
+            "SP",
+            -23.5505m,
+            -46.6333m
+        );
+        inMemDb.Restaurantes.Add(restaurante);
+
+        var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
+        inMemDb.FechamentosCaixa.Add(caixa);
+        await inMemDb.SaveChangesAsync();
+
+        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
+        _dbContextMock.Setup(d => d.Restaurantes).Returns(inMemDb.Restaurantes);
+        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
+        _dbContextMock.Setup(d => d.DadosClimaticos).Returns(inMemDb.DadosClimaticos);
+        _dbContextMock.Setup(d => d.Vendas).Returns(inMemDb.Vendas);
+        _dbContextMock.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns((CancellationToken ct) => inMemDb.SaveChangesAsync(ct));
+
+        _weatherClientMock.Setup(w => w.ObterPrevisaoClimaAsync(
+            -23.5505m,
+            -46.6333m,
+            It.IsAny<DateOnly>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WeatherData(29.5m, 68.0m, 4.2m));
+
+        var useCase = new FecharCaixaUseCase(
+            _dbContextMock.Object,
+            _tenantContextMock.Object,
+            _eventPublisherMock.Object,
+            _weatherClientMock.Object,
+            NullLogger<FecharCaixaUseCase>.Instance
+        );
+
+        // Act
+        var result = await useCase.ExecutarAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Status.Should().Be("FECHADO");
+
+        var dataAlvoEsperada = DateOnly.FromDateTime(result.DataFechamento.Date.AddDays(1));
+        var dadosClimaticos = await inMemDb.DadosClimaticos
+            .FirstOrDefaultAsync(d => d.RestauranteId == _tenantId && d.Data == dataAlvoEsperada);
+
+        dadosClimaticos.Should().NotBeNull();
+        dadosClimaticos!.Temperatura.Should().Be(29.5m);
+        dadosClimaticos.Umidade.Should().Be(68.0m);
+        dadosClimaticos.Precipitacao.Should().Be(4.2m);
+        dadosClimaticos.TipoDado.Should().Be("PREVISAO");
+    }
+
+    [Fact]
+    public async Task ExecutarAsync_QuandoWeatherClientFalha_DeveAplicarDegradacaoGraciosa_E_ConcluirFechamento()
+    {
+        // Arrange
+        using var inMemDb = CreateInMemoryDbContext();
+        var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
+        inMemDb.FechamentosCaixa.Add(caixa);
+        await inMemDb.SaveChangesAsync();
+
+        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
+        _dbContextMock.Setup(d => d.Restaurantes).Returns(inMemDb.Restaurantes);
+        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
+        _dbContextMock.Setup(d => d.DadosClimaticos).Returns(inMemDb.DadosClimaticos);
+        _dbContextMock.Setup(d => d.Vendas).Returns(inMemDb.Vendas);
+        _dbContextMock.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns((CancellationToken ct) => inMemDb.SaveChangesAsync(ct));
+
+        _weatherClientMock.Setup(w => w.ObterPrevisaoClimaAsync(
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>(),
+            It.IsAny<DateOnly>(),
+            It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Serviço Open-Meteo indisponível temporariamente"));
+
+        var useCase = new FecharCaixaUseCase(
+            _dbContextMock.Object,
+            _tenantContextMock.Object,
+            _eventPublisherMock.Object,
+            _weatherClientMock.Object,
+            NullLogger<FecharCaixaUseCase>.Instance
+        );
+
+        // Act
+        var result = await useCase.ExecutarAsync();
+
+        // Assert: Fechamento conclui sem lançar exceção
+        result.Should().NotBeNull();
+        result.Status.Should().Be("FECHADO");
+
+        // Clima persistido com valores de fallback gracioso padrão
+        var dataAlvoEsperada = DateOnly.FromDateTime(result.DataFechamento.Date.AddDays(1));
+        var dadosClimaticos = await inMemDb.DadosClimaticos
+            .FirstOrDefaultAsync(d => d.RestauranteId == _tenantId && d.Data == dataAlvoEsperada);
+
+        dadosClimaticos.Should().NotBeNull();
+        dadosClimaticos!.Temperatura.Should().Be(25.0m);
+        dadosClimaticos.Umidade.Should().Be(60.0m);
+        dadosClimaticos.Precipitacao.Should().Be(0.0m);
+    }
 }
+

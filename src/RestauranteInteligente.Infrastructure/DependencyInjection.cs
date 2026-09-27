@@ -16,6 +16,7 @@ using RestauranteInteligente.Infrastructure.Messaging.Consumers;
 using RestauranteInteligente.Infrastructure.Persistence;
 using RestauranteInteligente.Infrastructure.Persistence.Interceptors;
 using RestauranteInteligente.Infrastructure.Persistence.Repositories;
+using RestauranteInteligente.Infrastructure.ExternalServices.Weather;
 using RestauranteInteligente.Infrastructure.Redis;
 using RestauranteInteligente.Infrastructure.Security;
 
@@ -178,6 +179,20 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
+
+        // 9. Cliente Meteorológico Externo (Open-Meteo) com Timeout e Resiliência
+        services.AddHttpClient<IWeatherClient, OpenMeteoWeatherClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.open-meteo.com/");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(2);
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromMilliseconds(300);
+        });
 
         return services;
     }

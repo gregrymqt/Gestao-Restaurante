@@ -46,7 +46,7 @@
 - app/(tabs)/previsoes.tsx       -> Painel de previsões de demanda geradas por ML
 - app/pedidos/novo.tsx           -> Ponto de venda (PDV) móvel com baixa de estoque
 
-### features/ (Arquitetura Feature-First)
+### features/ (Arquitetura Feature-First - Bounded Contexts: components/, hooks/, services/, types/, index.ts)
 - features/auth/                 -> useAuth, authStore (Zustand + MMKV), DTOs de login
 - features/vendas/               -> useRegistrarVenda, PDV components, lista de itens
 - features/estoque/              -> useInsumos, useMovimentacoesKeyset (FlashList)

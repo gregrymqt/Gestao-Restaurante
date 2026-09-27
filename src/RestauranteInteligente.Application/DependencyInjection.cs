@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using RestauranteInteligente.Application.Caixa.UseCases;
 using RestauranteInteligente.Application.Estoque.Services;
+using RestauranteInteligente.Application.Previsoes.UseCases;
 using RestauranteInteligente.Application.Vendas.UseCases;
 
 namespace RestauranteInteligente.Application;
@@ -12,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<BaixaEstoqueService>();
         services.AddScoped<RegistrarVendaUseCase>();
         services.AddScoped<FecharCaixaUseCase>();
+        services.AddScoped<CalcularCapacidadeProducaoUseCase>();
         return services;
     }
 }

@@ -35,6 +35,16 @@ Qualquer código gerado que viole qualquer uma das seguintes cláusulas é **sum
 6. **PROIBIDOS Estilos Inline Dinâmicos:**
    - Proibido o uso de objetos literais inline no prop `style` (`style={{ ... }}`) para componentes renderizados em loops ou frequentemente atualizados, prevenindo alocações cíclicas de memória e recalculos na thread de UI. Usar sempre `StyleSheet.create` ou design tokens pré-compilados.
 
+7. **PROIBIDA Violação de Encapsulamento e Arquitetura Feature-First:**
+   - Todo módulo funcional de negócio deve residir sob `features/<nome>/` contendo estritamente as subpastas `components/`, `hooks/`, `services/`, `types/` e o ponto de exportação pública `index.ts`.
+   - É terminantemente proibido o import direto de arquivos internos profundos entre features distintas. Toda integração inter-features deve ser consumida através do `index.ts` público.
+   - Rotas em `app/` atuam exclusivamente como cascas finas de composição (*thin wrappers*). Proibida a definição de regras de negócio, chamadas diretas de API ou componentes complexos dentro de `app/`.
+
+8. **PROIBIDA Navegação Baseada em JS / Sem Otimização Nativa:**
+   - É mandatório o uso de `expo-router` operando com Native Stack (`Stack` do `expo-router` sobre `react-native-screens`). É estritamente proibido o uso de navegadores baseados na thread de JS (`@react-navigation/stack`).
+   - As rotas devem ser 100% tipadas (`expo-router/typed-routes`) e estruturadas para usufruir de code-splitting automático por rota via Metro.
+   - Telas e abas fora de foco devem aplicar congelamento nativo (`freezeOnBlur: true` ou desanexação via `react-native-screens`) para eliminar processamento ocioso e degradação de RAM.
+
 ---
 
 ## 2. Hierarquia Inviolável de Regras de Codificação
@@ -46,8 +56,8 @@ Quando houver tensão entre diferentes exigências técnicas, o agente deve segu
    - Isolamento de rede: injeção obrigatória do Bearer Token JWT via interceptors centrais do Axios, com leitura síncrona segura no storage nativo (`MMKV`).
 2. **Nível 2 - Regras Arquiteturais:**
    - Aderência estrita à Nova Arquitetura do React Native (Fabric, TurboModules, Hermes).
-   - Organização modular orientada a funcionalidades (*feature-first*).
-   - Roteamento com `expo-router` e rotas tipadas (`expo-router/typed-routes`).
+   - Organização modular Feature-First (Bounded Contexts) com subpastas obrigatórias (`components/`, `hooks/`, `services/`, `types/`), barreira `index.ts` e *thin route wrappers* em `app/`.
+   - Roteamento nativo exclusivo via `expo-router` Native Stack (`react-native-screens`) com rotas tipadas (`expo-router/typed-routes`), code-splitting por rota e `freezeOnBlur: true`.
    - Sincronização de dados do servidor via TanStack Query com polling resiliente.
 3. **Nível 3 - Regras de Estilo:**
    - Aderência aos Design Tokens da aplicação (cores, tipografia, espaçamentos).

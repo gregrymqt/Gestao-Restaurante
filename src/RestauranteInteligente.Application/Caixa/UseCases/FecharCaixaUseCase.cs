@@ -4,31 +4,35 @@ using RestauranteInteligente.Application.Caixa.DTOs;
 using RestauranteInteligente.Application.Common.Events;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Common.Messages;
+using RestauranteInteligente.Domain.Entities;
 
 namespace RestauranteInteligente.Application.Caixa.UseCases;
 
 /// <summary>
 /// Caso de uso de encerramento da sessão de caixa operacional.
-/// Consolida vendas do dia, atualiza status para FECHADO e dispara o evento assíncrono
-/// PrevisaoDemandaSolicitadaEvent_v1 via RabbitMQ para o Worker Python de Machine Learning.
+/// Consolida vendas do dia, atualiza status para FECHADO, consulta meteorologia externa resiliente
+/// e dispara eventos assíncronos via RabbitMQ para o Worker Python de Machine Learning.
 /// </summary>
 public sealed class FecharCaixaUseCase
 {
     private readonly IAppDbContext _dbContext;
     private readonly ITenantContext _tenantContext;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IWeatherClient _weatherClient;
     private readonly ILogger<FecharCaixaUseCase> _logger;
 
     public FecharCaixaUseCase(
         IAppDbContext dbContext,
         ITenantContext tenantContext,
         IEventPublisher eventPublisher,
+        IWeatherClient weatherClient,
         ILogger<FecharCaixaUseCase> logger)
     {
-        _dbContext = dbContext;
-        _tenantContext = tenantContext;
-        _eventPublisher = eventPublisher;
-        _logger = logger;
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
+        _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
+        _weatherClient = weatherClient ?? throw new ArgumentNullException(nameof(weatherClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<FecharCaixaOutputDto> ExecutarAsync(CancellationToken ct = default)
@@ -67,14 +71,59 @@ public sealed class FecharCaixaUseCase
             .OrderBy(h => h.Data)
             .ToList();
 
-        // 4. Coleta do último parâmetro meteorológico registrado
-        var climaRecente = await _dbContext.DadosClimaticos
-            .OrderByDescending(d => d.Data)
-            .FirstOrDefaultAsync(ct);
+        var dataAlvo = DateOnly.FromDateTime(dataFechamento.Date.AddDays(1));
 
-        var temp = climaRecente?.Temperatura ?? 25.0m;
-        var precip = climaRecente?.Precipitacao ?? 0.0m;
-        var umidade = climaRecente?.Umidade ?? 60.0m;
+        // 4. Integração meteorológica externa resiliente (Open-Meteo) com fallback gracioso
+        decimal lat = 0m;
+        decimal lon = 0m;
+
+        if (_dbContext.Restaurantes != null)
+        {
+            var restaurante = await _dbContext.Restaurantes
+                .FirstOrDefaultAsync(r => r.Id == tenantId, ct);
+
+            lat = restaurante?.Latitude ?? 0m;
+            lon = restaurante?.Longitude ?? 0m;
+        }
+
+        WeatherData weatherData;
+        try
+        {
+            weatherData = await _weatherClient.ObterPrevisaoClimaAsync(lat, lon, dataAlvo, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha na chamada ao WeatherClient para restaurante {TenantId}. Aplicando degradação graciosa com valores padrão.", tenantId);
+            weatherData = new WeatherData(25.0m, 60.0m, 0.0m);
+        }
+
+        // Persistência com upsert formal na tabela DadosClimaticos para a data alvo
+        var dadoClimaticoExistente = await _dbContext.DadosClimaticos
+            .FirstOrDefaultAsync(d => d.RestauranteId == tenantId && d.Data == dataAlvo, ct);
+
+        if (dadoClimaticoExistente != null)
+        {
+            dadoClimaticoExistente.AtualizarClima(weatherData.Temperatura, weatherData.Umidade, weatherData.Precipitacao, "PREVISAO");
+        }
+        else
+        {
+            var novoDadoClimatico = new DadosClimaticos(
+                id: Guid.NewGuid(),
+                restauranteId: tenantId,
+                data: dataAlvo,
+                temperatura: weatherData.Temperatura,
+                umidade: weatherData.Umidade,
+                precipitacao: weatherData.Precipitacao,
+                tipoDado: "PREVISAO"
+            );
+            await _dbContext.DadosClimaticos.AddAsync(novoDadoClimatico, ct);
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+
+        var temp = weatherData.Temperatura;
+        var precip = weatherData.Precipitacao;
+        var umidade = weatherData.Umidade;
         var climaPayload = new ParametroMeteorologicoPayloadDto(temp, precip, umidade);
 
         // 5. Coleta do catálogo de produtos ativos
@@ -88,7 +137,6 @@ public sealed class FecharCaixaUseCase
 
         // 6. Publicação de Mensageria assíncrona (RabbitMQ / MassTransit Raw JSON)
         var correlationId = Guid.NewGuid();
-        var dataAlvo = DateOnly.FromDateTime(dataFechamento.Date.AddDays(1));
 
         // 6.1 Publicação granular por produto (Fase 4 - fila previsao.demanda.solicitada)
         var datasUltimos14Dias = Enumerable.Range(0, 14)

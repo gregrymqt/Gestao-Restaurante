@@ -43,6 +43,8 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
    - Camada de rede centralizada via Axios/Fetch com interceptors para injeção de JWT.
    - Tipagem forte (100% TypeScript) espelhando os DTOs do backend.
    - Tratamento de assincronismo (polling ou SignalR) para operações disparadas via mensageria.
+   - Arquitetura Feature-First (Bounded Contexts): Todas as funcionalidades de negócio residem estritamente sob `src/frontend/features/<nome>/` contendo as subpastas `components/`, `hooks/`, `services/`, `types/` e barreira pública `index.ts` (vedados imports internos entre features). As rotas em `app/` atuam estritamente como cascas finas de composição (*thin wrappers*).
+   - Navegação Nativa de Alta Performance: Adoção exclusiva de `expo-router` com Native Stack (`react-native-screens`), rotas tipadas (`expo-router/typed-routes`), code-splitting automático por rota e congelamento de telas em background (`freezeOnBlur: true`). Banido o uso de navegadores JS (`@react-navigation/stack`).
 
 9. **Densidade de Tokens e Leitura Cirúrgica (Token-Density):**
    - Proibida a leitura integral de arquivos com mais de 100 linhas sem fatiamento cirúrgico (`StartLine` e `EndLine` delimitados a no máximo 80 linhas).

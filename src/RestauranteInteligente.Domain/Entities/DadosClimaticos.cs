@@ -43,4 +43,19 @@ public sealed class DadosClimaticos : IRestauranteEntity
         TipoDado = string.IsNullOrWhiteSpace(tipoDado) ? "HISTORICO" : tipoDado.Trim().ToUpperInvariant();
         ConsultadoEm = consultadoEm ?? DateTimeOffset.UtcNow;
     }
+
+    public void AtualizarClima(decimal temperatura, decimal umidade, decimal precipitacao, string tipoDado = "PREVISAO")
+    {
+        if (umidade < 0m || umidade > 100m)
+            throw new ArgumentOutOfRangeException(nameof(umidade), "A umidade relativa deve situar-se entre 0% e 100%.");
+
+        if (precipitacao < 0m)
+            throw new ArgumentOutOfRangeException(nameof(precipitacao), "A precipitação pluviométrica não pode ser negativa.");
+
+        Temperatura = temperatura;
+        Umidade = umidade;
+        Precipitacao = precipitacao;
+        TipoDado = string.IsNullOrWhiteSpace(tipoDado) ? "PREVISAO" : tipoDado.Trim().ToUpperInvariant();
+        ConsultadoEm = DateTimeOffset.UtcNow;
+    }
 }

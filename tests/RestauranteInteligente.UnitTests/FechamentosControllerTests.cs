@@ -18,12 +18,19 @@ public sealed class FechamentosControllerTests
 {
     private readonly Mock<ITenantContext> _tenantContextMock = new();
     private readonly Mock<IEventPublisher> _eventPublisherMock = new();
+    private readonly Mock<IWeatherClient> _weatherClientMock = new();
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     public FechamentosControllerTests()
     {
         _tenantContextMock.Setup(t => t.HasTenant).Returns(true);
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
+        _weatherClientMock.Setup(w => w.ObterPrevisaoClimaAsync(
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>(),
+            It.IsAny<DateOnly>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WeatherData(25.0m, 60.0m, 0.0m));
     }
 
     private AppDbContext CreateInMemoryDbContext()
@@ -40,7 +47,7 @@ public sealed class FechamentosControllerTests
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
-        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
+        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, _weatherClientMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
         var controller = new FechamentosController(useCase);
 
         // Act
@@ -60,7 +67,7 @@ public sealed class FechamentosControllerTests
         dbContext.FechamentosCaixa.Add(caixa);
         await dbContext.SaveChangesAsync();
 
-        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
+        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, _weatherClientMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
         var controller = new FechamentosController(useCase);
 
         // Act
