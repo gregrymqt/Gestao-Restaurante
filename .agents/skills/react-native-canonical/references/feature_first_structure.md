@@ -63,3 +63,12 @@ Para garantir máxima fluidez de interface (60/120 FPS), consumo mínimo de RAM 
 1. **Dependência Hierárquica Estrita:** Uma feature só pode consumir recursos de outra feature através de seu `index.ts` público. É sumariamente proibido importar submódulos internos (ex.: `import { Item } from '../features/estoque/components/Item'`).
 2. **Promoção para Primitivas Globais:** Se um componente visual for reutilizado por mais de dois domínios (ex.: `Button`, `ThemedText`, `CardBase`), ele deve ser promovido para `components/primitives/`.
 3. **Contratos Imutáveis:** Interfaces DTO em `types/` devem declarar todas as propriedades como `readonly`, garantindo correspondência simétrica com a imutabilidade dos modelos C# do backend.
+
+---
+
+## 6. Teto de Complexidade e Decomposição (Máximo 350 Linhas por Componente)
+
+1. **Limite Estrito:** Nenhum arquivo `.tsx` de componente pode ultrapassar **350 linhas** de código.
+2. **Decomposição Modular Obrigatória:** Componentes com múltiplos blocos (ex.: modais com formulários, resumos e calculadoras) devem ser decompostos em subcomponentes coesos dentro da pasta `components/` da feature.
+3. **Orquestrador Visual Limpo:** O componente principal apenas orquestra o estado do hook e organiza a disposição vertical dos subcomponentes, garantindo manutenibilidade, isolamento de renderização e densidade ideal de código.
+

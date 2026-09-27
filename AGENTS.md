@@ -44,6 +44,8 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
    - Tipagem forte (100% TypeScript) espelhando os DTOs do backend.
    - Tratamento de assincronismo (polling ou SignalR) para operações disparadas via mensageria.
    - Arquitetura Feature-First (Bounded Contexts): Todas as funcionalidades de negócio residem estritamente sob `src/frontend/features/<nome>/` contendo as subpastas `components/`, `hooks/`, `services/`, `types/` e barreira pública `index.ts` (vedados imports internos entre features). As rotas em `app/` atuam estritamente como cascas finas de composição (*thin wrappers*).
+   - Segregação Estrita de Responsabilidades (SRP): Componentes são puramente visuais e declarativos (vedada lógica de transporte ou chamadas diretas de API); Hooks orquestram estado e reatividade (vedadas requisições HTTP inline `axios/fetch`, delegando estritamente para `services/`); Services executam exclusivamente o transporte de I/O via `apiClient` (vedado uso de JSX ou hooks do React).
+   - Teto de Complexidade por Componente: Limite estrito de no máximo 350 linhas por arquivo de componente (`.tsx`). Componentes que atinjam ou superem esse limite devem ser obrigatoriamente decompostos em subcomponentes modulares na pasta `components/`.
    - Navegação Nativa de Alta Performance: Adoção exclusiva de `expo-router` com Native Stack (`react-native-screens`), rotas tipadas (`expo-router/typed-routes`), code-splitting automático por rota e congelamento de telas em background (`freezeOnBlur: true`). Banido o uso de navegadores JS (`@react-navigation/stack`).
 
 9. **Densidade de Tokens e Leitura Cirúrgica (Token-Density):**

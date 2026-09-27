@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { tokens } from '@/components/primitives/tokens';
@@ -12,39 +12,24 @@ import { BarraPesquisaPdv } from '../components/BarraPesquisaPdv';
 import { CategoriasCarrossel } from '../components/CategoriasCarrossel';
 import { ProdutoCard } from '../components/ProdutoCard';
 import { BarraFlutuanteCheckout } from '../components/BarraFlutuanteCheckout';
+import { CheckoutBottomSheet } from '../components/CheckoutBottomSheet';
 
 export function PdvScreen() {
   const [categoria, setCategoria] = useState<CategoriaProduto>('Todos');
   const [termoBusca, setTermoBusca] = useState('');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const { produtos, totalProdutos } = useCatalogoProdutos(categoria, termoBusca);
 
   const adicionarItem = useCarrinho((state) => state.adicionarItem);
   const totalItens = useCarrinho((state) => state.obterTotalItens());
   const subtotalFormatado = useCarrinho((state) => state.obterSubtotalFormatado());
-  const limparCarrinho = useCarrinho((state) => state.limparCarrinho);
 
   const handleCobrar = useCallback(() => {
-    if (totalItens === 0) return;
-
-    Alert.alert(
-      'Finalizar Pedido',
-      `Confirmar fechamento da comanda no valor de ${subtotalFormatado}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar Venda',
-          onPress: () => {
-            limparCarrinho();
-            Alert.alert(
-              'Venda Registrada!',
-              'Baixa de estoque executada atomicamente no sistema.'
-            );
-          },
-        },
-      ]
-    );
-  }, [totalItens, subtotalFormatado, limparCarrinho]);
+    if (totalItens > 0) {
+      setIsCheckoutOpen(true);
+    }
+  }, [totalItens]);
 
   const renderItem = useCallback(
     ({ item }: { item: Produto }) => (
@@ -91,6 +76,12 @@ export function PdvScreen() {
           totalItens={totalItens}
           subtotalFormatado={subtotalFormatado}
           aoCobrar={handleCobrar}
+        />
+
+        {/* Modal Deslizante de Cobrança e Checkout */}
+        <CheckoutBottomSheet
+          visible={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
         />
       </View>
     </SafeAreaView>

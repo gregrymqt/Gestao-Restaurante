@@ -1,25 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/primitives/ThemedText';
-import { tokens } from '@/components/primitives/tokens';
+import { PrevisoesScreen } from '@/features/previsoes';
 
+/**
+ * Rota Tab: Previsões de Demanda & Capacidade de Estoque.
+ * Atua estritamente como Thin Route Wrapper delegando para o bounded context features/previsoes.
+ */
 export default function PrevisoesRoute() {
-  return (
-    <View style={styles.container}>
-      <ThemedText variant="title">Previsões & Capacidade</ThemedText>
-      <ThemedText variant="body" color={tokens.colors.textMuted}>
-        Painel preditivo de demanda alimentado por IA em desenvolvimento.
-      </ThemedText>
-    </View>
-  );
+  return <PrevisoesScreen />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.background,
-    padding: tokens.spacing.lg,
-  },
-});

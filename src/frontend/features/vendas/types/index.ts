@@ -5,6 +5,8 @@ export type CategoriaProduto =
   | 'Bebidas'
   | 'Sobremesas';
 
+export type FormaPagamento = 'Dinheiro' | 'PIX' | 'Debito' | 'Credito';
+
 export interface Produto {
   readonly id: string;
   readonly nome: string;
@@ -27,4 +29,33 @@ export interface EstadoComanda {
   readonly terminalId: string;
   readonly operador: string;
   readonly statusCaixa: 'Aberto' | 'Fechado';
+}
+
+export interface ItemVendaRequestDto {
+  readonly produtoId: string;
+  readonly quantidade: number;
+}
+
+export interface RegistrarVendaRequestDto {
+  readonly formaPagamento: FormaPagamento;
+  readonly itens: readonly ItemVendaRequestDto[];
+}
+
+export interface ItemVendaResponseDto {
+  readonly id: string;
+  readonly produtoId: string;
+  readonly quantidade: number;
+  readonly precoUnitario: number;
+  readonly subtotal: number;
+}
+
+export interface VendaResponseDto {
+  readonly vendaId: string;
+  readonly restauranteId: string;
+  readonly fechamentoCaixaId: string;
+  readonly dataHora: string;
+  readonly status: string;
+  readonly formaPagamento: string;
+  readonly valorTotal: number;
+  readonly itens: readonly ItemVendaResponseDto[];
 }

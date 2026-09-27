@@ -45,6 +45,15 @@ Qualquer código gerado que viole qualquer uma das seguintes cláusulas é **sum
    - As rotas devem ser 100% tipadas (`expo-router/typed-routes`) e estruturadas para usufruir de code-splitting automático por rota via Metro.
    - Telas e abas fora de foco devem aplicar congelamento nativo (`freezeOnBlur: true` ou desanexação via `react-native-screens`) para eliminar processamento ocioso e degradação de RAM.
 
+9. **PROIBIDA Mistura de Responsabilidades (SRP Estrito):**
+   - Componentes (`components/`) são puramente dedicados à apresentação visual e eventos de interface. É terminantemente proibida a execução direta de chamadas de rede (`axios`, `fetch`, `apiClient`) dentro de arquivos de componentes.
+   - Hooks (`hooks/`) orquestram ciclo de vida, reatividade e estado (Zustand, TanStack Query). É proibido escrever chamadas HTTP inline dentro de hooks; a comunicação com a API deve obrigatoriamente delegar para a camada `services/`.
+   - Services (`services/`) operam exclusivamente no transporte de rede e serialização de dados consumindo o `apiClient`. É proibido declarar JSX, tags primitivas ou hooks do React em services.
+
+10. **PROIBIDOS Componentes Monolíticos (> 350 Linhas):**
+   - Todo arquivo `.tsx` de componente deve respeitar o teto estrito de no máximo **350 linhas** de código.
+   - Componentes com layouts extensos ou múltiplos painéis devem ser obrigatoriamente decompostos em subcomponentes modulares e coesos dentro da pasta `components/` da respectiva feature.
+
 ---
 
 ## 2. Hierarquia Inviolável de Regras de Codificação
