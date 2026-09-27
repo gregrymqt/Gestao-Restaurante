@@ -37,7 +37,8 @@ public sealed class BaixaEstoqueService
     public async Task<BaixaEstoqueResultDto> ExecutarBaixaAsync(
         IReadOnlyList<ItemBaixaEstoqueDto> itens,
         OrigemMovimentacao origem,
-        string motivo,
+        string? observacao = null,
+        Guid? referenciaId = null,
         CancellationToken ct = default)
     {
         if (itens == null || itens.Count == 0)
@@ -100,8 +101,9 @@ public sealed class BaixaEstoqueService
                     tipo: TipoMovimentacao.Saida,
                     origem: origem,
                     quantidade: item.QuantidadeTotal,
-                    custoUnitarioMomento: insumo.CustoUnitario,
-                    motivo: motivo
+                    dataHora: DateTimeOffset.UtcNow,
+                    referenciaId: referenciaId,
+                    observacao: observacao
                 );
 
                 await _dbContext.MovimentacoesEstoque.AddAsync(movimentacao, ct);

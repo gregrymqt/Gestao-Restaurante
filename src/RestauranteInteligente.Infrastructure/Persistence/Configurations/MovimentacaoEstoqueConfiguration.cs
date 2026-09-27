@@ -25,25 +25,25 @@ public sealed class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguration<
 
         builder.Property(m => m.Origem)
             .HasConversion<string>()
-            .HasMaxLength(20)
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(m => m.Quantidade)
             .HasColumnType("numeric(18,4)")
             .IsRequired();
 
-        builder.Property(m => m.CustoUnitarioMomento)
-            .HasColumnType("numeric(18,2)")
-            .IsRequired();
-
-        builder.Property(m => m.Motivo)
-            .HasMaxLength(255)
-            .IsRequired(false);
-
-        builder.Property(m => m.CriadoEm)
+        builder.Property(m => m.DataHora)
             .HasColumnType("timestamptz")
             .IsRequired();
 
-        builder.HasIndex(m => new { m.RestauranteId, m.InsumoId, m.CriadoEm });
+        builder.Property(m => m.ReferenciaId)
+            .IsRequired(false);
+
+        builder.Property(m => m.Observacao)
+            .HasColumnType("text")
+            .IsRequired(false);
+
+        builder.HasIndex(m => new { m.RestauranteId, m.InsumoId, m.DataHora })
+            .HasDatabaseName("IX_Movimentacoes_Restaurante_Insumo_Data");
     }
 }

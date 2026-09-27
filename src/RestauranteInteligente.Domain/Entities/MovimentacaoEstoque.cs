@@ -5,6 +5,7 @@ namespace RestauranteInteligente.Domain.Entities;
 
 /// <summary>
 /// Livro-razão (Ledger) imutável de estoque (Append-Only).
+/// Reflete rigorosamente a tabela MovimentacoesEstoque da DDL PostgreSQL.
 /// Esta entidade nunca sofre UPDATE ou DELETE.
 /// </summary>
 public sealed class MovimentacaoEstoque : IRestauranteEntity
@@ -13,11 +14,11 @@ public sealed class MovimentacaoEstoque : IRestauranteEntity
     public Guid RestauranteId { get; private set; }
     public Guid InsumoId { get; private set; }
     public TipoMovimentacao Tipo { get; private set; }
-    public OrigemMovimentacao Origem { get; private set; }
     public decimal Quantidade { get; private set; }
-    public decimal CustoUnitarioMomento { get; private set; }
-    public string? Motivo { get; private set; }
-    public DateTimeOffset CriadoEm { get; private set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset DataHora { get; private set; } = DateTimeOffset.UtcNow;
+    public OrigemMovimentacao Origem { get; private set; }
+    public Guid? ReferenciaId { get; private set; }
+    public string? Observacao { get; private set; }
 
     private MovimentacaoEstoque() { }
 
@@ -28,14 +29,12 @@ public sealed class MovimentacaoEstoque : IRestauranteEntity
         TipoMovimentacao tipo,
         OrigemMovimentacao origem,
         decimal quantidade,
-        decimal custoUnitarioMomento,
-        string? motivo = null)
+        DateTimeOffset? dataHora = null,
+        Guid? referenciaId = null,
+        string? observacao = null)
     {
         if (quantidade <= 0m)
             throw new ArgumentException("A quantidade movimentada deve ser estritamente positiva.", nameof(quantidade));
-
-        if (custoUnitarioMomento < 0m)
-            throw new ArgumentException("O custo unitário do momento não pode ser negativo.", nameof(custoUnitarioMomento));
 
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         RestauranteId = restauranteId;
@@ -43,8 +42,8 @@ public sealed class MovimentacaoEstoque : IRestauranteEntity
         Tipo = tipo;
         Origem = origem;
         Quantidade = quantidade;
-        CustoUnitarioMomento = custoUnitarioMomento;
-        Motivo = motivo;
-        CriadoEm = DateTimeOffset.UtcNow;
+        DataHora = dataHora ?? DateTimeOffset.UtcNow;
+        ReferenciaId = referenciaId;
+        Observacao = observacao?.Trim();
     }
 }

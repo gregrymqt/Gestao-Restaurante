@@ -224,8 +224,9 @@ public sealed class BaixaEstoqueServiceTests
         entry.Quantidade.Should().Be(12.5m);
         entry.Tipo.Should().Be(TipoMovimentacao.Saida);
         entry.Origem.Should().Be(OrigemMovimentacao.Venda);
-        entry.CustoUnitarioMomento.Should().Be(5.5m);
-        entry.Motivo.Should().Be("Produção Diária");
+        entry.Observacao.Should().Be("Produção Diária");
+        entry.ReferenciaId.Should().BeNull();
+        entry.DataHora.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
 
         _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

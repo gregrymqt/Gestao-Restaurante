@@ -82,8 +82,7 @@ public sealed class AppDbContextTests
                 insumoId: Guid.NewGuid(),
                 tipo: TipoMovimentacao.Entrada,
                 origem: OrigemMovimentacao.Compra,
-                quantidade: 50m,
-                custoUnitarioMomento: 10m
+                quantidade: 50m
             );
 
             await context.MovimentacoesEstoque.AddAsync(mov);
@@ -118,8 +117,7 @@ public sealed class AppDbContextTests
                 insumoId: Guid.NewGuid(),
                 tipo: TipoMovimentacao.Entrada,
                 origem: OrigemMovimentacao.Compra,
-                quantidade: 50m,
-                custoUnitarioMomento: 10m
+                quantidade: 50m
             );
 
             await context.MovimentacoesEstoque.AddAsync(mov);

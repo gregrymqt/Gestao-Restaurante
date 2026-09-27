@@ -37,7 +37,8 @@ public sealed class EstoqueController : ControllerBase
         var resultado = await _baixaEstoqueService.ExecutarBaixaAsync(
             itensDomain,
             request.Origem ?? OrigemMovimentacao.Venda,
-            request.Motivo ?? "Baixa operacional de estoque via API",
+            request.Observacao ?? "Baixa operacional de estoque via API",
+            request.ReferenciaId,
             ct
         );
 

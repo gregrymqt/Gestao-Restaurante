@@ -8,5 +8,6 @@ namespace RestauranteInteligente.Api.DTOs.Estoque;
 public sealed record BaixaEstoqueRequest(
     List<ItemBaixaRequest> Itens,
     OrigemMovimentacao? Origem = null,
-    string? Motivo = null
+    string? Observacao = null,
+    Guid? ReferenciaId = null
 );
