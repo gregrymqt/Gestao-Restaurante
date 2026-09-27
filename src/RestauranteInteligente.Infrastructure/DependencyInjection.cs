@@ -16,6 +16,7 @@ using RestauranteInteligente.Infrastructure.Messaging.Consumers;
 using RestauranteInteligente.Infrastructure.Persistence;
 using RestauranteInteligente.Infrastructure.Persistence.Interceptors;
 using RestauranteInteligente.Infrastructure.Persistence.Repositories;
+using RestauranteInteligente.Infrastructure.Persistence.UnitOfWork;
 using RestauranteInteligente.Infrastructure.ExternalServices.Weather;
 using RestauranteInteligente.Infrastructure.Redis;
 using RestauranteInteligente.Infrastructure.Security;
@@ -128,6 +129,12 @@ public static class DependencyInjection
         services.AddScoped<PostgresRlsTransactionInterceptor>();
         services.AddScoped<IInsumoRepository, InsumoRepository>();
         services.AddScoped<IProdutoRepository, ProdutoRepository>();
+        services.AddScoped<IVendaRepository, VendaRepository>();
+        services.AddScoped<IFechamentoCaixaRepository, FechamentoCaixaRepository>();
+        services.AddScoped<IDadosClimaticosRepository, DadosClimaticosRepository>();
+        services.AddScoped<IPrevisaoRepository, PrevisaoRepository>();
+        services.AddScoped<IRestauranteRepository, RestauranteRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connectionString))

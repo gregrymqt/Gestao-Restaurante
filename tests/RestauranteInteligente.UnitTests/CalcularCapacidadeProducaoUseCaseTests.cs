@@ -6,6 +6,7 @@ using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Previsoes.UseCases;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Infrastructure.Persistence;
+using RestauranteInteligente.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -35,11 +36,15 @@ public sealed class CalcularCapacidadeProducaoUseCaseTests
     {
         // Arrange
         using var inMemDb = CreateInMemoryDbContext();
+        var prevRepo = new PrevisaoRepository(inMemDb);
+        var prodRepo = new ProdutoRepository(inMemDb);
+
         var tenantMock = new Mock<ITenantContext>();
         tenantMock.Setup(t => t.HasTenant).Returns(false);
 
         var useCase = new CalcularCapacidadeProducaoUseCase(
-            inMemDb,
+            prevRepo,
+            prodRepo,
             tenantMock.Object,
             NullLogger<CalcularCapacidadeProducaoUseCase>.Instance
         );
@@ -90,8 +95,12 @@ public sealed class CalcularCapacidadeProducaoUseCaseTests
 
         await inMemDb.SaveChangesAsync();
 
+        var prevRepo = new PrevisaoRepository(inMemDb);
+        var prodRepo = new ProdutoRepository(inMemDb);
+
         var useCase = new CalcularCapacidadeProducaoUseCase(
-            inMemDb,
+            prevRepo,
+            prodRepo,
             _tenantContextMock.Object,
             NullLogger<CalcularCapacidadeProducaoUseCase>.Instance
         );
@@ -157,8 +166,12 @@ public sealed class CalcularCapacidadeProducaoUseCaseTests
 
         await inMemDb.SaveChangesAsync();
 
+        var prevRepo = new PrevisaoRepository(inMemDb);
+        var prodRepo = new ProdutoRepository(inMemDb);
+
         var useCase = new CalcularCapacidadeProducaoUseCase(
-            inMemDb,
+            prevRepo,
+            prodRepo,
             _tenantContextMock.Object,
             NullLogger<CalcularCapacidadeProducaoUseCase>.Instance
         );

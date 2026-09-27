@@ -1,6 +1,4 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RestauranteInteligente.Application.Common.Interfaces;
@@ -9,7 +7,6 @@ using RestauranteInteligente.Application.Vendas.UseCases;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Domain.Enums;
-using RestauranteInteligente.Infrastructure.Persistence;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -17,9 +14,12 @@ namespace RestauranteInteligente.UnitTests;
 public sealed class RegistrarVendaUseCaseTests
 {
     private readonly Mock<ITenantContext> _tenantContextMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ITransactionScope> _transactionMock = new();
     private readonly Mock<IInsumoRepository> _insumoRepoMock = new();
-    private readonly Mock<IAppDbContext> _dbContextMock = new();
-    private readonly Mock<IDbContextTransaction> _transactionMock = new();
+    private readonly Mock<IProdutoRepository> _produtoRepoMock = new();
+    private readonly Mock<IVendaRepository> _vendaRepoMock = new();
+    private readonly Mock<IFechamentoCaixaRepository> _fechamentoCaixaRepoMock = new();
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     public RegistrarVendaUseCaseTests()
@@ -27,32 +27,31 @@ public sealed class RegistrarVendaUseCaseTests
         _tenantContextMock.Setup(t => t.HasTenant).Returns(true);
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
 
-        _dbContextMock.Setup(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+        _unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_transactionMock.Object);
     }
 
-    private AppDbContext CreateInMemoryDbContext()
+    private RegistrarVendaUseCase CreateSut()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-
-        return new AppDbContext(options, _tenantContextMock.Object);
+        return new RegistrarVendaUseCase(
+            _unitOfWorkMock.Object,
+            _insumoRepoMock.Object,
+            _produtoRepoMock.Object,
+            _vendaRepoMock.Object,
+            _fechamentoCaixaRepoMock.Object,
+            _tenantContextMock.Object,
+            NullLogger<RegistrarVendaUseCase>.Instance
+        );
     }
 
     [Fact]
     public async Task ExecutarAsync_SemCaixaAberto_DeveLancarInvalidOperationException()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FechamentoCaixa?)null);
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "PIX",
@@ -71,20 +70,14 @@ public sealed class RegistrarVendaUseCaseTests
     public async Task ExecutarAsync_ComProdutoInexistente_DeveLancarInvalidOperationException()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
         var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
-        inMemDb.FechamentosCaixa.Add(caixa);
-        await inMemDb.SaveChangesAsync();
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
 
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Produto>());
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "CARTAO",
@@ -103,24 +96,17 @@ public sealed class RegistrarVendaUseCaseTests
     public async Task ExecutarAsync_ComProdutoInativo_DeveLancarInvalidOperationException()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
         var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
-        inMemDb.FechamentosCaixa.Add(caixa);
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
 
         var produtoInativo = new Produto(Guid.NewGuid(), _tenantId, "Lanche Descontinuado", null, 25m);
         produtoInativo.Desativar();
-        inMemDb.Produtos.Add(produtoInativo);
-        await inMemDb.SaveChangesAsync();
 
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Produto> { produtoInativo });
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "DINHEIRO",
@@ -139,9 +125,9 @@ public sealed class RegistrarVendaUseCaseTests
     public async Task ExecutarAsync_ComEstoqueInsuficiente_DeveDispararRollbackELancarExcecao()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
         var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
-        inMemDb.FechamentosCaixa.Add(caixa);
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
 
         var insumoId = Guid.NewGuid();
         var insumo = new Insumo(insumoId, _tenantId, "Carne", "KG", 5m, 30m);
@@ -149,21 +135,14 @@ public sealed class RegistrarVendaUseCaseTests
 
         var produto = new Produto(Guid.NewGuid(), _tenantId, "Hambúrguer", null, 35m);
         produto.AdicionarInsumo(insumoId, 1.5m); // Demanda por item: 1.5 KG
-        inMemDb.Produtos.Add(produto);
-        await inMemDb.SaveChangesAsync();
 
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Produto> { produto });
 
         _insumoRepoMock.Setup(r => r.ObterPorIdsParaAtualizacaoAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Insumo> { insumo });
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "PIX",
@@ -184,9 +163,9 @@ public sealed class RegistrarVendaUseCaseTests
     public async Task ExecutarAsync_ComSucesso_DeveExplodirBOM_DebitarEstoque_GravarLedger_CriarVenda_E_AtualizarCaixa()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
         var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
-        inMemDb.FechamentosCaixa.Add(caixa);
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
 
         var insumoId = Guid.NewGuid();
         var insumo = new Insumo(insumoId, _tenantId, "Pão de Hambúrguer", "UN", 10m, 2m);
@@ -194,25 +173,24 @@ public sealed class RegistrarVendaUseCaseTests
 
         var produto = new Produto(Guid.NewGuid(), _tenantId, "X-Burger", null, 28.50m);
         produto.AdicionarInsumo(insumoId, 1m);
-        inMemDb.Produtos.Add(produto);
-        await inMemDb.SaveChangesAsync();
 
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
-        _dbContextMock.Setup(d => d.Vendas).Returns(inMemDb.Vendas);
-        _dbContextMock.Setup(d => d.MovimentacoesEstoque).Returns(inMemDb.MovimentacoesEstoque);
-        _dbContextMock.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns((CancellationToken ct) => inMemDb.SaveChangesAsync(ct));
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Produto> { produto });
 
         _insumoRepoMock.Setup(r => r.ObterPorIdsParaAtualizacaoAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Insumo> { insumo });
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var movimentacoes = new List<MovimentacaoEstoque>();
+        _insumoRepoMock.Setup(r => r.AdicionarMovimentacaoAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()))
+            .Callback<MovimentacaoEstoque, CancellationToken>((m, _) => movimentacoes.Add(m))
+            .Returns(Task.CompletedTask);
+
+        Venda? salvaVenda = null;
+        _vendaRepoMock.Setup(r => r.AdicionarAsync(It.IsAny<Venda>(), It.IsAny<CancellationToken>()))
+            .Callback<Venda, CancellationToken>((v, _) => salvaVenda = v)
+            .Returns(Task.CompletedTask);
+
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "CARTAO",
@@ -238,11 +216,15 @@ public sealed class RegistrarVendaUseCaseTests
         caixa.TotalVendas.Should().Be(85.50m);
         caixa.QuantidadeVendas.Should().Be(1);
 
-        // Valida commit da transação
+        // Valida persistência da venda
+        salvaVenda.Should().NotBeNull();
+        salvaVenda!.ValorTotal.Should().Be(85.50m);
+
+        // Valida commit da transação e do unit of work
+        _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
 
         // Valida lançamento no ledger imutável
-        var movimentacoes = await inMemDb.MovimentacoesEstoque.ToListAsync();
         movimentacoes.Should().HaveCount(1);
         movimentacoes[0].Tipo.Should().Be(TipoMovimentacao.Saida);
         movimentacoes[0].Origem.Should().Be(OrigemMovimentacao.Venda);
@@ -254,9 +236,9 @@ public sealed class RegistrarVendaUseCaseTests
     public async Task ExecutarAsync_ComMultiplosProdutosQueCompartilhamInsumo_DeveAgruparConsumoE_SolicitarBloqueioOrdenadoPorInsumoIdAsc()
     {
         // Arrange
-        using var inMemDb = CreateInMemoryDbContext();
         var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
-        inMemDb.FechamentosCaixa.Add(caixa);
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
 
         // IDs deliberadamente desordenados
         var idInsumoZ = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
@@ -275,27 +257,15 @@ public sealed class RegistrarVendaUseCaseTests
         var prod2 = new Produto(Guid.NewGuid(), _tenantId, "Burger Duplo", null, 35m);
         prod2.AdicionarInsumo(idInsumoA, 0.30m); // 300g carne
 
-        inMemDb.Produtos.AddRange(prod1, prod2);
-        await inMemDb.SaveChangesAsync();
-
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
-        _dbContextMock.Setup(d => d.Vendas).Returns(inMemDb.Vendas);
-        _dbContextMock.Setup(d => d.MovimentacoesEstoque).Returns(inMemDb.MovimentacoesEstoque);
-        _dbContextMock.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns((CancellationToken ct) => inMemDb.SaveChangesAsync(ct));
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Produto> { prod1, prod2 });
 
         IReadOnlyList<Guid>? capturedIds = null;
         _insumoRepoMock.Setup(r => r.ObterPorIdsParaAtualizacaoAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
             .Callback<IReadOnlyList<Guid>, CancellationToken>((ids, _) => capturedIds = ids)
             .ReturnsAsync(new List<Insumo> { insumoA, insumoZ });
 
-        var useCase = new RegistrarVendaUseCase(
-            _dbContextMock.Object,
-            _insumoRepoMock.Object,
-            _tenantContextMock.Object,
-            NullLogger<RegistrarVendaUseCase>.Instance
-        );
+        var useCase = CreateSut();
 
         var input = new RegistrarVendaInputDto(
             FormaPagamento: "PIX",
@@ -318,5 +288,8 @@ public sealed class RegistrarVendaUseCaseTests
         // Valida débitos acumulados
         insumoA.QuantidadeEstoque.Should().Be(19.40m); // 20 - 0.60 = 19.40
         insumoZ.QuantidadeEstoque.Should().Be(9.90m);  // 10 - 0.10 = 9.90
+
+        _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -8,30 +8,30 @@ using RestauranteInteligente.Domain.Enums;
 namespace RestauranteInteligente.Application.Estoque.Services;
 
 /// <summary>
-/// Serviço de baixa de estoque com disciplina estrita anti-deadlock e transação explícita.
+/// Serviço de baixa de estoque com disciplina estrita anti-deadlock e transação explícita via Unit of Work.
 /// Regras Mandatórias:
 /// 1. Agrupar volumes por insumo.
 /// 2. Ordenar determinísticamente por InsumoId ASC antes de qualquer bloqueio pessimista.
-/// 3. Executar sob transação explícita (IDbContextTransaction) acionando o RLS Interceptor.
+/// 3. Executar sob transação explícita (ITransactionScope) acionando o RLS Interceptor.
 /// 4. Inserir lançamentos imutáveis no Livro-Razão (MovimentacoesEstoque).
 /// </summary>
 public sealed class BaixaEstoqueService
 {
-    private readonly IAppDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IInsumoRepository _insumoRepository;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<BaixaEstoqueService> _logger;
 
     public BaixaEstoqueService(
-        IAppDbContext dbContext,
+        IUnitOfWork unitOfWork,
         IInsumoRepository insumoRepository,
         ITenantContext tenantContext,
         ILogger<BaixaEstoqueService> logger)
     {
-        _dbContext = dbContext;
-        _insumoRepository = insumoRepository;
-        _tenantContext = tenantContext;
-        _logger = logger;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _insumoRepository = insumoRepository ?? throw new ArgumentNullException(nameof(insumoRepository));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<BaixaEstoqueResultDto> ExecutarBaixaAsync(
@@ -59,8 +59,8 @@ public sealed class BaixaEstoqueService
 
         var idsOrdenados = insumosDemandados.Select(x => x.InsumoId).ToList();
 
-        // 3. Abertura de Transação Explícita (aciona o PostgresRlsTransactionInterceptor com SET LOCAL)
-        await using var transaction = await _dbContext.BeginTransactionAsync(ct);
+        // 3. Abertura de Transação Explícita via IUnitOfWork (aciona o PostgresRlsTransactionInterceptor com SET LOCAL)
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
 
         try
         {
@@ -106,13 +106,11 @@ public sealed class BaixaEstoqueService
                     observacao: observacao
                 );
 
-                await _dbContext.MovimentacoesEstoque.AddAsync(movimentacao, ct);
+                await _insumoRepository.AdicionarMovimentacaoAsync(movimentacao, ct);
             }
 
-            // Persiste alterações atômicas no banco
-            await _dbContext.SaveChangesAsync(ct);
-
-            // Comita a transação
+            // Persiste alterações atômicas no banco e comita a transação
+            await _unitOfWork.CommitAsync(ct);
             await transaction.CommitAsync(ct);
 
             _logger.LogInformation("Baixa de estoque executada com sucesso para {Count} insumos no restaurante {TenantId}.",

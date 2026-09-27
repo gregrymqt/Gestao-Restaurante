@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RestauranteInteligente.Api.Controllers;
@@ -11,6 +10,7 @@ using RestauranteInteligente.Application.Vendas.UseCases;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Infrastructure.Persistence;
+using RestauranteInteligente.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -19,16 +19,15 @@ public sealed class VendasControllerTests
 {
     private readonly Mock<ITenantContext> _tenantContextMock = new();
     private readonly Mock<IInsumoRepository> _insumoRepoMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ITransactionScope> _transactionMock = new();
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-
-    private readonly Mock<IAppDbContext> _dbContextMock = new();
-    private readonly Mock<IDbContextTransaction> _transactionMock = new();
 
     public VendasControllerTests()
     {
         _tenantContextMock.Setup(t => t.HasTenant).Returns(true);
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
-        _dbContextMock.Setup(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+        _unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_transactionMock.Object);
     }
 
@@ -41,12 +40,25 @@ public sealed class VendasControllerTests
         return new AppDbContext(options, _tenantContextMock.Object);
     }
 
+    private RegistrarVendaUseCase CreateUseCase(AppDbContext dbContext)
+    {
+        return new RegistrarVendaUseCase(
+            _unitOfWorkMock.Object,
+            _insumoRepoMock.Object,
+            new ProdutoRepository(dbContext),
+            new VendaRepository(dbContext),
+            new FechamentoCaixaRepository(dbContext),
+            _tenantContextMock.Object,
+            NullLogger<RegistrarVendaUseCase>.Instance
+        );
+    }
+
     [Fact]
     public async Task RegistrarVenda_ComPayloadSemItens_DeveRetornarBadRequest()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
-        var useCase = new RegistrarVendaUseCase(dbContext, _insumoRepoMock.Object, _tenantContextMock.Object, NullLogger<RegistrarVendaUseCase>.Instance);
+        var useCase = CreateUseCase(dbContext);
         var controller = new VendasController(useCase);
 
         var request = new RegistrarVendaRequestDto(
@@ -67,7 +79,7 @@ public sealed class VendasControllerTests
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
-        var useCase = new RegistrarVendaUseCase(dbContext, _insumoRepoMock.Object, _tenantContextMock.Object, NullLogger<RegistrarVendaUseCase>.Instance);
+        var useCase = CreateUseCase(dbContext);
         var controller = new VendasController(useCase);
 
         var request = new RegistrarVendaRequestDto(
@@ -95,14 +107,10 @@ public sealed class VendasControllerTests
         inMemDb.Produtos.Add(produto);
         await inMemDb.SaveChangesAsync();
 
-        _dbContextMock.Setup(d => d.FechamentosCaixa).Returns(inMemDb.FechamentosCaixa);
-        _dbContextMock.Setup(d => d.Produtos).Returns(inMemDb.Produtos);
-        _dbContextMock.Setup(d => d.Vendas).Returns(inMemDb.Vendas);
-        _dbContextMock.Setup(d => d.MovimentacoesEstoque).Returns(inMemDb.MovimentacoesEstoque);
-        _dbContextMock.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        _unitOfWorkMock.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
             .Returns((CancellationToken ct) => inMemDb.SaveChangesAsync(ct));
 
-        var useCase = new RegistrarVendaUseCase(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, NullLogger<RegistrarVendaUseCase>.Instance);
+        var useCase = CreateUseCase(inMemDb);
         var controller = new VendasController(useCase);
 
         var request = new RegistrarVendaRequestDto(

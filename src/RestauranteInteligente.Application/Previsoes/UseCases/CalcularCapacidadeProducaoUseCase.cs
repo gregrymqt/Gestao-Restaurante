@@ -1,26 +1,30 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Previsoes.DTOs;
+using RestauranteInteligente.Domain.Common.Interfaces;
 
 namespace RestauranteInteligente.Application.Previsoes.UseCases;
 
 /// <summary>
 /// Caso de uso que analisa a capacidade produtiva e risco de rutura de estoque com base
 /// na demanda projetada de Machine Learning e nas fichas técnicas (BOM) dos produtos.
+/// Totalmente desacoplado de IAppDbContext utilizando IPrevisaoRepository e IProdutoRepository.
 /// </summary>
 public sealed class CalcularCapacidadeProducaoUseCase
 {
-    private readonly IAppDbContext _dbContext;
+    private readonly IPrevisaoRepository _previsaoRepository;
+    private readonly IProdutoRepository _produtoRepository;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CalcularCapacidadeProducaoUseCase> _logger;
 
     public CalcularCapacidadeProducaoUseCase(
-        IAppDbContext dbContext,
+        IPrevisaoRepository previsaoRepository,
+        IProdutoRepository produtoRepository,
         ITenantContext tenantContext,
         ILogger<CalcularCapacidadeProducaoUseCase> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _previsaoRepository = previsaoRepository ?? throw new ArgumentNullException(nameof(previsaoRepository));
+        _produtoRepository = produtoRepository ?? throw new ArgumentNullException(nameof(produtoRepository));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -37,17 +41,10 @@ public sealed class CalcularCapacidadeProducaoUseCase
             tenantId, dataReferencia);
 
         // 1. Busca previsões da data de referência
-        var previsoes = await _dbContext.Previsoes
-            .Include(p => p.Produto)
-            .Where(p => p.RestauranteId == tenantId && p.DataPrevisao == dataReferencia)
-            .ToListAsync(ct);
+        var previsoes = await _previsaoRepository.ObterPorDataAlvoAsync(dataReferencia, ct);
 
         // 2. Busca todas as fichas técnicas ativas com os respectivos insumos
-        var fichasTecnicas = await _dbContext.ProdutosInsumos
-            .Include(pi => pi.Insumo)
-            .Include(pi => pi.Produto)
-            .Where(pi => pi.RestauranteId == tenantId)
-            .ToListAsync(ct);
+        var fichasTecnicas = await _produtoRepository.ObterFichasTecnicasCompletasAsync(ct);
 
         var itensCapacidade = new List<ItemCapacidadeProducaoDto>();
         var demandaInsumosTotal = new Dictionary<Guid, (string Nome, string Unidade, decimal StockAtual, decimal ConsumoTotal)>();
@@ -129,15 +126,15 @@ public sealed class CalcularCapacidadeProducaoUseCase
             .Select(kvp =>
             {
                 var insumoId = kvp.Key;
-                var info = kvp.Value;
-                var qtdComprar = Math.Max(0m, info.ConsumoTotal - info.StockAtual);
+                var (Nome, Unidade, StockAtual, ConsumoTotal) = kvp.Value;
+                var qtdComprar = Math.Max(0m, ConsumoTotal - StockAtual);
 
                 return new SugestaoReposicaoInsumoDto(
                     InsumoId: insumoId,
-                    NomeInsumo: info.Nome,
-                    UnidadeMedida: info.Unidade,
-                    StockAtual: info.StockAtual,
-                    StockNecessario: info.ConsumoTotal,
+                    NomeInsumo: Nome,
+                    UnidadeMedida: Unidade,
+                    StockAtual: StockAtual,
+                    StockNecessario: ConsumoTotal,
                     QuantidadeComprar: qtdComprar
                 );
             })

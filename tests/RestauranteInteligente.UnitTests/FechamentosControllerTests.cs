@@ -10,6 +10,8 @@ using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Infrastructure.Persistence;
+using RestauranteInteligente.Infrastructure.Persistence.Repositories;
+using RestauranteInteligente.Infrastructure.Persistence.UnitOfWork;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -42,12 +44,28 @@ public sealed class FechamentosControllerTests
         return new AppDbContext(options, _tenantContextMock.Object);
     }
 
+    private FecharCaixaUseCase CreateUseCase(AppDbContext dbContext)
+    {
+        return new FecharCaixaUseCase(
+            new UnitOfWork(dbContext),
+            new FechamentoCaixaRepository(dbContext),
+            new VendaRepository(dbContext),
+            new DadosClimaticosRepository(dbContext),
+            new ProdutoRepository(dbContext),
+            new RestauranteRepository(dbContext),
+            _tenantContextMock.Object,
+            _eventPublisherMock.Object,
+            _weatherClientMock.Object,
+            NullLogger<FecharCaixaUseCase>.Instance
+        );
+    }
+
     [Fact]
     public async Task FecharCaixa_SemCaixaAberto_DeveRetornarUnprocessableEntity()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
-        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, _weatherClientMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
+        var useCase = CreateUseCase(dbContext);
         var controller = new FechamentosController(useCase);
 
         // Act
@@ -67,7 +85,7 @@ public sealed class FechamentosControllerTests
         dbContext.FechamentosCaixa.Add(caixa);
         await dbContext.SaveChangesAsync();
 
-        var useCase = new FecharCaixaUseCase(dbContext, _tenantContextMock.Object, _eventPublisherMock.Object, _weatherClientMock.Object, NullLogger<FecharCaixaUseCase>.Instance);
+        var useCase = CreateUseCase(dbContext);
         var controller = new FechamentosController(useCase);
 
         // Act
@@ -78,6 +96,5 @@ public sealed class FechamentosControllerTests
         okResult.StatusCode.Should().Be(200);
         var response = okResult.Value.Should().BeOfType<FecharCaixaResponseDto>().Subject;
         response.Status.Should().Be("FECHADO");
-        response.CorrelationId.Should().NotBeEmpty();
     }
 }

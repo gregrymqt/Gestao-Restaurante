@@ -9,5 +9,8 @@ public interface IProdutoRepository
 {
     Task<Produto?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Produto>> ListarTodosAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Produto>> ObterTodosAtivosAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Produto>> ObterPorIdsComFichaTecnicaAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default);
+    Task<IReadOnlyList<ProdutoInsumo>> ObterFichasTecnicasCompletasAsync(CancellationToken ct = default);
     Task AdicionarAsync(Produto produto, CancellationToken ct = default);
 }

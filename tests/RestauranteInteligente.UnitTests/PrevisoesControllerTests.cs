@@ -8,6 +8,7 @@ using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Previsoes.DTOs;
 using RestauranteInteligente.Application.Previsoes.UseCases;
 using RestauranteInteligente.Infrastructure.Persistence;
+using RestauranteInteligente.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -34,8 +35,11 @@ public sealed class PrevisoesControllerTests
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
 
         using var inMemDb = CreateInMemoryDbContext();
+        var prevRepo = new PrevisaoRepository(inMemDb);
+        var prodRepo = new ProdutoRepository(inMemDb);
         var useCase = new CalcularCapacidadeProducaoUseCase(
-            inMemDb,
+            prevRepo,
+            prodRepo,
             _tenantContextMock.Object,
             NullLogger<CalcularCapacidadeProducaoUseCase>.Instance
         );
@@ -63,8 +67,11 @@ public sealed class PrevisoesControllerTests
         _tenantContextMock.Setup(t => t.HasTenant).Returns(false);
 
         using var inMemDb = CreateInMemoryDbContext();
+        var prevRepo = new PrevisaoRepository(inMemDb);
+        var prodRepo = new ProdutoRepository(inMemDb);
         var useCase = new CalcularCapacidadeProducaoUseCase(
-            inMemDb,
+            prevRepo,
+            prodRepo,
             _tenantContextMock.Object,
             NullLogger<CalcularCapacidadeProducaoUseCase>.Instance
         );
@@ -75,8 +82,8 @@ public sealed class PrevisoesControllerTests
         var response = await controller.ObterCapacidadeProducao(null, CancellationToken.None);
 
         // Assert
-        var unprocessableResult = response as UnprocessableEntityObjectResult;
-        unprocessableResult.Should().NotBeNull();
-        unprocessableResult!.StatusCode.Should().Be(422);
+        var unprocessable = response as UnprocessableEntityObjectResult;
+        unprocessable.Should().NotBeNull();
+        unprocessable!.StatusCode.Should().Be(422);
     }
 }

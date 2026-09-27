@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Caixa.DTOs;
 using RestauranteInteligente.Application.Common.Events;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Common.Messages;
+using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 
 namespace RestauranteInteligente.Application.Caixa.UseCases;
@@ -12,23 +12,39 @@ namespace RestauranteInteligente.Application.Caixa.UseCases;
 /// Caso de uso de encerramento da sessão de caixa operacional.
 /// Consolida vendas do dia, atualiza status para FECHADO, consulta meteorologia externa resiliente
 /// e dispara eventos assíncronos via RabbitMQ para o Worker Python de Machine Learning.
+/// Totalmente desacoplado de IAppDbContext utilizando IUnitOfWork e repositórios segregados.
 /// </summary>
 public sealed class FecharCaixaUseCase
 {
-    private readonly IAppDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFechamentoCaixaRepository _fechamentoCaixaRepository;
+    private readonly IVendaRepository _vendaRepository;
+    private readonly IDadosClimaticosRepository _dadosClimaticosRepository;
+    private readonly IProdutoRepository _produtoRepository;
+    private readonly IRestauranteRepository _restauranteRepository;
     private readonly ITenantContext _tenantContext;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWeatherClient _weatherClient;
     private readonly ILogger<FecharCaixaUseCase> _logger;
 
     public FecharCaixaUseCase(
-        IAppDbContext dbContext,
+        IUnitOfWork unitOfWork,
+        IFechamentoCaixaRepository fechamentoCaixaRepository,
+        IVendaRepository vendaRepository,
+        IDadosClimaticosRepository dadosClimaticosRepository,
+        IProdutoRepository produtoRepository,
+        IRestauranteRepository restauranteRepository,
         ITenantContext tenantContext,
         IEventPublisher eventPublisher,
         IWeatherClient weatherClient,
         ILogger<FecharCaixaUseCase> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _fechamentoCaixaRepository = fechamentoCaixaRepository ?? throw new ArgumentNullException(nameof(fechamentoCaixaRepository));
+        _vendaRepository = vendaRepository ?? throw new ArgumentNullException(nameof(vendaRepository));
+        _dadosClimaticosRepository = dadosClimaticosRepository ?? throw new ArgumentNullException(nameof(dadosClimaticosRepository));
+        _produtoRepository = produtoRepository ?? throw new ArgumentNullException(nameof(produtoRepository));
+        _restauranteRepository = restauranteRepository ?? throw new ArgumentNullException(nameof(restauranteRepository));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
         _weatherClient = weatherClient ?? throw new ArgumentNullException(nameof(weatherClient));
@@ -43,8 +59,7 @@ public sealed class FecharCaixaUseCase
         var tenantId = _tenantContext.RestauranteId;
 
         // 1. Localização da sessão de caixa atualmente aberta
-        var caixaAberto = await _dbContext.FechamentosCaixa
-            .FirstOrDefaultAsync(c => c.Status == "ABERTO", ct);
+        var caixaAberto = await _fechamentoCaixaRepository.ObterCaixaAbertoAsync(ct);
 
         if (caixaAberto == null)
             throw new InvalidOperationException("Operação cancelada: Nenhuma sessão de caixa aberta foi localizada para encerramento.");
@@ -53,17 +68,14 @@ public sealed class FecharCaixaUseCase
         var dataFechamento = DateTimeOffset.UtcNow;
         caixaAberto.Encerrar(dataFechamento);
 
-        await _dbContext.SaveChangesAsync(ct);
+        await _unitOfWork.CommitAsync(ct);
 
         _logger.LogInformation("Sessão de caixa {CaixaId} encerrada com sucesso no restaurante {TenantId}. Vendas: {Qtd}, Total: {Total:C}",
             caixaAberto.Id, tenantId, caixaAberto.QuantidadeVendas, caixaAberto.TotalVendas);
 
         // 3. Coleta de histórico dos últimos 14 dias de vendas para o pipeline de ML
         var dataLimiteInicio = dataFechamento.Date.AddDays(-14);
-        var vendasRecentes = await _dbContext.Vendas
-            .Where(v => v.Status == "CONCLUIDA" && v.DataHora >= dataLimiteInicio)
-            .Include(v => v.Itens)
-            .ToListAsync(ct);
+        var vendasRecentes = await _vendaRepository.ObterVendasConcluidasPorPeriodoAsync(dataLimiteInicio, ct);
 
         var historicoVendas = vendasRecentes
             .GroupBy(v => DateOnly.FromDateTime(v.DataHora.Date))
@@ -77,13 +89,11 @@ public sealed class FecharCaixaUseCase
         decimal lat = 0m;
         decimal lon = 0m;
 
-        if (_dbContext.Restaurantes != null)
+        var restaurante = await _restauranteRepository.ObterPorIdAsync(tenantId, ct);
+        if (restaurante != null)
         {
-            var restaurante = await _dbContext.Restaurantes
-                .FirstOrDefaultAsync(r => r.Id == tenantId, ct);
-
-            lat = restaurante?.Latitude ?? 0m;
-            lon = restaurante?.Longitude ?? 0m;
+            lat = restaurante.Latitude;
+            lon = restaurante.Longitude;
         }
 
         WeatherData weatherData;
@@ -98,8 +108,7 @@ public sealed class FecharCaixaUseCase
         }
 
         // Persistência com upsert formal na tabela DadosClimaticos para a data alvo
-        var dadoClimaticoExistente = await _dbContext.DadosClimaticos
-            .FirstOrDefaultAsync(d => d.RestauranteId == tenantId && d.Data == dataAlvo, ct);
+        var dadoClimaticoExistente = await _dadosClimaticosRepository.ObterPorDataAsync(dataAlvo, ct);
 
         if (dadoClimaticoExistente != null)
         {
@@ -116,10 +125,10 @@ public sealed class FecharCaixaUseCase
                 precipitacao: weatherData.Precipitacao,
                 tipoDado: "PREVISAO"
             );
-            await _dbContext.DadosClimaticos.AddAsync(novoDadoClimatico, ct);
+            await _dadosClimaticosRepository.AdicionarAsync(novoDadoClimatico, ct);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        await _unitOfWork.CommitAsync(ct);
 
         var temp = weatherData.Temperatura;
         var precip = weatherData.Precipitacao;
@@ -127,9 +136,7 @@ public sealed class FecharCaixaUseCase
         var climaPayload = new ParametroMeteorologicoPayloadDto(temp, precip, umidade);
 
         // 5. Coleta do catálogo de produtos ativos
-        var produtosAtivos = await _dbContext.Produtos
-            .Where(p => p.Ativo)
-            .ToListAsync(ct);
+        var produtosAtivos = await _produtoRepository.ObterTodosAtivosAsync(ct);
 
         var produtosPayload = produtosAtivos
             .Select(p => new ProdutoPrevisaoItemPayloadDto(p.Id, p.Preco))

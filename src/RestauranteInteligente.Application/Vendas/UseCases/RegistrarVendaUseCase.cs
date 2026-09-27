@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Vendas.DTOs;
@@ -10,25 +9,34 @@ namespace RestauranteInteligente.Application.Vendas.UseCases;
 
 /// <summary>
 /// Caso de uso atômico de registro de venda comercial com explosão de ficha técnica (BOM),
-/// disciplina anti-deadlock (ordenação determinística por InsumoId ASC) e baixa transacional no estoque.
+/// disciplina anti-deadlock (ordenação determinística por InsumoId ASC) e baixa transacional no estoque via Unit of Work.
 /// </summary>
 public sealed class RegistrarVendaUseCase
 {
-    private readonly IAppDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IInsumoRepository _insumoRepository;
+    private readonly IProdutoRepository _produtoRepository;
+    private readonly IVendaRepository _vendaRepository;
+    private readonly IFechamentoCaixaRepository _fechamentoCaixaRepository;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<RegistrarVendaUseCase> _logger;
 
     public RegistrarVendaUseCase(
-        IAppDbContext dbContext,
+        IUnitOfWork unitOfWork,
         IInsumoRepository insumoRepository,
+        IProdutoRepository produtoRepository,
+        IVendaRepository vendaRepository,
+        IFechamentoCaixaRepository fechamentoCaixaRepository,
         ITenantContext tenantContext,
         ILogger<RegistrarVendaUseCase> logger)
     {
-        _dbContext = dbContext;
-        _insumoRepository = insumoRepository;
-        _tenantContext = tenantContext;
-        _logger = logger;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _insumoRepository = insumoRepository ?? throw new ArgumentNullException(nameof(insumoRepository));
+        _produtoRepository = produtoRepository ?? throw new ArgumentNullException(nameof(produtoRepository));
+        _vendaRepository = vendaRepository ?? throw new ArgumentNullException(nameof(vendaRepository));
+        _fechamentoCaixaRepository = fechamentoCaixaRepository ?? throw new ArgumentNullException(nameof(fechamentoCaixaRepository));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<RegistrarVendaOutputDto> ExecutarAsync(RegistrarVendaInputDto input, CancellationToken ct = default)
@@ -45,18 +53,14 @@ public sealed class RegistrarVendaUseCase
         var tenantId = _tenantContext.RestauranteId;
 
         // 1. Validação de Caixa Aberto
-        var caixaAberto = await _dbContext.FechamentosCaixa
-            .FirstOrDefaultAsync(c => c.Status == "ABERTO", ct);
+        var caixaAberto = await _fechamentoCaixaRepository.ObterCaixaAbertoAsync(ct);
 
         if (caixaAberto == null)
             throw new InvalidOperationException("Operação cancelada: Não há sessão de caixa aberta para registrar vendas no restaurante.");
 
         // 2. Consulta dos Produtos com sua Ficha Técnica (BOM)
         var produtoIds = input.Itens.Select(i => i.ProdutoId).Distinct().ToList();
-        var produtos = await _dbContext.Produtos
-            .Include(p => p.FichaTecnica)
-            .Where(p => produtoIds.Contains(p.Id))
-            .ToListAsync(ct);
+        var produtos = await _produtoRepository.ObterPorIdsComFichaTecnicaAsync(produtoIds, ct);
 
         if (produtos.Count != produtoIds.Count)
         {
@@ -104,8 +108,8 @@ public sealed class RegistrarVendaUseCase
 
         var idsInsumosOrdenados = insumosOrdenados.Select(x => x.Key).ToList();
 
-        // 5. Transação Atômica ACID (BeginTransactionAsync)
-        await using var transaction = await _dbContext.BeginTransactionAsync(ct);
+        // 5. Transação Atômica ACID via IUnitOfWork (BeginTransactionAsync)
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
 
         try
         {
@@ -180,17 +184,17 @@ public sealed class RegistrarVendaUseCase
                     observacao: $"Baixa por venda {venda.Id} (BOM)"
                 );
 
-                await _dbContext.MovimentacoesEstoque.AddAsync(movimentacao, ct);
+                await _insumoRepository.AdicionarMovimentacaoAsync(movimentacao, ct);
             }
 
             // 8. Persistência da Venda com ItensVenda vinculados
-            await _dbContext.Vendas.AddAsync(venda, ct);
+            await _vendaRepository.AdicionarAsync(venda, ct);
 
             // 9. Atualização atômica dos acumuladores da sessão de caixa
             caixaAberto.RegistrarVenda(venda.ValorTotal);
 
-            // 10. Persistência final e Commit
-            await _dbContext.SaveChangesAsync(ct);
+            // 10. Persistência final e Commit via IUnitOfWork
+            await _unitOfWork.CommitAsync(ct);
             await transaction.CommitAsync(ct);
 
             _logger.LogInformation("Venda {VendaId} registrada com sucesso no restaurante {TenantId}. Valor: {ValorTotal:C}",

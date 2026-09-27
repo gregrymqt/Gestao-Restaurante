@@ -1,29 +1,32 @@
 using MassTransit;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Common.Messages;
+using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 
 namespace RestauranteInteligente.Infrastructure.Messaging.Consumers;
 
 /// <summary>
 /// Consumidor assíncrono MassTransit para o evento PrevisaoDemandaConcluidaEvent vindo do RabbitMQ.
-/// Responsável pela persistência/upsert formal da demanda prevista na tabela Previsoes,
+/// Responsável pela persistência/upsert formal da demanda prevista na tabela Previsoes via Repositório e Unit of Work,
 /// garantindo ativação do contexto multi-tenant (RLS + Global Query Filter).
 /// </summary>
 public sealed class PrevisaoDemandaConcluidaConsumer : IConsumer<PrevisaoDemandaConcluidaEvent>
 {
-    private readonly IAppDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IPrevisaoRepository _previsaoRepository;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<PrevisaoDemandaConcluidaConsumer> _logger;
 
     public PrevisaoDemandaConcluidaConsumer(
-        IAppDbContext dbContext,
+        IUnitOfWork unitOfWork,
+        IPrevisaoRepository previsaoRepository,
         ITenantContext tenantContext,
         ILogger<PrevisaoDemandaConcluidaConsumer> logger)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _previsaoRepository = previsaoRepository ?? throw new ArgumentNullException(nameof(previsaoRepository));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -48,12 +51,10 @@ public sealed class PrevisaoDemandaConcluidaConsumer : IConsumer<PrevisaoDemanda
 
         var dataReferencia = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var previsaoExistente = await _dbContext.Previsoes
-            .FirstOrDefaultAsync(p =>
-                p.RestauranteId == message.RestauranteId &&
-                p.DataPrevisao == message.DataAlvo &&
-                p.ProdutoId == message.ProdutoId,
-                context.CancellationToken);
+        var previsaoExistente = await _previsaoRepository.ObterPorProdutoEDataAsync(
+            message.ProdutoId,
+            message.DataAlvo,
+            context.CancellationToken);
 
         if (previsaoExistente != null)
         {
@@ -73,12 +74,12 @@ public sealed class PrevisaoDemandaConcluidaConsumer : IConsumer<PrevisaoDemanda
                 modeloVersao: message.ModeloVersao
             );
 
-            await _dbContext.Previsoes.AddAsync(novaPrevisao, context.CancellationToken);
+            await _previsaoRepository.AdicionarAsync(novaPrevisao, context.CancellationToken);
             _logger.LogInformation("Nova previsão registrada para produto {ProdutoId} e data {DataAlvo}.",
                 message.ProdutoId, message.DataAlvo);
         }
 
-        await _dbContext.SaveChangesAsync(context.CancellationToken);
+        await _unitOfWork.CommitAsync(context.CancellationToken);
 
         _logger.LogInformation("Previsão de demanda para SolicitacaoId={SolicitacaoId} persistida com sucesso.",
             message.SolicitacaoId);
