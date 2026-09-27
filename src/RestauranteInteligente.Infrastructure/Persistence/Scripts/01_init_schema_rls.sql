@@ -89,9 +89,12 @@ ON "Insumos"("RestauranteId", "QuantidadeEstoque", "EstoqueMinimo");
 -- ------------------------------------------------------------------------------
 CREATE TABLE "ProdutosInsumos" (
     "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
     "ProdutoId" UUID NOT NULL,
     "InsumoId" UUID NOT NULL,
     "Quantidade" NUMERIC(18, 4) NOT NULL,
+    CONSTRAINT "FK_ProdutosInsumos_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ProdutosInsumos_Produto" FOREIGN KEY ("ProdutoId") 
         REFERENCES "Produtos"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ProdutosInsumos_Insumo" FOREIGN KEY ("InsumoId") 
@@ -100,6 +103,7 @@ CREATE TABLE "ProdutosInsumos" (
     CONSTRAINT "CK_ProdutosInsumos_Quantidade_Positiva" CHECK ("Quantidade" > 0)
 );
 
+CREATE INDEX "IX_ProdutosInsumos_RestauranteId" ON "ProdutosInsumos"("RestauranteId");
 CREATE INDEX "IX_ProdutosInsumos_InsumoId" ON "ProdutosInsumos"("InsumoId");
 
 -- ------------------------------------------------------------------------------
@@ -108,13 +112,17 @@ CREATE INDEX "IX_ProdutosInsumos_InsumoId" ON "ProdutosInsumos"("InsumoId");
 CREATE TABLE "FechamentosCaixa" (
     "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "RestauranteId" UUID NOT NULL,
+    "UsuarioId" UUID NOT NULL,
     "DataAbertura" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "DataFechamento" TIMESTAMPTZ NULL,
     "ValorTotalVendas" NUMERIC(18, 2) NOT NULL DEFAULT 0.00,
     "QuantidadeVendas" INTEGER NOT NULL DEFAULT 0,
     "Status" VARCHAR(20) NOT NULL DEFAULT 'ABERTO',
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_FechamentosCaixa_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_FechamentosCaixa_Usuario" FOREIGN KEY ("UsuarioId") 
+        REFERENCES "Usuarios"("Id") ON DELETE RESTRICT,
     CONSTRAINT "CK_FechamentosCaixa_Status" CHECK ("Status" IN ('ABERTO', 'FECHADO'))
 );
 
@@ -122,16 +130,20 @@ CREATE UNIQUE INDEX "IX_FechamentosCaixa_Ativo"
 ON "FechamentosCaixa"("RestauranteId") 
 WHERE "Status" = 'ABERTO';
 
+CREATE INDEX "IX_FechamentosCaixa_UsuarioId" ON "FechamentosCaixa"("UsuarioId");
+
 -- ------------------------------------------------------------------------------
 -- 7. Vendas Transacionadas
 -- ------------------------------------------------------------------------------
 CREATE TABLE "Vendas" (
     "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "RestauranteId" UUID NOT NULL,
-    "FechamentoCaixaId" UUID NOT NULL,
+    "FechamentoCaixaId" UUID NULL,
     "DataHora" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "ValorTotal" NUMERIC(18, 2) NOT NULL,
     "FormaPagamento" VARCHAR(50) NOT NULL,
+    "Status" VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDA',
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_Vendas_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_Vendas_FechamentoCaixa" FOREIGN KEY ("FechamentoCaixaId") 
@@ -142,16 +154,22 @@ CREATE TABLE "Vendas" (
 CREATE INDEX "IX_Vendas_Restaurante_DataHora" 
 ON "Vendas"("RestauranteId", "DataHora" DESC);
 
+CREATE INDEX "IX_Vendas_FechamentoCaixaId" 
+ON "Vendas"("FechamentoCaixaId");
+
 -- ------------------------------------------------------------------------------
 -- 8. Detalhamento de Itens da Venda
 -- ------------------------------------------------------------------------------
 CREATE TABLE "ItensVenda" (
     "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
     "VendaId" UUID NOT NULL,
     "ProdutoId" UUID NOT NULL,
-    "Quantidade" INTEGER NOT NULL,
+    "Quantidade" NUMERIC(18, 4) NOT NULL,
     "PrecoUnitario" NUMERIC(18, 2) NOT NULL,
     "Subtotal" NUMERIC(18, 2) NOT NULL,
+    CONSTRAINT "FK_ItensVenda_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ItensVenda_Venda" FOREIGN KEY ("VendaId") 
         REFERENCES "Vendas"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ItensVenda_Produto" FOREIGN KEY ("ProdutoId") 
@@ -160,6 +178,7 @@ CREATE TABLE "ItensVenda" (
     CONSTRAINT "CK_ItensVenda_Subtotal_Positivo" CHECK ("Subtotal" >= 0)
 );
 
+CREATE INDEX "IX_ItensVenda_RestauranteId" ON "ItensVenda"("RestauranteId");
 CREATE INDEX "IX_ItensVenda_VendaId" ON "ItensVenda"("VendaId");
 CREATE INDEX "IX_ItensVenda_ProdutoId" ON "ItensVenda"("ProdutoId");
 
@@ -212,6 +231,7 @@ CREATE TABLE "Previsoes" (
     "RestauranteId" UUID NOT NULL,
     "ProdutoId" UUID NOT NULL,
     "DataPrevisao" DATE NOT NULL,
+    "DataReferencia" DATE NOT NULL,
     "DemandaPrevista" NUMERIC(10, 2) NOT NULL,
     "EstoqueDisponivel" NUMERIC(10, 2) NOT NULL,
     "DemandaAtendivel" NUMERIC(10, 2) NOT NULL,
@@ -287,3 +307,18 @@ CREATE POLICY restaurante_previsoes_isolation ON "Previsoes"
     FOR ALL
     USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
     WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "ProdutosInsumos" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProdutosInsumos" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_produtos_insumos_isolation ON "ProdutosInsumos"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "ItensVenda" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ItensVenda" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_itens_venda_isolation ON "ItensVenda"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+

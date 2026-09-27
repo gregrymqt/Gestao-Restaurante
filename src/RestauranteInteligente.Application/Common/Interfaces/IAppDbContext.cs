@@ -14,6 +14,13 @@ public interface IAppDbContext
     DbSet<Insumo> Insumos { get; }
     DbSet<Produto> Produtos { get; }
     DbSet<MovimentacaoEstoque> MovimentacoesEstoque { get; }
+    DbSet<Usuario> Usuarios { get; }
+    DbSet<ProdutoInsumo> ProdutosInsumos { get; }
+    DbSet<Venda> Vendas { get; }
+    DbSet<ItemVenda> ItensVenda { get; }
+    DbSet<FechamentoCaixa> FechamentosCaixa { get; }
+    DbSet<DadosClimaticos> DadosClimaticos { get; }
+    DbSet<Previsao> Previsoes { get; }
 
     DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

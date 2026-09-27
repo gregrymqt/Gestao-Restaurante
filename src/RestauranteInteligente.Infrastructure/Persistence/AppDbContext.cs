@@ -33,6 +33,13 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     public DbSet<Insumo> Insumos => Set<Insumo>();
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<ProdutoInsumo> ProdutosInsumos => Set<ProdutoInsumo>();
+    public DbSet<Venda> Vendas => Set<Venda>();
+    public DbSet<ItemVenda> ItensVenda => Set<ItemVenda>();
+    public DbSet<FechamentoCaixa> FechamentosCaixa => Set<FechamentoCaixa>();
+    public DbSet<DadosClimaticos> DadosClimaticos => Set<DadosClimaticos>();
+    public DbSet<Previsao> Previsoes => Set<Previsao>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
@@ -64,7 +71,7 @@ public sealed class AppDbContext : DbContext, IAppDbContext
                     .GetMethod(nameof(ConfigureTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)?
                     .MakeGenericMethod(entityType.ClrType);
 
-                method?.Invoke(this, new object[] { modelBuilder });
+                method?.Invoke(this, [modelBuilder]);
             }
         }
     }

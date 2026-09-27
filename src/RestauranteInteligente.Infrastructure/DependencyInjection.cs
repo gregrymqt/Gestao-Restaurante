@@ -33,7 +33,7 @@ public static class DependencyInjection
         // 2. Segurança: Opções e Chaves Internas
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
-        services.AddSingleton<IAuthUserService, InMemoryAuthUserService>();
+        services.AddScoped<IAuthUserService, EfAuthUserService>();
 
         // 3. Segurança: Blacklist, Rate Limiter e Refresh Tokens no Redis
         services.AddSingleton<ITokenBlacklistService, RedisTokenBlacklistService>();
