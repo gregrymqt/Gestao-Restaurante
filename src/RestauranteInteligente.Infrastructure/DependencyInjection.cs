@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
+using MassTransit;
+using RestauranteInteligente.Infrastructure.Messaging;
 using RestauranteInteligente.Infrastructure.Persistence;
 using RestauranteInteligente.Infrastructure.Persistence.Interceptors;
 using RestauranteInteligente.Infrastructure.Persistence.Repositories;
@@ -141,6 +143,28 @@ public static class DependencyInjection
 
             services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         }
+
+        // 8. Mensageria RabbitMQ com MassTransit e Serialização Raw JSON (interoperável com Python Pydantic V2)
+        services.AddMassTransit(x =>
+        {
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var rabbitHost = configuration["RabbitMQ:Host"] ?? "localhost";
+                var rabbitUser = configuration["RabbitMQ:Username"] ?? "guest";
+                var rabbitPass = configuration["RabbitMQ:Password"] ?? "guest";
+
+                cfg.Host(rabbitHost, "/", h =>
+                {
+                    h.Username(rabbitUser);
+                    h.Password(rabbitPass);
+                });
+
+                // CLÁUSULA INEGOCIÁVEL: Serialização Raw JSON pura para interoperabilidade total com Python Pydantic V2
+                cfg.UseRawJsonSerializer();
+            });
+        });
+
+        services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
 
         return services;
     }

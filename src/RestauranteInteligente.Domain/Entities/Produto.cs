@@ -47,6 +47,16 @@ public sealed class Produto : IRestauranteEntity
         Preco = novoPreco;
     }
 
+    public void Desativar()
+    {
+        Ativo = false;
+    }
+
+    public void Ativar()
+    {
+        Ativo = true;
+    }
+
     public ProdutoInsumo AdicionarInsumo(Guid insumoId, decimal quantidade)
     {
         if (insumoId == Guid.Empty)
