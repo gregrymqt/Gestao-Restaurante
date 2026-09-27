@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using RestauranteInteligente.Api.DTOs.Auth;
 using RestauranteInteligente.Domain.Common.Interfaces;
 
 namespace RestauranteInteligente.Api.Controllers;
@@ -211,9 +212,3 @@ public sealed class AuthController : ControllerBase
         });
     }
 }
-
-public sealed record LoginRequest(string Email, string Password, Guid? RestauranteId = null);
-public sealed record LoginResponse(string Token, string RefreshToken, string Jti, DateTimeOffset ExpiresAt, Guid RestauranteId, Guid UserId);
-public sealed record RefreshTokenRequest(string RefreshToken);
-public sealed record RefreshTokenResponse(string Token, string RefreshToken, string Jti, DateTimeOffset ExpiresAt);
-public sealed record LogoutRequest(string? RefreshToken = null);

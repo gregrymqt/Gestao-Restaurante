@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RestauranteInteligente.Api.DTOs.Produtos;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
@@ -80,6 +81,3 @@ public sealed class ProdutosController : ControllerBase
             new ProdutoResponse(produto.Id, produto.Nome, produto.Descricao, produto.Preco, produto.Ativo));
     }
 }
-
-public sealed record CriarProdutoRequest(string Nome, string? Descricao, decimal Preco);
-public sealed record ProdutoResponse(Guid Id, string Nome, string? Descricao, decimal Preco, bool Ativo);

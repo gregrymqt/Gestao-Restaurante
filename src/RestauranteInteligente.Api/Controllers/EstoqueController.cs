@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestauranteInteligente.Api.DTOs.Estoque;
 using RestauranteInteligente.Application.Estoque.Services;
+using RestauranteInteligente.Application.UseCases.Estoque.DTOs;
 using RestauranteInteligente.Domain.Enums;
 
 namespace RestauranteInteligente.Api.Controllers;
@@ -29,7 +31,7 @@ public sealed class EstoqueController : ControllerBase
         }
 
         var itensDomain = request.Itens
-            .Select(i => new ItemBaixaEstoque(i.InsumoId, i.Quantidade))
+            .Select(i => new ItemBaixaEstoqueDto(i.InsumoId, i.Quantidade))
             .ToList();
 
         var resultado = await _baixaEstoqueService.ExecutarBaixaAsync(
@@ -47,6 +49,3 @@ public sealed class EstoqueController : ControllerBase
         return Ok(new { status = "Baixa de estoque processada com sucesso sob transação segura e RLS." });
     }
 }
-
-public sealed record ItemBaixaRequest(Guid InsumoId, decimal Quantidade);
-public sealed record BaixaEstoqueRequest(List<ItemBaixaRequest> Itens, OrigemMovimentacao? Origem = null, string? Motivo = null);

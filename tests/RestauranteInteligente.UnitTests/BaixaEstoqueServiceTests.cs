@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Estoque.Services;
+using RestauranteInteligente.Application.UseCases.Estoque.DTOs;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Domain.Enums;
@@ -70,7 +71,7 @@ public sealed class BaixaEstoqueServiceTests
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, _loggerMock.Object);
 
         // Payload propositalmente enviado em ordem NÃO-ascendente: id3, id1, id2
-        var payload = new List<ItemBaixaEstoque>
+        var payload = new List<ItemBaixaEstoqueDto>
         {
             new(id3, 2m),
             new(id1, 5m),
@@ -106,7 +107,7 @@ public sealed class BaixaEstoqueServiceTests
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, _loggerMock.Object);
 
         // Duplicados no payload (ex: 2 itens de venda usando o mesmo insumo)
-        var payload = new List<ItemBaixaEstoque>
+        var payload = new List<ItemBaixaEstoqueDto>
         {
             new(id, 2.5m),
             new(id, 3.5m)
@@ -134,7 +135,7 @@ public sealed class BaixaEstoqueServiceTests
 
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, _loggerMock.Object);
 
-        var payload = new List<ItemBaixaEstoque> { new(id, 5m) };
+        var payload = new List<ItemBaixaEstoqueDto> { new(id, 5m) };
 
         // Act
         var result = await sut.ExecutarBaixaAsync(payload, OrigemMovimentacao.Venda, "Venda Gourmet");
@@ -157,7 +158,7 @@ public sealed class BaixaEstoqueServiceTests
 
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, _loggerMock.Object);
 
-        var payload = new List<ItemBaixaEstoque> { new(id, 1m) };
+        var payload = new List<ItemBaixaEstoqueDto> { new(id, 1m) };
 
         // Act
         var result = await sut.ExecutarBaixaAsync(payload, OrigemMovimentacao.Venda, "Venda Pedido #999");
@@ -177,7 +178,7 @@ public sealed class BaixaEstoqueServiceTests
 
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, tenantContextMock.Object, _loggerMock.Object);
 
-        var payload = new List<ItemBaixaEstoque> { new(Guid.NewGuid(), 1m) };
+        var payload = new List<ItemBaixaEstoqueDto> { new(Guid.NewGuid(), 1m) };
 
         // Act
         var result = await sut.ExecutarBaixaAsync(payload, OrigemMovimentacao.Venda, "Venda Sem Tenant");
@@ -206,7 +207,7 @@ public sealed class BaixaEstoqueServiceTests
 
         var sut = new BaixaEstoqueService(_dbContextMock.Object, _insumoRepoMock.Object, _tenantContextMock.Object, _loggerMock.Object);
 
-        var payload = new List<ItemBaixaEstoque> { new(id, 12.5m) };
+        var payload = new List<ItemBaixaEstoqueDto> { new(id, 12.5m) };
 
         // Act
         var result = await sut.ExecutarBaixaAsync(payload, OrigemMovimentacao.Venda, "Produção Diária");

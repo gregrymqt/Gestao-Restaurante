@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RestauranteInteligente.Api.Controllers;
+using RestauranteInteligente.Api.DTOs.Auth;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using Xunit;
 

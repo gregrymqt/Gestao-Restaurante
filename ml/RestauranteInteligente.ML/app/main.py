@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="Restaurante Inteligente - ML & Scraper Worker",
+    title="Restaurante Inteligente - ML Worker",
     version="1.0.0",
     lifespan=lifespan
 )

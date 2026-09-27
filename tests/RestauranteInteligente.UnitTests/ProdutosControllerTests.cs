@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RestauranteInteligente.Api.Controllers;
+using RestauranteInteligente.Api.DTOs.Produtos;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;

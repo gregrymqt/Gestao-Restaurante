@@ -1,14 +1,11 @@
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
+using RestauranteInteligente.Application.UseCases.Estoque.DTOs;
 using RestauranteInteligente.Domain.Common.Interfaces;
 using RestauranteInteligente.Domain.Entities;
 using RestauranteInteligente.Domain.Enums;
 
 namespace RestauranteInteligente.Application.Estoque.Services;
-
-public sealed record ItemBaixaEstoque(Guid InsumoId, decimal Quantidade);
-
-public sealed record BaixaEstoqueResult(bool Sucesso, string? MensagemErro = null);
 
 /// <summary>
 /// Serviço de baixa de estoque com disciplina estrita anti-deadlock e transação explícita.
@@ -37,17 +34,17 @@ public sealed class BaixaEstoqueService
         _logger = logger;
     }
 
-    public async Task<BaixaEstoqueResult> ExecutarBaixaAsync(
-        IReadOnlyList<ItemBaixaEstoque> itens,
+    public async Task<BaixaEstoqueResultDto> ExecutarBaixaAsync(
+        IReadOnlyList<ItemBaixaEstoqueDto> itens,
         OrigemMovimentacao origem,
         string motivo,
         CancellationToken ct = default)
     {
         if (itens == null || itens.Count == 0)
-            return new BaixaEstoqueResult(false, "Nenhum insumo informado para baixa.");
+            return new BaixaEstoqueResultDto(false, "Nenhum insumo informado para baixa.");
 
         if (!_tenantContext.HasTenant)
-            return new BaixaEstoqueResult(false, "Contexto de restaurante (Tenant) não inicializado.");
+            return new BaixaEstoqueResultDto(false, "Contexto de restaurante (Tenant) não inicializado.");
 
         var tenantId = _tenantContext.RestauranteId;
 
@@ -73,7 +70,7 @@ public sealed class BaixaEstoqueService
             {
                 var faltantes = idsOrdenados.Except(insumosBloqueados.Select(i => i.Id)).ToList();
                 _logger.LogWarning("Tentativa de baixa com insumos inexistentes ou pertencentes a outro restaurante: {Faltantes}", string.Join(", ", faltantes));
-                return new BaixaEstoqueResult(false, "Um ou mais insumos solicitados não foram localizados no restaurante.");
+                return new BaixaEstoqueResultDto(false, "Um ou mais insumos solicitados não foram localizados no restaurante.");
             }
 
             // Dicionário para acesso rápido aos insumos bloqueados
@@ -88,7 +85,7 @@ public sealed class BaixaEstoqueService
                 if (insumo.QuantidadeEstoque < item.QuantidadeTotal)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new BaixaEstoqueResult(false,
+                    return new BaixaEstoqueResultDto(false,
                         $"Saldo insuficiente para o insumo '{insumo.Nome}'. Disponível: {insumo.QuantidadeEstoque}, Solicitado: {item.QuantidadeTotal}.");
                 }
 
@@ -119,7 +116,7 @@ public sealed class BaixaEstoqueService
             _logger.LogInformation("Baixa de estoque executada com sucesso para {Count} insumos no restaurante {TenantId}.",
                 insumosDemandados.Count, tenantId);
 
-            return new BaixaEstoqueResult(true);
+            return new BaixaEstoqueResultDto(true);
         }
         catch (Exception ex)
         {

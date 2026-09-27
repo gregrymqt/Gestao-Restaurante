@@ -40,10 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<IRateLimiterService, RedisSlidingWindowRateLimiter>();
         services.AddSingleton<IRefreshTokenService, RedisRefreshTokenService>();
 
-        // 4. Segurança: Validador de Assinatura de Webhooks HMAC
-        services.AddSingleton<IWebhookSignatureValidator, WebhookSignatureValidator>();
-
-        // 5. Segurança: Emissor e Validador JWT com Validação Fail-Fast
+        // 4. Segurança: Emissor e Validador JWT com Validação Fail-Fast
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 

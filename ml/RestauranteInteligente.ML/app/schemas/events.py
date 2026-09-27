@@ -23,15 +23,6 @@ class StreamEventEnvelope(BaseModel):
     )
 
 
-class ScrapingProgressPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    status: str
-    progress_percentage: int = Field(ge=0, le=100)
-    items_extracted: int = Field(ge=0)
-    detail: str = ""
-
-
 class MLInferenceProgressPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 

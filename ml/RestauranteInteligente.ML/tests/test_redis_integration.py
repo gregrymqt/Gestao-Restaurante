@@ -10,7 +10,6 @@ from app.messaging.idempotency import (
 )
 from app.schemas.events import (
     MLInferenceProgressPayload,
-    ScrapingProgressPayload,
     StreamEventEnvelope,
 )
 from app.services.event_publisher import publish_tenant_event
@@ -25,15 +24,6 @@ def test_key_builders_devem_possuir_hashtags() -> None:
 
 
 def test_schemas_pydantic_v2_validacao_estrita() -> None:
-    scraping_event = ScrapingProgressPayload(
-        status="PROCESSANDO",
-        progress_percentage=45,
-        items_extracted=120,
-        detail="Scraping página 4 de 10"
-    )
-    assert scraping_event.progress_percentage == 45
-    assert scraping_event.items_extracted == 120
-
     inference_event = MLInferenceProgressPayload(
         step="HIST_GRADIENT_BOOSTING",
         progress_percentage=80,
@@ -41,13 +31,15 @@ def test_schemas_pydantic_v2_validacao_estrita() -> None:
         detail="Cross-validation fold 4/5"
     )
     assert inference_event.step == "HIST_GRADIENT_BOOSTING"
+    assert inference_event.progress_percentage == 80
+    assert inference_event.current_product_id == "prod-pizza-calabresa"
 
     envelope = StreamEventEnvelope(
-        eventType="ScrapingProgresso",
-        payloadJson=scraping_event.model_dump_json()
+        eventType="InferenciaProgresso",
+        payloadJson=inference_event.model_dump_json()
     )
     dumped = envelope.model_dump(by_alias=True)
-    assert dumped["eventType"] == "ScrapingProgresso"
+    assert dumped["eventType"] == "InferenciaProgresso"
     assert "payloadJson" in dumped
     assert "timestamp" in dumped
     assert "correlationId" in dumped
@@ -59,15 +51,15 @@ async def test_publish_tenant_event_deve_publicar_no_canal_correto() -> None:
     mock_redis = AsyncMock()
 
     with patch("app.services.event_publisher.get_redis_client", return_value=mock_redis):
-        payload = {"status": "EXTRAÇÃO_CONCLUÍDA", "itens": 150}
-        await publish_tenant_event(tenant_id, "ScrapingFinalizado", payload)
+        payload = {"status": "INFERENCIA_CONCLUIDA", "previsoes": 10}
+        await publish_tenant_event(tenant_id, "InferenciaFinalizada", payload)
 
         mock_redis.publish.assert_called_once()
         args, _ = mock_redis.publish.call_args
         assert args[0] == "{tenant-restaurante-abc}:events:stream"
 
         envelope_data = json.loads(args[1])
-        assert envelope_data["eventType"] == "ScrapingFinalizado"
+        assert envelope_data["eventType"] == "InferenciaFinalizada"
         assert json.loads(envelope_data["payloadJson"]) == payload
 
 

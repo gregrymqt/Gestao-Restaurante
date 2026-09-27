@@ -11,9 +11,4 @@ public sealed class SecurityOptions
     /// Chave de API pré-compartilhada para requisições de serviço que informam X-Tenant-Id fora de tokens JWT.
     /// </summary>
     public string InternalServiceApiKey { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Segredo HMAC para validação de webhooks do Mercado Pago.
-    /// </summary>
-    public string MercadoPagoWebhookSecret { get; set; } = string.Empty;
 }
