@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Restaurante Inteligente",
+    "slug": "restaurante-inteligente",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "restaurante-inteligente",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
