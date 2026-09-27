@@ -1,4 +1,5 @@
 using RestauranteInteligente.Api.Middlewares;
+using RestauranteInteligente.Application;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Common.Services;
 using RestauranteInteligente.Infrastructure;
@@ -9,10 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Camada de Aplicação: Contexto de Tenant escopado
+// Camada de Aplicação: Contexto de Tenant escopado e Use Cases
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddApplicationServices();
 
-// Camada de Infraestrutura: Redis Resiliente, JWT, Blacklist, Rate Limiting e FallbackPolicy
+// Camada de Infraestrutura: Redis Resiliente, JWT, Blacklist, Rate Limiting, FallbackPolicy e PostgreSQL EF Core
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();

@@ -2,11 +2,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Domain.Common.Interfaces;
+using RestauranteInteligente.Infrastructure.Persistence;
+using RestauranteInteligente.Infrastructure.Persistence.Interceptors;
+using RestauranteInteligente.Infrastructure.Persistence.Repositories;
 using RestauranteInteligente.Infrastructure.Redis;
 using RestauranteInteligente.Infrastructure.Security;
 
@@ -116,6 +121,29 @@ public static class DependencyInjection
                 .RequireAuthenticatedUser()
                 .Build();
         });
+
+        // 7. Persistência PostgreSQL 16 com EF Core e Interceptor RLS
+        services.AddScoped<PostgresRlsTransactionInterceptor>();
+        services.AddScoped<IInsumoRepository, InsumoRepository>();
+        services.AddScoped<IProdutoRepository, ProdutoRepository>();
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            services.AddDbContextPool<AppDbContext>((sp, options) =>
+            {
+                var interceptor = sp.GetRequiredService<PostgresRlsTransactionInterceptor>();
+                options.UseNpgsql(connectionString, npgsql =>
+                {
+                    npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+                    npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
+                })
+                .AddInterceptors(interceptor)
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            });
+
+            services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        }
 
         return services;
     }
