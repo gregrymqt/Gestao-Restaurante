@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     RABBITMQ_USER: str
     RABBITMQ_PASSWORD: str
 
+    # Observabilidade e Depuração
+    LOG_LEVEL: str = "DEBUG"
+    LOG_TO_FILE: bool = True
+    LOG_FILE_PATH: str = "logs/ml_worker_debug.log"
+    LOG_FORMAT: str = "console"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def REDIS_URL(self) -> str:

@@ -6,6 +6,7 @@ import aio_pika
 from aio_pika.abc import AbstractRobustConnection, AbstractChannel, AbstractQueue
 
 from app.core.config import settings
+from app.core.logging import clear_request_context, set_request_context, trace_execution
 from app.schemas.messaging import (
     PrevisaoDemandaSolicitadaMessage,
     PrevisaoDemandaConcluidaMessage,
@@ -80,56 +81,72 @@ class RabbitConsumer:
         async with message.process(requeue=False, reject_on_exception=True):
             try:
                 body_str = message.body.decode("utf-8")
+                logger.debug(
+                    "Mensagem AMQP recebida [routingKey=%s, bytes=%d]: %s",
+                    message.routing_key,
+                    len(message.body),
+                    body_str
+                )
                 raw_dict = json.loads(body_str)
                 solicitacao = PrevisaoDemandaSolicitadaMessage.model_validate(raw_dict)
             except Exception as parse_err:
-                logger.error("Erro crítico ao deserializar payload JSON recebido: %s. Enviando para DLQ.", parse_err)
+                logger.error("Erro crítico ao deserializar payload JSON recebido: %s. Enviando para DLQ.", parse_err, exc_info=True)
                 raise parse_err
 
-            logger.info(
-                "Processando inferência de demanda: SolicitacaoId=%s, ProdutoId=%s, Histórico=%d pontos",
-                solicitacao.solicitacao_id,
-                solicitacao.produto_id,
-                len(solicitacao.historico_vendas_recentes)
+            set_request_context(
+                correlation_id=getattr(message, "correlation_id", None) or str(solicitacao.solicitacao_id),
+                solicitacao_id=str(solicitacao.solicitacao_id)
             )
 
-            # Execução de inferência via thread separada desacoplada do loop
-            resultado = await self.ml_service.calcular_previsao(solicitacao)
-
-            # Publicação de resposta em Raw JSON para o backend C# .NET
-            payload_resposta = resultado.model_dump_json(by_alias=True).encode("utf-8")
-            response_msg = aio_pika.Message(
-                body=payload_resposta,
-                content_type="application/json",
-                delivery_mode=aio_pika.DeliveryMode.PERSISTENT
-            )
-
-            assert self.channel is not None
-            await self.channel.default_exchange.publish(
-                response_msg,
-                routing_key="previsao.demanda.concluida"
-            )
-
-            logger.info(
-                "Previsão concluída enviada para 'previsao.demanda.concluida': SolicitacaoId=%s, Qtd=%s",
-                resultado.solicitacao_id,
-                resultado.quantidade_prevista
-            )
-
-            # Emissão de evento de progresso em tempo real no canal SSE do Redis (não-bloqueante)
             try:
-                await publish_tenant_event(
-                    tenant_id=str(solicitacao.restaurante_id),
-                    event_type="ML_PREVISION_COMPLETED",
-                    payload={
-                        "solicitacaoId": str(solicitacao.solicitacao_id),
-                        "produtoId": str(solicitacao.produto_id),
-                        "quantidadePrevista": str(resultado.quantidade_prevista),
-                        "modeloVersao": resultado.modelo_versao
-                    }
-                )
-            except Exception as sse_err:
-                logger.warning("Falha ao publicar evento de progresso SSE no Redis: %s", sse_err)
+                with trace_execution("processamento_inferencia_amqp", logger, produtoId=str(solicitacao.produto_id)):
+                    logger.info(
+                        "Processando inferência de demanda: SolicitacaoId=%s, ProdutoId=%s, Histórico=%d pontos",
+                        solicitacao.solicitacao_id,
+                        solicitacao.produto_id,
+                        len(solicitacao.historico_vendas_recentes)
+                    )
+
+                    # Execução de inferência via thread separada desacoplada do loop
+                    resultado = await self.ml_service.calcular_previsao(solicitacao)
+
+                    # Publicação de resposta em Raw JSON para o backend C# .NET
+                    payload_resposta = resultado.model_dump_json(by_alias=True).encode("utf-8")
+                    response_msg = aio_pika.Message(
+                        body=payload_resposta,
+                        content_type="application/json",
+                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+                        correlation_id=str(solicitacao.solicitacao_id)
+                    )
+
+                    assert self.channel is not None
+                    await self.channel.default_exchange.publish(
+                        response_msg,
+                        routing_key="previsao.demanda.concluida"
+                    )
+
+                    logger.info(
+                        "Previsão concluída enviada para 'previsao.demanda.concluida': SolicitacaoId=%s, Qtd=%s",
+                        resultado.solicitacao_id,
+                        resultado.quantidade_prevista
+                    )
+
+                    # Emissão de evento de progresso em tempo real no canal SSE do Redis (não-bloqueante)
+                    try:
+                        await publish_tenant_event(
+                            tenant_id=str(solicitacao.restaurante_id),
+                            event_type="ML_PREVISION_COMPLETED",
+                            payload={
+                                "solicitacaoId": str(solicitacao.solicitacao_id),
+                                "produtoId": str(solicitacao.produto_id),
+                                "quantidadePrevista": str(resultado.quantidade_prevista),
+                                "modeloVersao": resultado.modelo_versao
+                            }
+                        )
+                    except Exception as sse_err:
+                        logger.warning("Falha ao publicar evento de progresso SSE no Redis: %s", sse_err)
+            finally:
+                clear_request_context()
 
     async def start(self) -> None:
         """
