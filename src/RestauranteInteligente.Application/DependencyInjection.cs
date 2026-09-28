@@ -12,6 +12,7 @@ public static class DependencyInjection
     {
         services.AddScoped<BaixaEstoqueService>();
         services.AddScoped<RegistrarVendaUseCase>();
+        services.AddScoped<AbrirCaixaUseCase>();
         services.AddScoped<FecharCaixaUseCase>();
         services.AddScoped<CalcularCapacidadeProducaoUseCase>();
         return services;

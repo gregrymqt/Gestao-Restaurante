@@ -60,13 +60,45 @@ public sealed class FechamentosControllerTests
         );
     }
 
+    private AbrirCaixaUseCase CreateAbrirUseCase(AppDbContext dbContext)
+    {
+        return new AbrirCaixaUseCase(
+            new UnitOfWork(dbContext),
+            new FechamentoCaixaRepository(dbContext),
+            _tenantContextMock.Object,
+            NullLogger<AbrirCaixaUseCase>.Instance
+        );
+    }
+
+    [Fact]
+    public async Task AbrirCaixa_ComUsuarioValido_DeveRetornarOk200ComStatusAberto()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var abrirUseCase = CreateAbrirUseCase(dbContext);
+        var fecharUseCase = CreateUseCase(dbContext);
+        var controller = new FechamentosController(abrirUseCase, fecharUseCase);
+        var operadorId = Guid.NewGuid();
+
+        // Act
+        var result = await controller.AbrirCaixa(new AbrirCaixaRequestDto(operadorId), CancellationToken.None);
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.StatusCode.Should().Be(200);
+        var response = okResult.Value.Should().BeOfType<RestauranteInteligente.Application.Caixa.DTOs.AbrirCaixaOutputDto>().Subject;
+        response.Status.Should().Be("ABERTO");
+        response.UsuarioId.Should().Be(operadorId);
+    }
+
     [Fact]
     public async Task FecharCaixa_SemCaixaAberto_DeveRetornarUnprocessableEntity()
     {
         // Arrange
         using var dbContext = CreateInMemoryDbContext();
+        var abrirUseCase = CreateAbrirUseCase(dbContext);
         var useCase = CreateUseCase(dbContext);
-        var controller = new FechamentosController(useCase);
+        var controller = new FechamentosController(abrirUseCase, useCase);
 
         // Act
         var result = await controller.FecharCaixa(CancellationToken.None);
@@ -85,8 +117,9 @@ public sealed class FechamentosControllerTests
         dbContext.FechamentosCaixa.Add(caixa);
         await dbContext.SaveChangesAsync();
 
+        var abrirUseCase = CreateAbrirUseCase(dbContext);
         var useCase = CreateUseCase(dbContext);
-        var controller = new FechamentosController(useCase);
+        var controller = new FechamentosController(abrirUseCase, useCase);
 
         // Act
         var result = await controller.FecharCaixa(CancellationToken.None);

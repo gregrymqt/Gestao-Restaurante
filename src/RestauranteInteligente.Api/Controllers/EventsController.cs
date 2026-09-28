@@ -42,26 +42,77 @@ public sealed class EventsController : ControllerBase
         var tenantId = _tenantContext.RestauranteId;
         _logger.LogInformation("Iniciando streaming SSE para o restaurante {TenantId}...", tenantId);
 
+        // Envia cabeçalhos mandatários para SSE e desativação de buffering em proxies reversos (Nginx/Cloudflare)
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
         Response.Headers.Append("X-Accel-Buffering", "no");
 
-        // Envia mensagem inicial de handshake SSE
-        await Response.WriteAsync($":connected for tenant {tenantId}\n\n", cancellationToken);
-        await Response.Body.FlushAsync(cancellationToken);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var ct = linkedCts.Token;
+
+        using var syncLock = new SemaphoreSlim(1, 1);
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+
+        async Task WriteChunkAsync(string message)
+        {
+            await syncLock.WaitAsync(ct);
+            try
+            {
+                await Response.WriteAsync(message, ct);
+                await Response.Body.FlushAsync(ct);
+            }
+            finally
+            {
+                syncLock.Release();
+            }
+        }
 
         try
         {
-            await foreach (var evt in _streamService.SubscribeAsync(tenantId, cancellationToken))
+            // Envia mensagem inicial de handshake SSE
+            await WriteChunkAsync($":connected for tenant {tenantId}\n\n");
+
+            var heartbeatTask = Task.Run(async () =>
             {
-                var sseMessage = $"id: {evt.CorrelationId}\nevent: {evt.EventType}\ndata: {evt.PayloadJson}\n\n";
-                await Response.WriteAsync(sseMessage, cancellationToken);
-                await Response.Body.FlushAsync(cancellationToken);
-            }
+                try
+                {
+                    while (await timer.WaitForNextTickAsync(ct))
+                    {
+                        await WriteChunkAsync(": heartbeat\n\n");
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Encerramento natural por desconexão do cliente
+                }
+            }, ct);
+
+            var streamTask = Task.Run(async () =>
+            {
+                try
+                {
+                    await foreach (var evt in _streamService.SubscribeAsync(tenantId, ct))
+                    {
+                        var sseMessage = $"id: {evt.CorrelationId}\nevent: {evt.EventType}\ndata: {evt.PayloadJson}\n\n";
+                        await WriteChunkAsync(sseMessage);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Encerramento natural por desconexão do cliente
+                }
+            }, ct);
+
+            await Task.WhenAny(heartbeatTask, streamTask);
         }
         catch (OperationCanceledException)
         {
+            // Conexão encerrada pelo cliente
+        }
+        finally
+        {
+            await linkedCts.CancelAsync();
             _logger.LogInformation("Cliente desconectou do streaming SSE do restaurante {TenantId}.", tenantId);
         }
     }

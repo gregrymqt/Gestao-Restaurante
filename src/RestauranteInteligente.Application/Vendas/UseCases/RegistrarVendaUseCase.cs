@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Vendas.DTOs;
@@ -13,11 +14,17 @@ namespace RestauranteInteligente.Application.Vendas.UseCases;
 /// </summary>
 public sealed class RegistrarVendaUseCase
 {
+    private static readonly JsonSerializerOptions StreamJsonOptions = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInsumoRepository _insumoRepository;
     private readonly IProdutoRepository _produtoRepository;
     private readonly IVendaRepository _vendaRepository;
     private readonly IFechamentoCaixaRepository _fechamentoCaixaRepository;
+    private readonly ISseEventStreamService _streamService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<RegistrarVendaUseCase> _logger;
 
@@ -27,6 +34,7 @@ public sealed class RegistrarVendaUseCase
         IProdutoRepository produtoRepository,
         IVendaRepository vendaRepository,
         IFechamentoCaixaRepository fechamentoCaixaRepository,
+        ISseEventStreamService streamService,
         ITenantContext tenantContext,
         ILogger<RegistrarVendaUseCase> logger)
     {
@@ -35,6 +43,7 @@ public sealed class RegistrarVendaUseCase
         _produtoRepository = produtoRepository ?? throw new ArgumentNullException(nameof(produtoRepository));
         _vendaRepository = vendaRepository ?? throw new ArgumentNullException(nameof(vendaRepository));
         _fechamentoCaixaRepository = fechamentoCaixaRepository ?? throw new ArgumentNullException(nameof(fechamentoCaixaRepository));
+        _streamService = streamService ?? throw new ArgumentNullException(nameof(streamService));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -167,10 +176,16 @@ public sealed class RegistrarVendaUseCase
             }
 
             // 7. Débito no estoque e inclusão de lançamentos append-only no Livro-Razão
+            var insumosCriticos = new List<Insumo>();
             foreach (var demanda in insumosOrdenados)
             {
                 var insumo = insumoMap[demanda.Key];
                 insumo.DebitarEstoque(demanda.Value);
+
+                if (insumo.QuantidadeEstoque <= insumo.EstoqueMinimo)
+                {
+                    insumosCriticos.Add(insumo);
+                }
 
                 var movimentacao = new MovimentacaoEstoque(
                     id: Guid.NewGuid(),
@@ -199,6 +214,36 @@ public sealed class RegistrarVendaUseCase
 
             _logger.LogInformation("Venda {VendaId} registrada com sucesso no restaurante {TenantId}. Valor: {ValorTotal:C}",
                 venda.Id, tenantId, venda.ValorTotal);
+
+            // 11. Disparo de alertas reativos de estoque crítico no barramento SSE do tenant
+            foreach (var critico in insumosCriticos)
+            {
+                var payload = JsonSerializer.Serialize(new
+                {
+                    insumoId = critico.Id,
+                    nomeInsumo = critico.Nome,
+                    saldoAtual = critico.QuantidadeEstoque,
+                    saldoMinimo = critico.EstoqueMinimo,
+                    unidadeMedida = critico.UnidadeMedida
+                }, StreamJsonOptions);
+
+                try
+                {
+                    await _streamService.PublishAsync(
+                        tenantId,
+                        "EstoqueCritico",
+                        payload,
+                        Guid.NewGuid(),
+                        ct);
+                    _logger.LogWarning("Alerta de estoque crítico disparado para o insumo '{NomeInsumo}' ({SaldoAtual} {Unidade}) no restaurante {TenantId}.",
+                        critico.Nome, critico.QuantidadeEstoque, critico.UnidadeMedida, tenantId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erro ao publicar evento de estoque crítico para o insumo {InsumoId} no restaurante {TenantId}.",
+                        critico.Id, tenantId);
+                }
+            }
 
             return new RegistrarVendaOutputDto(
                 venda.Id,

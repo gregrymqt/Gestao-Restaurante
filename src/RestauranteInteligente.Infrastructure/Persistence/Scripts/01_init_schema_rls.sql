@@ -52,7 +52,6 @@ CREATE TABLE "Produtos" (
     "Preco" NUMERIC(18, 2) NOT NULL,
     "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
     "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "xmin" XID NOT NULL,
     CONSTRAINT "FK_Produtos_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "CK_Produtos_Preco_Positivo" CHECK ("Preco" >= 0)
@@ -73,7 +72,6 @@ CREATE TABLE "Insumos" (
     "CustoUnitario" NUMERIC(18, 2) NOT NULL DEFAULT 0.00,
     "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
     "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "xmin" XID NOT NULL,
     CONSTRAINT "FK_Insumos_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "UQ_Insumos_Restaurante_Nome" UNIQUE ("RestauranteId", "Nome"),

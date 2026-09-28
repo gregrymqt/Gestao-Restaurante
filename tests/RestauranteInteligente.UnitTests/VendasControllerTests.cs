@@ -48,6 +48,7 @@ public sealed class VendasControllerTests
             new ProdutoRepository(dbContext),
             new VendaRepository(dbContext),
             new FechamentoCaixaRepository(dbContext),
+            new Mock<ISseEventStreamService>().Object,
             _tenantContextMock.Object,
             NullLogger<RegistrarVendaUseCase>.Instance
         );

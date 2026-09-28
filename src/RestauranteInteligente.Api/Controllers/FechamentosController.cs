@@ -10,11 +10,52 @@ namespace RestauranteInteligente.Api.Controllers;
 [Route("api/v1/caixa")]
 public sealed class FechamentosController : ControllerBase
 {
+    private readonly AbrirCaixaUseCase _abrirCaixaUseCase;
     private readonly FecharCaixaUseCase _fecharCaixaUseCase;
 
-    public FechamentosController(FecharCaixaUseCase fecharCaixaUseCase)
+    public FechamentosController(
+        AbrirCaixaUseCase abrirCaixaUseCase,
+        FecharCaixaUseCase fecharCaixaUseCase)
     {
+        _abrirCaixaUseCase = abrirCaixaUseCase;
         _fecharCaixaUseCase = fecharCaixaUseCase;
+    }
+
+    /// <summary>
+    /// Inicia uma nova sessão de turno de caixa operacional para o restaurante.
+    /// </summary>
+    [HttpPost("abrir")]
+    public async Task<IActionResult> AbrirCaixa([FromBody] AbrirCaixaRequestDto? request, CancellationToken ct)
+    {
+        try
+        {
+            Guid usuarioId;
+            if (request?.UsuarioId.HasValue == true && request.UsuarioId.Value != Guid.Empty)
+            {
+                usuarioId = request.UsuarioId.Value;
+            }
+            else
+            {
+                var userIdStr = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                             ?? User?.FindFirst("sub")?.Value;
+
+                if (!string.IsNullOrEmpty(userIdStr) && Guid.TryParse(userIdStr, out var parsedId))
+                {
+                    usuarioId = parsedId;
+                }
+                else
+                {
+                    return BadRequest(new { error = "Identificador do usuário operador é obrigatório." });
+                }
+            }
+
+            var resultado = await _abrirCaixaUseCase.ExecutarAsync(usuarioId, ct);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return UnprocessableEntity(new { error = ex.Message });
+        }
     }
 
     /// <summary>

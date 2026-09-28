@@ -20,6 +20,7 @@ public sealed class RegistrarVendaUseCaseTests
     private readonly Mock<IProdutoRepository> _produtoRepoMock = new();
     private readonly Mock<IVendaRepository> _vendaRepoMock = new();
     private readonly Mock<IFechamentoCaixaRepository> _fechamentoCaixaRepoMock = new();
+    private readonly Mock<ISseEventStreamService> _streamServiceMock = new();
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     public RegistrarVendaUseCaseTests()
@@ -39,6 +40,7 @@ public sealed class RegistrarVendaUseCaseTests
             _produtoRepoMock.Object,
             _vendaRepoMock.Object,
             _fechamentoCaixaRepoMock.Object,
+            _streamServiceMock.Object,
             _tenantContextMock.Object,
             NullLogger<RegistrarVendaUseCase>.Instance
         );
@@ -291,5 +293,51 @@ public sealed class RegistrarVendaUseCaseTests
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecutarAsync_QuandoEstoqueAtingeNivelCritico_DevePublicarEventoEstoqueCriticoNoStream()
+    {
+        // Arrange
+        var caixa = new FechamentoCaixa(Guid.NewGuid(), _tenantId, Guid.NewGuid());
+        _fechamentoCaixaRepoMock.Setup(r => r.ObterCaixaAbertoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(caixa);
+
+        var insumoId = Guid.NewGuid();
+        // Insumo com 10 unidades em estoque e mínimo 5
+        var insumo = new Insumo(insumoId, _tenantId, "Carne Bovina Angus", "KG", 5m, 40m);
+        insumo.CreditarEstoque(10m);
+
+        var produto = new Produto(Guid.NewGuid(), _tenantId, "Burger Artesanal", null, 30m);
+        produto.AdicionarInsumo(insumoId, 1m); // 1kg por burger
+
+        _produtoRepoMock.Setup(r => r.ObterPorIdsComFichaTecnicaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([produto]);
+
+        _insumoRepoMock.Setup(r => r.ObterPorIdsParaAtualizacaoAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([insumo]);
+
+        var useCase = CreateSut();
+
+        // Venda de 6 burgers consome 6kg -> saldo restante = 4kg (crítico, pois <= 5kg)
+        var input = new RegistrarVendaInputDto(
+            FormaPagamento: "CARTAO",
+            Itens: [new(produto.Id, 6m)]
+        );
+
+        // Act
+        var result = await useCase.ExecutarAsync(input);
+
+        // Assert
+        result.Should().NotBeNull();
+        insumo.QuantidadeEstoque.Should().Be(4m);
+
+        _streamServiceMock.Verify(s => s.PublishAsync(
+            _tenantId,
+            "EstoqueCritico",
+            It.Is<string>(payload => payload.Contains("\"saldoAtual\":4") && payload.Contains("\"saldoMinimo\":5")),
+            It.IsAny<Guid>(),
+            It.IsAny<CancellationToken>()
+        ), Times.Once);
     }
 }

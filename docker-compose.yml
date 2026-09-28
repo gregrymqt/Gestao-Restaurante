@@ -34,9 +34,16 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - postgres-wal:/var/lib/postgresql/wal
       - postgres-backup:/var/lib/postgresql/backups
+      - ./src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql:/docker-entrypoint-initdb.d/01_init_schema_rls.sql:ro
+      - ./src/RestauranteInteligente.Infrastructure/Persistence/Scripts/02_seed_initial_data.sql:/docker-entrypoint-initdb.d/02_seed_initial_data.sql:ro
     shm_size: 512m
     ports:
       - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d restaurante_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - internal_backend_net
 
@@ -75,6 +82,65 @@ services:
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_backend_net
+
+  webapi:
+    build:
+      context: .
+      dockerfile: src/RestauranteInteligente.Api/Dockerfile
+    container_name: restaurante_webapi
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=restaurante_db;Username=postgres;Password=postgres_seguro_123;Include Error Detail=true
+      Redis__Configuration: redis:6379,password=redis_seguro_123,abortConnect=false
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      Jwt__SecretKey: ChaveSecretaSuperSeguraParaHomologacaoRestaurante2026!#
+      Jwt__Issuer: RestauranteInteligente
+      Jwt__Audience: RestauranteInteligenteApp
+      Jwt__ExpiryMinutes: 480
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - internal_backend_net
+
+  ml-worker:
+    build:
+      context: ./ml/RestauranteInteligente.ML
+      dockerfile: Dockerfile
+    container_name: restaurante_ml_worker
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_seguro_123
+    ports:
+      - "8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - internal_backend_net
 
