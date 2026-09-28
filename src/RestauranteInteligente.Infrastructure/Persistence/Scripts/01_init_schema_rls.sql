@@ -214,8 +214,10 @@ CREATE TABLE "DadosClimaticos" (
     "Temperatura" NUMERIC(5, 2) NOT NULL,
     "Precipitacao" NUMERIC(6, 2) NOT NULL,
     "Umidade" NUMERIC(5, 2) NOT NULL,
-    "CondicaoClimatica" VARCHAR(50) NOT NULL,
-    "Fonte" VARCHAR(100) NOT NULL,
+    "CondicaoClimatica" VARCHAR(50) DEFAULT 'Desconhecido',
+    "Fonte" VARCHAR(100) DEFAULT 'Open-Meteo',
+    "TipoDado" VARCHAR(50) NOT NULL DEFAULT 'HISTORICO',
+    "ConsultadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_DadosClimaticos_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "UQ_DadosClimaticos_Restaurante_Data" UNIQUE ("RestauranteId", "Data")
@@ -231,9 +233,9 @@ CREATE TABLE "Previsoes" (
     "DataPrevisao" DATE NOT NULL,
     "DataReferencia" DATE NOT NULL,
     "DemandaPrevista" NUMERIC(10, 2) NOT NULL,
-    "EstoqueDisponivel" NUMERIC(10, 2) NOT NULL,
-    "DemandaAtendivel" NUMERIC(10, 2) NOT NULL,
-    "PossivelPerda" NUMERIC(10, 2) NOT NULL,
+    "EstoqueDisponivel" NUMERIC(10, 2) DEFAULT 0,
+    "DemandaAtendivel" NUMERIC(10, 2) DEFAULT 0,
+    "PossivelPerda" NUMERIC(10, 2) DEFAULT 0,
     "ModeloVersao" VARCHAR(50) NOT NULL,
     "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_Previsoes_Restaurante" FOREIGN KEY ("RestauranteId") 

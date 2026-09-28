@@ -3,8 +3,6 @@
 # PostgreSQL 16 (RLS + WAL), Redis 7 (Cache/Locks/SSE) e RabbitMQ 3 (AMQP Raw JSON)
 # ==============================================================================
 
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -99,14 +97,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=restaurante_db;Username=postgres;Password=postgres_seguro_123;Include Error Detail=true
-      Redis__Configuration: redis:6379,password=redis_seguro_123,abortConnect=false
+      Redis__Host: redis
+      Redis__Port: 6379
+      Redis__Password: redis_seguro_123
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
-      Jwt__SecretKey: ChaveSecretaSuperSeguraParaHomologacaoRestaurante2026!#
+      Jwt__Key: ChaveSecretaSuperSeguraParaHomologacaoRestaurante2026!#
       Jwt__Issuer: RestauranteInteligente
-      Jwt__Audience: RestauranteInteligenteApp
-      Jwt__ExpiryMinutes: 480
+      Jwt__Audience: RestauranteInteligente.App
+      Jwt__ExpirationMinutes: 480
     ports:
       - "5000:5000"
     depends_on:

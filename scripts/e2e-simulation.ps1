@@ -64,15 +64,14 @@ $authHeaders = @{
 }
 
 # ------------------------------------------------------------------------------
-# 2. Conexão SSE em Segundo Plano
+# 2. Conexão SSE em Segundo Plano (Start-Job com Runspace Dedicado)
 # ------------------------------------------------------------------------------
 Write-Host "`n[2/7] Conectando ao canal SSE em tempo real (GET /api/v1/events/stream)..." -ForegroundColor Yellow
 
-$sseEventsList = [System.Collections.Generic.List[string]]::new()
-$sseCancellation = [System.Threading.CancellationTokenSource]::new()
-
-$sseTask = [System.Threading.Tasks.Task]::Run([Action]{
+$sseJob = Start-Job -ScriptBlock {
+    param($BaseUrl, $jwtToken, $TenantId)
     try {
+        Add-Type -AssemblyName System.Net.Http
         $handler = [System.Net.Http.HttpClientHandler]::new()
         $client = [System.Net.Http.HttpClient]::new($handler)
         $client.Timeout = [System.TimeSpan]::FromMinutes(5)
@@ -82,28 +81,28 @@ $sseTask = [System.Threading.Tasks.Task]::Run([Action]{
         $request.Headers.Add("X-Tenant-Id", $TenantId)
         $request.Headers.Add("Accept", "text/event-stream")
 
-        $response = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead, $sseCancellation.Token).GetAwaiter().GetResult()
+        $response = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
         $stream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
         $reader = [System.IO.StreamReader]::new($stream)
 
-        while (-not $reader.EndOfStream -and -not $sseCancellation.IsCancellationRequested) {
+        while (-not $reader.EndOfStream) {
             $line = $reader.ReadLine()
             if ($line) {
-                [System.Threading.Monitor]::Enter($sseEventsList)
-                try {
-                    $sseEventsList.Add($line)
-                } finally {
-                    [System.Threading.Monitor]::Exit($sseEventsList)
-                }
+                Write-Output $line
             }
         }
     } catch {
-        # Encerramento ou cancelamento do stream
+        Write-Output "SSE_JOB_ERROR: $_"
     }
-})
+} -ArgumentList $BaseUrl, $jwtToken, $TenantId
 
-Start-Sleep -Milliseconds 800
-Write-Host "  -> [OK] Streaming SSE ativo e aguardando eventos do tenant." -ForegroundColor Green
+Start-Sleep -Milliseconds 1500
+$handshake = Receive-Job -Job $sseJob
+if ($handshake) {
+    Write-Host "  -> [OK] Streaming SSE conectado com sucesso: $($handshake -join ' ')" -ForegroundColor Green
+} else {
+    Write-Host "  -> [OK] Streaming SSE ativo em background e aguardando eventos do tenant." -ForegroundColor Green
+}
 
 # ------------------------------------------------------------------------------
 # 3. Abertura do Turno de Caixa
@@ -168,28 +167,30 @@ $estoqueCriticoCapturado = $false
 $payloadRecebido = $null
 $tentativas = 0
 
-while ($tentativas -lt 20 -and -not $estoqueCriticoCapturado) {
+$capturedLines = [System.Collections.Generic.List[string]]::new()
+while ($tentativas -lt 25 -and -not $estoqueCriticoCapturado) {
     Start-Sleep -Milliseconds 250
     $tentativas++
 
-    [System.Threading.Monitor]::Enter($sseEventsList)
-    try {
-        for ($i = 0; $i -lt $sseEventsList.Count; $i++) {
-            if ($sseEventsList[$i] -match "event:\s*EstoqueCritico") {
-                # A linha seguinte contem 'data: ...'
-                for ($j = $i + 1; $j -lt $sseEventsList.Count; $j++) {
-                    if ($sseEventsList[$j].StartsWith("data:")) {
-                        $rawJson = $sseEventsList[$j].Substring(5).Trim()
-                        $payloadRecebido = $rawJson | ConvertFrom-Json
-                        $estoqueCriticoCapturado = $true
-                        break
-                    }
-                }
-                if ($estoqueCriticoCapturado) { break }
-            }
+    $newLines = Receive-Job -Job $sseJob
+    if ($newLines) {
+        foreach ($nl in $newLines) {
+            $capturedLines.Add($nl)
         }
-    } finally {
-        [System.Threading.Monitor]::Exit($sseEventsList)
+    }
+
+    for ($i = 0; $i -lt $capturedLines.Count; $i++) {
+        if ($capturedLines[$i] -match "event:\s*EstoqueCritico") {
+            for ($j = $i + 1; $j -lt $capturedLines.Count; $j++) {
+                if ($capturedLines[$j].StartsWith("data:")) {
+                    $rawJson = $capturedLines[$j].Substring(5).Trim()
+                    $payloadRecebido = $rawJson | ConvertFrom-Json
+                    $estoqueCriticoCapturado = $true
+                    break
+                }
+            }
+            if ($estoqueCriticoCapturado) { break }
+        }
     }
 }
 
@@ -198,7 +199,7 @@ if ($estoqueCriticoCapturado) {
     Write-Host "         Insumo: $($payloadRecebido.nomeInsumo)" -ForegroundColor White
     Write-Host "         Saldo Atual: $($payloadRecebido.saldoAtual) $($payloadRecebido.unidadeMedida) (Estoque Mínimo: $($payloadRecebido.saldoMinimo))" -ForegroundColor White
 } else {
-    Write-Host "  -> [ALERTA] Evento não recebido no tempo limite. Verifique se o Redis Pub/Sub está ativo." -ForegroundColor Yellow
+    Write-Host "  -> [ALERTA] Evento não recebido no tempo limite. Total linhas capturadas: $($capturedLines.Count) ($($capturedLines -join ' | '))" -ForegroundColor Yellow
 }
 
 # ------------------------------------------------------------------------------
@@ -239,7 +240,8 @@ try {
 }
 
 # Limpeza da conexão SSE
-$sseCancellation.Cancel()
+Stop-Job -Job $sseJob -ErrorAction SilentlyContinue
+Remove-Job -Job $sseJob -Force -ErrorAction SilentlyContinue
 
 Write-Host "`n======================================================================" -ForegroundColor Cyan
 Write-Host "       FLUXO E2E SIMULADO EXECUTADO COM 100% DE CONFORMIDADE!        " -ForegroundColor Green

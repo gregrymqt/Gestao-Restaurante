@@ -43,8 +43,10 @@ public sealed class InsumoRepository : IInsumoRepository
         var sortedIds = ids.Distinct().OrderBy(id => id).ToArray();
 
         // Bloqueio pessimista no PostgreSQL utilizando FOR UPDATE sob transação ativa (mantém tracking para mutação)
+        // Nota: Inclui explicitamente xmin para compatibilidade com o token de concorrência e projeção de subconsultas do EF Core
         return await _context.Insumos
-            .FromSqlRaw("SELECT * FROM \"Insumos\" WHERE \"Id\" = ANY({0}) ORDER BY \"Id\" ASC FOR UPDATE", sortedIds)
+            .FromSqlRaw("SELECT *, xmin FROM \"Insumos\" WHERE \"Id\" = ANY({0}) ORDER BY \"Id\" ASC FOR UPDATE", sortedIds)
+            .AsTracking()
             .ToListAsync(ct);
     }
 

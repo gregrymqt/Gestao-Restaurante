@@ -6,6 +6,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /source
 
 # Copia arquivos csproj para cacheamento otimizado de camadas do Docker
+COPY RestauranteInteligente.sln .
 COPY src/RestauranteInteligente.Domain/*.csproj src/RestauranteInteligente.Domain/
 COPY src/RestauranteInteligente.Application/*.csproj src/RestauranteInteligente.Application/
 COPY src/RestauranteInteligente.Infrastructure/*.csproj src/RestauranteInteligente.Infrastructure/
@@ -23,8 +24,7 @@ COPY src/RestauranteInteligente.Api/ src/RestauranteInteligente.Api/
 # Compilação e publicação em modo Release
 RUN dotnet publish src/RestauranteInteligente.Api/RestauranteInteligente.Api.csproj \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 # ------------------------------------------------------------------------------
 # Runtime Image (Alpine Linux minimalista e segura)

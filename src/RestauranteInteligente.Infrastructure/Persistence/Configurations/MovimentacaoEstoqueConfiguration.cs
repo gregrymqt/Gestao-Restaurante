@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RestauranteInteligente.Domain.Entities;
+using RestauranteInteligente.Domain.Enums;
 
 namespace RestauranteInteligente.Infrastructure.Persistence.Configurations;
 
@@ -19,12 +20,16 @@ public sealed class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguration<
             .IsRequired();
 
         builder.Property(m => m.Tipo)
-            .HasConversion<string>()
+            .HasConversion(
+                v => v.ToString().ToUpperInvariant(),
+                v => Enum.Parse<TipoMovimentacao>(v, true))
             .HasMaxLength(20)
             .IsRequired();
 
         builder.Property(m => m.Origem)
-            .HasConversion<string>()
+            .HasConversion(
+                v => v.ToString().ToUpperInvariant(),
+                v => Enum.Parse<OrigemMovimentacao>(v, true))
             .HasMaxLength(50)
             .IsRequired();
 

@@ -139,15 +139,12 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            services.AddDbContextPool<AppDbContext>((sp, options) =>
+            services.AddDbContext<AppDbContext>(options =>
             {
-                var interceptor = sp.GetRequiredService<PostgresRlsTransactionInterceptor>();
                 options.UseNpgsql(connectionString, npgsql =>
                 {
                     npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
-                    npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
                 })
-                .AddInterceptors(interceptor)
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
 

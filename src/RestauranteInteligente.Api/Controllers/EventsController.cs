@@ -48,7 +48,7 @@ public sealed class EventsController : ControllerBase
         Response.Headers.Append("Connection", "keep-alive");
         Response.Headers.Append("X-Accel-Buffering", "no");
 
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, HttpContext.RequestAborted);
         var ct = linkedCts.Token;
 
         using var syncLock = new SemaphoreSlim(1, 1);
