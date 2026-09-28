@@ -8,6 +8,8 @@ using Microsoft.Extensions.Options;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Infrastructure.Security;
 
+using RestauranteInteligente.Infrastructure.Configuration;
+
 namespace RestauranteInteligente.Api.Middlewares;
 
 /// <summary>
@@ -25,16 +27,31 @@ public sealed class TenantMiddleware
 
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantMiddleware> _logger;
-    private readonly SecurityOptions _securityOptions;
+    private readonly ISecurityConfig _securityConfig;
 
     public TenantMiddleware(
         RequestDelegate next,
         ILogger<TenantMiddleware> logger,
-        IOptions<SecurityOptions>? securityOptions = null)
+        ISecurityConfig securityConfig)
     {
         _next = next;
         _logger = logger;
-        _securityOptions = securityOptions?.Value ?? new SecurityOptions();
+        _securityConfig = securityConfig;
+    }
+
+    public TenantMiddleware(
+        RequestDelegate next,
+        ILogger<TenantMiddleware> logger,
+        IOptions<SecurityOptions> securityOptions)
+        : this(next, logger, new SecurityConfig(securityOptions?.Value?.InternalServiceApiKey ?? string.Empty, string.Empty))
+    {
+    }
+
+    public TenantMiddleware(
+        RequestDelegate next,
+        ILogger<TenantMiddleware> logger)
+        : this(next, logger, new SecurityConfig(string.Empty, string.Empty))
+    {
     }
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
@@ -103,7 +120,7 @@ public sealed class TenantMiddleware
 
     private bool IsValidServiceApiKey(HttpContext context)
     {
-        if (string.IsNullOrWhiteSpace(_securityOptions.InternalServiceApiKey))
+        if (string.IsNullOrWhiteSpace(_securityConfig.InternalServiceApiKey))
             return false;
 
         if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var receivedApiKey) ||
@@ -112,7 +129,7 @@ public sealed class TenantMiddleware
             return false;
         }
 
-        var expectedBytes = Encoding.UTF8.GetBytes(_securityOptions.InternalServiceApiKey);
+        var expectedBytes = Encoding.UTF8.GetBytes(_securityConfig.InternalServiceApiKey);
         var actualBytes = Encoding.UTF8.GetBytes(receivedApiKey.FirstOrDefault()!);
 
         if (expectedBytes.Length != actualBytes.Length)

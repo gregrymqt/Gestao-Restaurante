@@ -1,8 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { storage, STORAGE_KEYS } from './storage';
+import { env } from '../config/env';
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api/v1',
+  baseURL: env.apiUrl,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

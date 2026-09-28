@@ -74,7 +74,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     ports:
@@ -95,18 +95,28 @@ services:
     container_name: restaurante_webapi
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=restaurante_db;Username=postgres;Password=postgres_seguro_123;Include Error Detail=true
-      Redis__Host: redis
-      Redis__Port: 6379
-      Redis__Password: redis_seguro_123
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__Username: guest
-      RabbitMQ__Password: guest
-      Jwt__Key: ChaveSecretaSuperSeguraParaHomologacaoRestaurante2026!#
-      Jwt__Issuer: RestauranteInteligente
-      Jwt__Audience: RestauranteInteligente.App
-      Jwt__ExpirationMinutes: 480
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      ASPNETCORE_ENVIRONMENT: ${ENVIRONMENT:-development}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurante_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_seguro_123}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_seguro_123}
+      REDIS_DB: ${REDIS_DB:-0}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      JWT_KEY: ${JWT_KEY}
+      JWT_ISSUER: ${JWT_ISSUER:-RestauranteInteligente}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-RestauranteInteligente.App}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${MERCADO_PAGO_WEBHOOK_SECRET}
     ports:
       - "5000:5000"
     depends_on:
@@ -126,14 +136,15 @@ services:
     container_name: restaurante_ml_worker
     restart: unless-stopped
     environment:
-      ENVIRONMENT: development
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: redis_seguro_123
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_seguro_123}
+      REDIS_DB: ${REDIS_DB:-0}
     ports:
       - "8000:8000"
     depends_on:

@@ -77,7 +77,7 @@ class RabbitConsumer:
         Se ocorrer exceção, rejeita sem requeue, encaminhando para a DLQ via DLX.
         """
         # CLÁUSULA INEGOCIÁVEL 4: Auto-ack proibido. Rejeição com requeue=False direciona para DLQ.
-        async with message.process(requeue=False):
+        async with message.process(requeue=False, reject_on_exception=True):
             try:
                 body_str = message.body.decode("utf-8")
                 raw_dict = json.loads(body_str)

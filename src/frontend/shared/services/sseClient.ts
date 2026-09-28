@@ -2,6 +2,7 @@ import {
   TenantStreamEvent,
   SseConnectionState,
 } from '../types/sse.types';
+import { env } from '../config/env';
 
 type EventCallback = (event: TenantStreamEvent) => void;
 type StatusCallback = (status: SseConnectionState) => void;
@@ -113,7 +114,7 @@ class SseClient {
     this.setStatus(this.reconnectAttempt === 0 ? 'CONNECTING' : 'RECONNECTING');
 
     this.abortController = new AbortController();
-    const defaultBase = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const defaultBase = env.apiUrl;
     const streamUrl = this.currentOptions.url || `${defaultBase}/events/stream`;
 
     try {
