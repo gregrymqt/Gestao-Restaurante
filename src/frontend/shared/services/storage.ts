@@ -1,14 +1,16 @@
-import { createMMKV, type MMKV } from 'react-native-mmkv';
+import type { MMKV } from 'react-native-mmkv';
 
 // Criação da instância síncrona segura com isolamento de chave
 let mmkvInstance: MMKV | null = null;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createMMKV } = require('react-native-mmkv');
   mmkvInstance = createMMKV({
     id: 'gastropdv-secure-storage',
   });
 } catch {
-  // Fallback silencioso para ambientes onde JSI não está ativo (ex: node tests, web)
+  // Fallback silencioso para ambientes onde JSI/NitroModules não está ativo (ex: Expo Go, node tests, web)
   mmkvInstance = null;
 }
 

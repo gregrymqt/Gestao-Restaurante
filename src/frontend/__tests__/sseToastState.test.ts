@@ -31,15 +31,15 @@ if (eventType === SseEventTypes.ESTOQUE_CRITICO) {
 // 4. Asserções do Toast
 const toastAtivo = useSseStatus.getState().activeToast;
 assert.ok(toastAtivo !== null, 'Um toast ativo deve ser registrado no Zustand');
-assert.strictEqual(toastAtivo.tipo, 'critico', 'Tipo do toast deve ser critico');
-assert.strictEqual(toastAtivo.titulo, 'Alerta de Estoque Crítico', 'Título deve coincidir com o padrão de estoque');
-assert.strictEqual(toastAtivo.icone, '⚠️', 'Ícone deve ser de atenção');
+assert.strictEqual(toastAtivo!.tipo, 'critico', 'Tipo do toast deve ser critico');
+assert.strictEqual(toastAtivo!.titulo, 'Alerta de Estoque Crítico', 'Título deve coincidir com o padrão de estoque');
+assert.strictEqual(toastAtivo!.icone, '⚠️', 'Ícone deve ser de atenção');
 assert.ok(
-  toastAtivo.mensagem.includes('Pão Brioche Artesanal atingiu 4 UN (mínimo: 5)'),
-  `Mensagem incorreta: ${toastAtivo.mensagem}`
+  toastAtivo!.mensagem.includes('Pão Brioche Artesanal atingiu 4 UN (mínimo: 5)'),
+  `Mensagem incorreta: ${toastAtivo!.mensagem}`
 );
-assert.ok(toastAtivo.id.startsWith('toast-'), 'ID único do toast deve ser gerado');
-assert.ok(!Number.isNaN(Date.parse(toastAtivo.dataHora)), 'Data/hora deve ser um ISO string válido');
+assert.ok(toastAtivo!.id.startsWith('toast-'), 'ID único do toast deve ser gerado');
+assert.ok(!Number.isNaN(Date.parse(toastAtivo!.dataHora)), 'Data/hora deve ser um ISO string válido');
 
 // 5. Limpeza do Toast
 useSseStatus.getState().clearToast();

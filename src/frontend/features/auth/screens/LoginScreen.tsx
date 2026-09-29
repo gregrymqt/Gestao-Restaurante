@@ -25,12 +25,12 @@ export function LoginScreen() {
   const setTenant = useAuthStore((state) => state.setTenant);
   const loginMutation = useLoginMutation();
 
-  const [identificador, setIdentificador] = useState('operador@gastropdv.com.br');
+  const [identificador, setIdentificador] = useState('operador@restaurante.com');
   const [palavraPasse, setPalavraPasse] = useState('123456');
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [tenants, setTenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
   const [operadores] = useState<OperadorRecente[]>(OPERADORES_RECENTES_PADRAO);
-  const [operadorAtivoId, setOperadorAtivoId] = useState<string>('op-lucas-vicente');
+  const [operadorAtivoId, setOperadorAtivoId] = useState<string>('99999999-9999-9999-9999-999999999999');
 
   useEffect(() => {
     authService.obterTenants().then(setTenants);

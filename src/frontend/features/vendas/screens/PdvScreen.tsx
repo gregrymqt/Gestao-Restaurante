@@ -65,7 +65,6 @@ export function PdvScreen() {
               renderItem={renderItem}
               keyExtractor={(item) => item.id}
               numColumns={2}
-              estimatedItemSize={230}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />

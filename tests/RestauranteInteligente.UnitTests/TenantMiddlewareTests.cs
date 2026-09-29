@@ -2,11 +2,10 @@ using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 using RestauranteInteligente.Api.Middlewares;
 using RestauranteInteligente.Application.Common.Interfaces;
-using RestauranteInteligente.Infrastructure.Security;
+using RestauranteInteligente.Infrastructure.Configuration;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -17,15 +16,12 @@ public sealed class TenantMiddlewareTests
     private readonly Guid _tenantA = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly Guid _tenantB = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private readonly Mock<ITenantContext> _tenantContextMock;
-    private readonly IOptions<SecurityOptions> _securityOptions;
+    private readonly ISecurityConfig _securityConfig;
 
     public TenantMiddlewareTests()
     {
         _tenantContextMock = new Mock<ITenantContext>();
-        _securityOptions = Options.Create(new SecurityOptions
-        {
-            InternalServiceApiKey = ValidApiKey
-        });
+        _securityConfig = new SecurityConfig(ValidApiKey, string.Empty);
     }
 
     [Fact]
@@ -38,7 +34,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -63,7 +59,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -87,7 +83,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         var claims = new[] { new Claim("restaurante_id", _tenantA.ToString()) };
@@ -109,7 +105,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();
@@ -132,7 +128,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();
@@ -155,7 +151,7 @@ public sealed class TenantMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityOptions);
+        var middleware = new TenantMiddleware(next, NullLogger<TenantMiddleware>.Instance, _securityConfig);
 
         var context = new DefaultHttpContext();
         context.Request.Headers[TenantMiddleware.TenantHeaderName] = _tenantB.ToString();

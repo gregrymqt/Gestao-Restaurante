@@ -24,8 +24,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'PDV',
-          tabBarIcon: ({ color }: { color: string }) => (
-            <ThemedText variant="subtitle" color={color}>
+          tabBarIcon: ({ color }) => (
+            <ThemedText variant="subtitle" color={color as string}>
               🛒
             </ThemedText>
           ),
@@ -35,8 +35,8 @@ export default function TabLayout() {
         name="caixa"
         options={{
           title: 'Caixa',
-          tabBarIcon: ({ color }: { color: string }) => (
-            <ThemedText variant="subtitle" color={color}>
+          tabBarIcon: ({ color }) => (
+            <ThemedText variant="subtitle" color={color as string}>
               📊
             </ThemedText>
           ),
@@ -46,8 +46,8 @@ export default function TabLayout() {
         name="previsoes"
         options={{
           title: 'Previsões',
-          tabBarIcon: ({ color }: { color: string }) => (
-            <ThemedText variant="subtitle" color={color}>
+          tabBarIcon: ({ color }) => (
+            <ThemedText variant="subtitle" color={color as string}>
               🤖
             </ThemedText>
           ),
@@ -57,8 +57,8 @@ export default function TabLayout() {
         name="estoque"
         options={{
           title: 'Estoque',
-          tabBarIcon: ({ color }: { color: string }) => (
-            <ThemedText variant="subtitle" color={color}>
+          tabBarIcon: ({ color }) => (
+            <ThemedText variant="subtitle" color={color as string}>
               📦
             </ThemedText>
           ),

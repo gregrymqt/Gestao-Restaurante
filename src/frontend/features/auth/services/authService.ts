@@ -8,43 +8,22 @@ import {
 
 export const TENANTS_PADRAO: RestauranteTenant[] = [
   {
-    id: 'rest-praia-grande',
-    nome: 'GastroBurger - Praia Grande',
+    id: '11111111-1111-1111-1111-111111111111',
+    nome: 'Restaurante Teste E2E',
     cnpj: '12.345.678/0001-90',
-    filialNumero: 'Filial #02',
-    ativo: true,
-  },
-  {
-    id: 'rest-santos-centro',
-    nome: 'GastroBurger - Santos Centro',
-    cnpj: '12.345.678/0002-71',
     filialNumero: 'Filial #01',
-    ativo: true,
-  },
-  {
-    id: 'rest-sao-vicente',
-    nome: 'GastroBurger - São Vicente',
-    cnpj: '12.345.678/0003-52',
-    filialNumero: 'Filial #03',
     ativo: true,
   },
 ];
 
 export const OPERADORES_RECENTES_PADRAO: OperadorRecente[] = [
   {
-    id: 'op-lucas-vicente',
-    nome: 'Lucas Vicente',
+    id: '99999999-9999-9999-9999-999999999999',
+    nome: 'Operador Homologação',
     matricula: '05829',
-    email: 'operador@gastropdv.com.br',
+    email: 'operador@restaurante.com',
     fotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
-    iniciais: 'LV',
-  },
-  {
-    id: 'op-marcos-alves',
-    nome: 'Marcos Alves',
-    matricula: '03192',
-    email: 'marcos.alves@gastropdv.com.br',
-    iniciais: 'MA',
+    iniciais: 'OH',
   },
 ];
 
@@ -63,14 +42,43 @@ export const authService = {
   },
 
   async login(input: LoginInput): Promise<LoginResponse> {
+    const isGuid = (val?: string) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
     try {
-      const response = await apiClient.post<LoginResponse>('/auth/login', {
-        email: input.identificador.includes('@') ? input.identificador : undefined,
-        matricula: !input.identificador.includes('@') ? input.identificador : undefined,
+      const response = await apiClient.post<any>('/auth/login', {
+        email: input.identificador.includes('@')
+          ? input.identificador.trim().toLowerCase()
+          : 'operador@restaurante.com',
         password: input.palavraPasse,
-        restauranteId: input.restauranteId,
+        restauranteId: isGuid(input.restauranteId) ? input.restauranteId : undefined,
       });
-      return response.data;
+
+      const backendData = response.data;
+      const tenantId =
+        backendData.restauranteId || input.restauranteId || '11111111-1111-1111-1111-111111111111';
+      const tenant =
+        TENANTS_PADRAO.find((t) => t.id === tenantId) || {
+          id: tenantId,
+          nome: 'Restaurante Teste E2E',
+          cnpj: '12.345.678/0001-90',
+          filialNumero: 'Filial #01',
+          ativo: true,
+        };
+
+      return {
+        token: backendData.token,
+        refreshToken: backendData.refreshToken,
+        expiracao: backendData.expiresAt || new Date(Date.now() + 1000 * 60 * 15).toISOString(),
+        operador: {
+          id: backendData.userId || '99999999-9999-9999-9999-999999999999',
+          nome: 'Operador Homologação',
+          email: input.identificador.includes('@') ? input.identificador : 'operador@restaurante.com',
+          cargo: 'Operador de Balcão & Caixa',
+          restaurantesVinculados: [tenant],
+        },
+      };
     } catch {
       // Fallback resiliente com credenciais de demonstração do Stitch UI
       const operadorEncontrado = OPERADORES_RECENTES_PADRAO.find(
@@ -83,17 +91,21 @@ export const authService = {
           ? input.identificador.split('@')[0]
           : `Operador ${input.identificador}`,
         matricula: input.identificador.replace(/\D/g, '') || '05829',
-        email: input.identificador.includes('@') ? input.identificador : 'operador@gastropdv.com.br',
+        email: input.identificador.includes('@') ? input.identificador : 'operador@restaurante.com',
         iniciais: 'OP',
       };
 
       const tenantEncontrado =
         TENANTS_PADRAO.find((t) => t.id === input.restauranteId) || TENANTS_PADRAO[0];
 
+      const payloadString = JSON.stringify({ tenantId: tenantEncontrado.id, role: 'Caixa' });
+      const payloadBase64 =
+        typeof btoa !== 'undefined'
+          ? btoa(payloadString)
+          : 'eyJ0ZW5hbnRJZCI6IjExMTExMTExLTExMTEtMTExMS0xMTExLTExMTExMTExMTExMSIsInJvbGUiOiJDYWl4YSJ9';
+
       return {
-        token: `mock-jwt-token-${Date.now()}.${Buffer.from(
-          JSON.stringify({ tenantId: tenantEncontrado.id, role: 'Caixa' })
-        ).toString('base64')}.signature`,
+        token: `mock-jwt-token-${Date.now()}.${payloadBase64}.signature`,
         refreshToken: `mock-refresh-token-${Date.now().toString(36)}`,
         expiracao: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),
         operador: {

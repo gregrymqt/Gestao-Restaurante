@@ -11,8 +11,32 @@ export interface AppEnvConfig {
  * Orquestrador e validador Fail-Fast de variáveis de ambiente.
  * Se 'EXPO_PUBLIC_API_URL' não estiver definida no .env ou no ambiente, lança uma exceção fatal imediata.
  */
+declare const __DEV__: boolean | undefined;
+
+function getDynamicHostUrl(): string | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Constants = require('expo-constants').default;
+    const hostUri = Constants?.expoConfig?.hostUri;
+    if (hostUri) {
+      const host = hostUri.split(':')[0];
+      if (host && host.trim().length > 0) {
+        return `http://${host}:5287/api/v1`;
+      }
+    }
+  } catch {
+    // Silencioso em ambientes onde expo-constants não está vinculado
+  }
+  return undefined;
+}
+
 export function loadEnvConfig(customApiUrl?: string): AppEnvConfig {
-  const apiUrl = customApiUrl ?? process.env.EXPO_PUBLIC_API_URL;
+  const dynamicDevUrl =
+    typeof __DEV__ !== 'undefined' && __DEV__
+      ? getDynamicHostUrl()
+      : undefined;
+
+  const apiUrl = customApiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? dynamicDevUrl;
 
   if (!apiUrl || typeof apiUrl !== 'string' || apiUrl.trim().length === 0) {
     throw new Error(

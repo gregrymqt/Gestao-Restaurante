@@ -3,11 +3,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using RestauranteInteligente.Application.Common.Interfaces;
-using RestauranteInteligente.Infrastructure.Security;
-
 using RestauranteInteligente.Infrastructure.Configuration;
 
 namespace RestauranteInteligente.Api.Middlewares;
@@ -29,6 +27,7 @@ public sealed class TenantMiddleware
     private readonly ILogger<TenantMiddleware> _logger;
     private readonly ISecurityConfig _securityConfig;
 
+    [ActivatorUtilitiesConstructor]
     public TenantMiddleware(
         RequestDelegate next,
         ILogger<TenantMiddleware> logger,
@@ -37,21 +36,6 @@ public sealed class TenantMiddleware
         _next = next;
         _logger = logger;
         _securityConfig = securityConfig;
-    }
-
-    public TenantMiddleware(
-        RequestDelegate next,
-        ILogger<TenantMiddleware> logger,
-        IOptions<SecurityOptions> securityOptions)
-        : this(next, logger, new SecurityConfig(securityOptions?.Value?.InternalServiceApiKey ?? string.Empty, string.Empty))
-    {
-    }
-
-    public TenantMiddleware(
-        RequestDelegate next,
-        ILogger<TenantMiddleware> logger)
-        : this(next, logger, new SecurityConfig(string.Empty, string.Empty))
-    {
     }
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
