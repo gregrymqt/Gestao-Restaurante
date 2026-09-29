@@ -64,6 +64,17 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color }) => (
+            <ThemedText variant="subtitle" color={color as string}>
+              👤
+            </ThemedText>
+          ),
+        }}
+      />
     </Tabs>
   );
 }

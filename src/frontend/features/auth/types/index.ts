@@ -13,6 +13,7 @@ export interface OperadorRecente {
   fotoUrl?: string;
   email: string;
   iniciais?: string;
+  restaurantesVinculados?: RestauranteTenant[];
 }
 
 export interface LoginInput {
