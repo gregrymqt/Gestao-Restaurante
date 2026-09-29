@@ -3,6 +3,7 @@
  */
 export interface AppEnvConfig {
   readonly apiUrl: string;
+  readonly apiId?: string;
   readonly isDevelopment: boolean;
   readonly isProduction: boolean;
 }
@@ -30,7 +31,7 @@ function getDynamicHostUrl(): string | undefined {
   return undefined;
 }
 
-export function loadEnvConfig(customApiUrl?: string): AppEnvConfig {
+export function loadEnvConfig(customApiUrl?: string, customApiId?: string): AppEnvConfig {
   const dynamicDevUrl =
     typeof __DEV__ !== 'undefined' && __DEV__
       ? getDynamicHostUrl()
@@ -44,11 +45,18 @@ export function loadEnvConfig(customApiUrl?: string): AppEnvConfig {
     );
   }
 
+  const rawApiId = customApiId ?? process.env.EXPO_PUBLIC_API_ID;
+  const apiId =
+    rawApiId && typeof rawApiId === 'string' && rawApiId.trim().length > 0
+      ? rawApiId.trim()
+      : undefined;
+
   const normalizedUrl = apiUrl.trim().replace(/\/+$/, '');
   const nodeEnv = process.env.NODE_ENV || 'development';
 
   return Object.freeze({
     apiUrl: normalizedUrl,
+    apiId,
     isDevelopment: nodeEnv === 'development',
     isProduction: nodeEnv === 'production',
   });

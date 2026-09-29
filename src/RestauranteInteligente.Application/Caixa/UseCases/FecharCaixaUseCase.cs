@@ -74,7 +74,7 @@ public sealed class FecharCaixaUseCase
             caixaAberto.Id, tenantId, caixaAberto.QuantidadeVendas, caixaAberto.TotalVendas);
 
         // 3. Coleta de histórico dos últimos 14 dias de vendas para o pipeline de ML
-        var dataLimiteInicio = dataFechamento.Date.AddDays(-14);
+        var dataLimiteInicio = new DateTimeOffset(dataFechamento.UtcDateTime.Date.AddDays(-14), TimeSpan.Zero);
         var vendasRecentes = await _vendaRepository.ObterVendasConcluidasPorPeriodoAsync(dataLimiteInicio, ct);
 
         var historicoVendas = vendasRecentes

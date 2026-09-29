@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,12 +6,14 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { useInsumosEstoque } from '../hooks/useInsumosEstoque';
 import { useRegistrarEntradaEstoque } from '../hooks/useRegistrarEntradaEstoque';
+import { useCadastrarInsumo } from '../hooks/useCadastrarInsumo';
 import { EstoqueHeader } from '../components/EstoqueHeader';
 import { SegmentedEstoqueControl } from '../components/SegmentedEstoqueControl';
 import { InsumoSaldoCard } from '../components/InsumoSaldoCard';
@@ -19,7 +21,8 @@ import { FichaTecnicaDestaqueCard } from '../components/FichaTecnicaDestaqueCard
 import { FichasTecnicasList } from '../components/FichasTecnicasList';
 import { FabEntradaMercadoria } from '../components/FabEntradaMercadoria';
 import { ModalEntradaEstoque } from '../components/ModalEntradaEstoque';
-import { EntradaEstoqueInput } from '../types';
+import { ModalNovoInsumo } from '../components/ModalNovoInsumo';
+import { CadastrarInsumoInput, EntradaEstoqueInput } from '../types';
 
 export function EstoqueScreen() {
   const insets = useSafeAreaInsets();
@@ -43,7 +46,9 @@ export function EstoqueScreen() {
     fecharModalEntrada,
   } = useInsumosEstoque();
 
+  const [isModalNovoInsumoOpen, setIsModalNovoInsumoOpen] = useState(false);
   const registrarEntradaMutation = useRegistrarEntradaEstoque();
+  const cadastrarInsumoMutation = useCadastrarInsumo();
 
   const handleConfirmarEntrada = async (dados: EntradaEstoqueInput) => {
     try {
@@ -56,6 +61,12 @@ export function EstoqueScreen() {
     } catch {
       Alert.alert('Erro', 'Não foi possível registrar a entrada de estoque.');
     }
+  };
+
+  const handleConfirmarNovoInsumo = async (dados: CadastrarInsumoInput) => {
+    await cadastrarInsumoMutation.mutateAsync(dados);
+    setIsModalNovoInsumoOpen(false);
+    Alert.alert('Insumo Cadastrado! 📦', `O insumo "${dados.nome}" foi cadastrado com sucesso.`);
   };
 
   return (
@@ -74,14 +85,13 @@ export function EstoqueScreen() {
       >
         {/* Header com Branding, Contadores e Busca */}
         <EstoqueHeader
-          totalInsumos={totalInsumos}
-          totalFichas={totalFichas}
           busca={busca}
           onBuscaChange={setBusca}
-          onScanBarcode={() => Alert.alert('Leitor de Código', 'Scanner de código de barras / QR acionado.')}
+          totalInsumos={totalInsumos}
+          totalFichas={totalFichas}
         />
 
-        {/* Segmented Control: Insumos & Saldos vs Fichas Técnicas */}
+        {/* Segmented Control: Insumos vs Fichas Técnicas */}
         <SegmentedEstoqueControl
           abaAtiva={abaAtiva}
           onSelectAba={setAbaAtiva}
@@ -96,32 +106,42 @@ export function EstoqueScreen() {
           </View>
         ) : abaAtiva === 'insumos' ? (
           <>
-            {/* Seção Níveis de Estoque com Legenda */}
+            {/* Seção Níveis de Estoque com Botão Novo Insumo e Legenda */}
             <View style={styles.secaoNiveisHeader}>
               <ThemedText variant="title" style={styles.secaoTitulo}>
                 Níveis de Estoque
               </ThemedText>
 
-              <View style={styles.legendaRow}>
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.redText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Crítico
-                  </ThemedText>
-                </View>
+              <View style={styles.acoesHeaderRow}>
+                <TouchableOpacity
+                  style={styles.btnNovoInsumo}
+                  onPress={() => setIsModalNovoInsumoOpen(true)}
+                  activeOpacity={0.8}
+                >
+                  <ThemedText style={styles.btnNovoInsumoText}>+ Novo Insumo</ThemedText>
+                </TouchableOpacity>
 
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.orangeText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Atenção
-                  </ThemedText>
-                </View>
+                <View style={styles.legendaRow}>
+                  <View style={styles.legendaItem}>
+                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.redText }]} />
+                    <ThemedText variant="caption" style={styles.legendaTexto}>
+                      Crítico
+                    </ThemedText>
+                  </View>
 
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.greenText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Normal
-                  </ThemedText>
+                  <View style={styles.legendaItem}>
+                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.orangeText }]} />
+                    <ThemedText variant="caption" style={styles.legendaTexto}>
+                      Atenção
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.legendaItem}>
+                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.greenText }]} />
+                    <ThemedText variant="caption" style={styles.legendaTexto}>
+                      Normal
+                    </ThemedText>
+                  </View>
                 </View>
               </View>
             </View>
@@ -135,7 +155,7 @@ export function EstoqueScreen() {
                     Nenhum insumo encontrado
                   </ThemedText>
                   <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                    Verifique o termo buscado ou limpe o campo de busca.
+                    Verifique o termo buscado ou adicione novos insumos.
                   </ThemedText>
                 </View>
               ) : (
@@ -174,6 +194,14 @@ export function EstoqueScreen() {
         onConfirmar={handleConfirmarEntrada}
         isEnviando={registrarEntradaMutation.isPending}
       />
+
+      {/* Modal para Cadastro de Novo Insumo */}
+      <ModalNovoInsumo
+        visible={isModalNovoInsumoOpen}
+        onClose={() => setIsModalNovoInsumoOpen(false)}
+        onConfirmar={handleConfirmarNovoInsumo}
+        isEnviando={cadastrarInsumoMutation.isPending}
+      />
     </View>
   );
 }
@@ -208,6 +236,22 @@ const styles = StyleSheet.create({
     fontSize: tokens.typography.fontMd,
     fontWeight: '800',
     color: tokens.colors.textPrimary,
+  },
+  acoesHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  btnNovoInsumo: {
+    backgroundColor: tokens.colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  btnNovoInsumoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: tokens.colors.white,
   },
   legendaRow: {
     flexDirection: 'row',

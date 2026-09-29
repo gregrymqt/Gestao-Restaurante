@@ -264,7 +264,15 @@ public sealed class RegistrarVendaUseCase
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(ct);
+            try
+            {
+                await transaction.RollbackAsync(ct);
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogWarning(rollbackEx, "Exceção secundária durante o Rollback da transação de venda.");
+            }
+
             _logger.LogError(ex, "Falha na transação de registro de venda no restaurante {TenantId}.", tenantId);
             throw;
         }

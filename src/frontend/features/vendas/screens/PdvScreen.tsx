@@ -1,25 +1,29 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
-import { CategoriaProduto, Produto } from '../types';
+import { CategoriaProduto, CriarProdutoInput, Produto } from '../types';
 import { useCarrinho } from '../hooks/useCarrinho';
 import { useCatalogoProdutos } from '../hooks/useCatalogoProdutos';
+import { useCriarProduto } from '../hooks/useCriarProduto';
 import { HeaderOperacional } from '../components/HeaderOperacional';
 import { BarraPesquisaPdv } from '../components/BarraPesquisaPdv';
 import { CategoriasCarrossel } from '../components/CategoriasCarrossel';
 import { ProdutoCard } from '../components/ProdutoCard';
 import { BarraFlutuanteCheckout } from '../components/BarraFlutuanteCheckout';
 import { CheckoutBottomSheet } from '../components/CheckoutBottomSheet';
+import { ModalNovoProduto } from '../components/ModalNovoProduto';
 
 export function PdvScreen() {
   const [categoria, setCategoria] = useState<CategoriaProduto>('Todos');
   const [termoBusca, setTermoBusca] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isNovoProdutoOpen, setIsNovoProdutoOpen] = useState(false);
 
   const { produtos, totalProdutos } = useCatalogoProdutos(categoria, termoBusca);
+  const criarProdutoMutation = useCriarProduto();
 
   const adicionarItem = useCarrinho((state) => state.adicionarItem);
   const totalItens = useCarrinho((state) => state.obterTotalItens());
@@ -31,6 +35,12 @@ export function PdvScreen() {
     }
   }, [totalItens]);
 
+  const handleConfirmarNovoProduto = async (dados: CriarProdutoInput) => {
+    await criarProdutoMutation.mutateAsync(dados);
+    setIsNovoProdutoOpen(false);
+    Alert.alert('Produto Cadastrado! 🍔', `O produto "${dados.nome}" já está disponível para vendas.`);
+  };
+
   const renderItem = useCallback(
     ({ item }: { item: Produto }) => (
       <ProdutoCard produto={item} aoAdicionar={adicionarItem} />
@@ -41,7 +51,7 @@ export function PdvScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        <HeaderOperacional />
+        <HeaderOperacional onPressNovoProduto={() => setIsNovoProdutoOpen(true)} />
         <BarraPesquisaPdv
           valor={termoBusca}
           aoMudarTexto={setTermoBusca}
@@ -81,6 +91,14 @@ export function PdvScreen() {
         <CheckoutBottomSheet
           visible={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
+        />
+
+        {/* Modal para Cadastro de Novo Produto e Ficha Técnica */}
+        <ModalNovoProduto
+          visible={isNovoProdutoOpen}
+          onClose={() => setIsNovoProdutoOpen(false)}
+          onConfirmar={handleConfirmarNovoProduto}
+          isEnviando={criarProdutoMutation.isPending}
         />
       </View>
     </SafeAreaView>

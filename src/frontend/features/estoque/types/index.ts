@@ -1,3 +1,5 @@
+export type AbaEstoqueAtiva = 'insumos' | 'fichas';
+
 export type StatusNivelEstoque = 'critico' | 'atencao' | 'normal';
 
 export interface InsumoEstoque {
@@ -5,7 +7,7 @@ export interface InsumoEstoque {
   nome: string;
   sku: string;
   categoria: string;
-  localizacao: string;
+  localizacao?: string;
   saldoAtual: number;
   estoqueMinimo: number;
   estoqueIdeal?: number;
@@ -31,8 +33,8 @@ export interface FichaTecnicaItem {
   produtoId: string;
   nomeProduto: string;
   sku: string;
-  versaoBom: string;
-  tempoPreparoMin: number;
+  versaoBom?: string;
+  tempoPreparoMin?: number;
   imagemUrl?: string;
   ingredientes: IngredienteFicha[];
   custoInsumos: number;
@@ -58,4 +60,11 @@ export interface EntradaEstoqueResponse {
   protocoloLedger: string;
 }
 
-export type AbaEstoqueAtiva = 'insumos' | 'fichas';
+export interface CadastrarInsumoInput {
+  readonly nome: string;
+  readonly unidadeMedida: string;
+  readonly estoqueMinimo: number;
+  readonly custoUnitario: number;
+  readonly saldoInicial?: number;
+  readonly categoria?: string;
+}

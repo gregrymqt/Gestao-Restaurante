@@ -4,6 +4,7 @@ console.log('[TEST] Iniciando validação de carregamento e fail-fast de variáv
 
 // 1. Valida que ao importar sem a variável EXPO_PUBLIC_API_URL definida, o módulo quebra imediatamente (Fail-Fast)
 delete process.env.EXPO_PUBLIC_API_URL;
+delete process.env.EXPO_PUBLIC_API_ID;
 
 assert.throws(
   () => {
@@ -21,10 +22,12 @@ assert.throws(
 
 // 2. Agora define a variável e valida a exportação e parsing
 process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.100:5000/api/v1///';
-const { loadEnvConfig, env } = require('../shared/config/env');
+process.env.EXPO_PUBLIC_API_ID = 'restaurante-inteligente-pdv';
+const { loadEnvConfig } = require('../shared/config/env');
 
-const config = loadEnvConfig('http://192.168.1.100:5000/api/v1///');
+const config = loadEnvConfig('http://192.168.1.100:5000/api/v1///', 'restaurante-inteligente-pdv');
 assert.strictEqual(config.apiUrl, 'http://192.168.1.100:5000/api/v1', 'Deve remover barras extras no final da URL');
+assert.strictEqual(config.apiId, 'restaurante-inteligente-pdv', 'Deve carregar apiId corretamente');
 assert.strictEqual(typeof config.isDevelopment, 'boolean', 'isDevelopment deve ser booleano');
 assert.strictEqual(typeof config.isProduction, 'boolean', 'isProduction deve ser booleano');
 

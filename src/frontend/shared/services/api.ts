@@ -9,26 +9,33 @@ export const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'ngrok-skip-browser-warning': 'true',
+    ...(env.apiId ? { 'api-id': env.apiId, 'x-api-id': env.apiId } : {}),
   },
 });
 
-// Interceptor de Requisição: Injeta Bearer Token e X-Tenant-Id em todas as chamadas
+// Interceptor de Requisição: Injeta api-id, Bearer Token e X-Tenant-Id em todas as chamadas
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Injeta identificador de API se configurado
+    if (env.apiId) {
+      config.headers['api-id'] = env.apiId;
+      config.headers['x-api-id'] = env.apiId;
+    }
+
     const token = storage.getString(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
 
-    const tenantRaw = storage.getString(STORAGE_KEYS.ACTIVE_TENANT);
-    if (tenantRaw) {
-      try {
-        const tenant = JSON.parse(tenantRaw);
-        if (tenant?.id) {
-          config.headers['X-Tenant-Id'] = tenant.id;
+      const tenantRaw = storage.getString(STORAGE_KEYS.ACTIVE_TENANT);
+      if (tenantRaw) {
+        try {
+          const tenant = JSON.parse(tenantRaw);
+          if (tenant?.id) {
+            config.headers['X-Tenant-Id'] = tenant.id;
+          }
+        } catch {
+          // Ignora parsing inválido
         }
-      } catch {
-        // Ignora parsing inválido
       }
     }
 

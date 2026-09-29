@@ -1,5 +1,8 @@
 export { EstoqueScreen } from './screens/EstoqueScreen';
 export { useInsumosEstoque } from './hooks/useInsumosEstoque';
 export { useRegistrarEntradaEstoque } from './hooks/useRegistrarEntradaEstoque';
+export { useCadastrarInsumo } from './hooks/useCadastrarInsumo';
+export { ModalNovoInsumo } from './components/ModalNovoInsumo';
+export { ModalEntradaEstoque } from './components/ModalEntradaEstoque';
 export { estoqueService } from './services/estoqueService';
 export * from './types';

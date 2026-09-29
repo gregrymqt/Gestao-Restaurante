@@ -8,6 +8,7 @@ interface HeaderOperacionalProps {
   comanda?: string;
   statusCaixa?: 'Aberto' | 'Fechado';
   onPressPerfil?: () => void;
+  onPressNovoProduto?: () => void;
 }
 
 export function HeaderOperacional({
@@ -15,6 +16,7 @@ export function HeaderOperacional({
   comanda = '#042',
   statusCaixa = 'Aberto',
   onPressPerfil,
+  onPressNovoProduto,
 }: HeaderOperacionalProps) {
   const isAberto = statusCaixa === 'Aberto';
 
@@ -64,16 +66,29 @@ export function HeaderOperacional({
         </View>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Perfil do Operador"
-        style={styles.avatarButton}
-        onPress={onPressPerfil}
-      >
-        <ThemedText variant="subtitle" style={styles.avatarText}>
-          OP
-        </ThemedText>
-      </Pressable>
+      <View style={styles.rightActionsRow}>
+        {onPressNovoProduto && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Novo Produto"
+            style={styles.btnNovoProduto}
+            onPress={onPressNovoProduto}
+          >
+            <ThemedText style={styles.btnNovoProdutoText}>+ Produto</ThemedText>
+          </Pressable>
+        )}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Perfil do Operador"
+          style={styles.avatarButton}
+          onPress={onPressPerfil}
+        >
+          <ThemedText variant="subtitle" style={styles.avatarText}>
+            OP
+          </ThemedText>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -157,9 +172,25 @@ const styles = StyleSheet.create({
   statusDotFechado: {
     backgroundColor: tokens.colors.status.redText,
   },
+  rightActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  btnNovoProduto: {
+    backgroundColor: tokens.colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  btnNovoProdutoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: tokens.colors.white,
+  },
   avatarButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: tokens.radii.full,
     backgroundColor: tokens.colors.primaryLight,
     borderWidth: 1,

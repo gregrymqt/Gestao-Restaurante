@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Produto, CategoriaProduto } from '../types';
+import { vendasService } from '../services/vendasService';
 
-const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
+export const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
   {
-    id: 'p-001',
-    nome: 'X-Burger Artesanal',
-    descricao: 'Pão brioche, blend 180g, queijo cheddar e maionese da casa.',
-    preco: 34.90,
+    id: '55555555-5555-5555-5555-555555555555',
+    nome: 'Hambúrguer Artesanal Supremo',
+    descricao: 'Delicioso hambúrguer artesanal com blend angus, pão brioche e queijo cheddar derretido.',
+    preco: 38.00,
     categoria: 'Hambúrgueres',
-    estoqueRestante: 4,
+    estoqueRestante: 10,
     ativo: true,
   },
   {
-    id: 'p-002',
+    id: '55555555-5555-5555-5555-555555555552',
     nome: 'Double Smash Bacon',
     descricao: '2x blend smash 90g, muito bacon crocante e queijo prato.',
     preco: 42.00,
@@ -22,7 +23,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-003',
+    id: '55555555-5555-5555-5555-555555555553',
     nome: 'Batata Rústica Trufada',
     descricao: 'Batatas crocantes com azeite trufado e queijo parmesão ralado.',
     preco: 26.50,
@@ -31,7 +32,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-004',
+    id: '55555555-5555-5555-5555-555555555554',
     nome: 'Onion Rings Crocantes',
     descricao: 'Anéis de cebola empanados acompanhados de molho barbecue.',
     preco: 22.00,
@@ -40,7 +41,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-005',
+    id: '55555555-5555-5555-5555-555555555556',
     nome: 'Refrigerante Lata 350ml',
     descricao: 'Coca-Cola, Guaraná Antarctica ou Água Tônica.',
     preco: 7.50,
@@ -49,7 +50,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-006',
+    id: '55555555-5555-5555-5555-555555555557',
     nome: 'Suco de Laranja Natural',
     descricao: 'Suco integral 400ml preparado na hora.',
     preco: 12.00,
@@ -58,7 +59,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-007',
+    id: '55555555-5555-5555-5555-555555555558',
     nome: 'Pudim de Leite Artesanal',
     descricao: 'Fatia individual de pudim tradicional com calda de caramelo.',
     preco: 14.00,
@@ -67,7 +68,7 @@ const PRODUTOS_CATALOGO_INICIAL: Produto[] = [
     ativo: true,
   },
   {
-    id: 'p-008',
+    id: '55555555-5555-5555-5555-555555555559',
     nome: 'Brownie com Sorvete',
     descricao: 'Brownie de chocolate belga aquecido com sorvete de creme.',
     preco: 18.90,
@@ -84,8 +85,19 @@ export function useCatalogoProdutos(
   const { data: produtos = PRODUTOS_CATALOGO_INICIAL, isLoading, isError, refetch } = useQuery({
     queryKey: ['produtos', 'catalogo'],
     queryFn: async (): Promise<Produto[]> => {
-      // Retorna os dados enriquecidos locais para garantia de disponibilidade imediata no PDV
-      return PRODUTOS_CATALOGO_INICIAL;
+      try {
+        const backendProdutos = await vendasService.obterProdutos();
+        if (backendProdutos && backendProdutos.length > 0) {
+          return backendProdutos;
+        }
+        return PRODUTOS_CATALOGO_INICIAL;
+      } catch (error) {
+        console.warn(
+          'Falha ao sincronizar catálogo do backend. Utilizando catálogo local resiliente:',
+          error
+        );
+        return PRODUTOS_CATALOGO_INICIAL;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutos de cache
   });

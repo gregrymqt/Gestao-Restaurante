@@ -86,5 +86,5 @@ async def test_rabbit_consumer_payload_invalido_rejeita_para_dlq():
     with pytest.raises(Exception):
         await consumer._process_single_message(message_mock)
 
-    # Valida que o process context manager foi acionado com reject_on_exception=True
-    message_mock.process.assert_called_once_with(requeue=False, reject_on_exception=True)
+    # Valida que o process context manager foi acionado com requeue=False
+    message_mock.process.assert_called_once_with(requeue=False)

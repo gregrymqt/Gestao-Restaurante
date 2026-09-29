@@ -74,10 +74,11 @@ INSERT INTO "Insumos" (
     CURRENT_TIMESTAMP
 ) ON CONFLICT ("Id") DO NOTHING;
 
--- 5. Inserção do Produto: Hambúrguer Artesanal Supremo
+-- 5. Inserção do Catálogo de Produtos
 INSERT INTO "Produtos" (
     "Id", "RestauranteId", "Nome", "Descricao", "Preco", "Ativo", "CriadoEm"
-) VALUES (
+) VALUES 
+(
     '55555555-5555-5555-5555-555555555555'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     'Hambúrguer Artesanal Supremo',
@@ -85,7 +86,71 @@ INSERT INTO "Produtos" (
     38.00,
     TRUE,
     CURRENT_TIMESTAMP
-) ON CONFLICT ("Id") DO NOTHING;
+),
+(
+    '55555555-5555-5555-5555-555555555552'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Double Smash Bacon',
+    '2x blend smash 90g, muito bacon crocante e queijo prato.',
+    42.00,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555553'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Batata Rústica Trufada',
+    'Batatas crocantes com azeite trufado e queijo parmesão ralado.',
+    26.50,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555554'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Onion Rings Crocantes',
+    'Anéis de cebola empanados acompanhados de molho barbecue.',
+    22.00,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555556'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Refrigerante Lata 350ml',
+    'Coca-Cola, Guaraná Antarctica ou Água Tônica.',
+    7.50,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555557'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Suco de Laranja Natural',
+    'Suco integral 400ml preparado na hora.',
+    12.00,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555558'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Pudim de Leite Artesanal',
+    'Fatia individual de pudim tradicional com calda de caramelo.',
+    14.00,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '55555555-5555-5555-5555-555555555559'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Brownie com Sorvete',
+    'Brownie de chocolate belga aquecido com sorvete de creme.',
+    18.90,
+    TRUE,
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT ("Id") DO NOTHING;
 
 -- 6. Inserção da Ficha Técnica (BOM)
 INSERT INTO "ProdutosInsumos" ("Id", "RestauranteId", "ProdutoId", "InsumoId", "Quantidade")

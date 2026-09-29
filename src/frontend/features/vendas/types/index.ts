@@ -59,3 +59,16 @@ export interface VendaResponseDto {
   readonly valorTotal: number;
   readonly itens: readonly ItemVendaResponseDto[];
 }
+
+export interface ItemFichaTecnicaInput {
+  readonly insumoId: string;
+  readonly quantidade: number;
+}
+
+export interface CriarProdutoInput {
+  readonly nome: string;
+  readonly preco: number;
+  readonly categoria: CategoriaProduto;
+  readonly descricao?: string;
+  readonly fichaTecnica?: readonly ItemFichaTecnicaInput[];
+}

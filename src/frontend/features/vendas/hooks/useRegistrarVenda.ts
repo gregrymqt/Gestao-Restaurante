@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { vendasService } from '../services/vendasService';
 import { RegistrarVendaRequestDto, VendaResponseDto } from '../types';
 import { useCarrinho } from './useCarrinho';
@@ -10,6 +11,7 @@ interface UseRegistrarVendaOptions {
 }
 
 export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const limparCarrinho = useCarrinho((state) => state.limparCarrinho);
 
@@ -40,11 +42,35 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
         [{ text: 'Concluir', style: 'default' }]
       );
     },
-    onError: (error: Error) => {
-      Alert.alert(
-        'Erro ao Registrar Venda',
-        error.message || 'Não foi possível registrar a venda. Verifique a conexão com o servidor.'
-      );
+    onError: (error: any) => {
+      const serverMessage =
+        error?.response?.data?.error ||
+        error?.message ||
+        'Não foi possível registrar a venda. Verifique a conexão com o servidor.';
+
+      const isCaixaFechado =
+        error?.response?.status === 422 ||
+        (typeof serverMessage === 'string' &&
+          (serverMessage.toLowerCase().includes('caixa aberta') ||
+            serverMessage.toLowerCase().includes('sessão de caixa')));
+
+      if (isCaixaFechado) {
+        Alert.alert(
+          'Caixa Fechado ⚠️',
+          'Não há sessão de caixa aberta no momento. É necessário abrir o caixa para emitir vendas.\n\nDeseja ir para a tela de Caixa agora?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Abrir Caixa',
+              style: 'default',
+              onPress: () => router.push('/(tabs)/caixa'),
+            },
+          ]
+        );
+        return;
+      }
+
+      Alert.alert('Erro ao Registrar Venda', String(serverMessage));
     },
   });
 }
