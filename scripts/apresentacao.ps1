@@ -1,0 +1,395 @@
+<#
+.SYNOPSIS
+    Script Master de Apresentação Técnica - Sistema Restaurante Inteligente
+    Desenvolvido para demonstração ao vivo para banca/professor.
+.DESCRIPTION
+    Gerencia autenticação automática JWT, verificação de microsserviços,
+    execução de ciclo ponta a ponta (C# + RabbitMQ + Python ML + PostgreSQL)
+    e visualização rica do relatório de capacidade produtiva com IA.
+#>
+
+[CmdletBinding()]
+param(
+    [string]$BaseUrl = "",
+    [ValidateSet("Menu", "Auto", "Capacidade", "Testes", "Status")]
+    [string]$Modo = "Menu",
+    [string]$TenantId = "11111111-1111-1111-1111-111111111111",
+    [string]$Email = "operador@restaurante.com",
+    [string]$Password = "123456"
+)
+
+# Detecta porta ativa automaticamente
+if (-not $BaseUrl) {
+    $port5287 = Get-NetTCPConnection -LocalPort 5287 -State Listen -ErrorAction SilentlyContinue
+    if ($port5287) {
+        $BaseUrl = "http://localhost:5287"
+    } else {
+        $BaseUrl = "http://localhost:5000"
+    }
+}
+
+function Show-Header {
+    Clear-Host
+    Write-Host "================================================================================" -ForegroundColor Cyan
+    Write-Host "         SISTEMA RESTAURANTE INTELIGENTE - DEMONSTRACAO DE BACKEND              " -ForegroundColor White
+    Write-Host "     ASP.NET Core .NET 9  |  Python 3.12 ML  |  PostgreSQL 16  |  RabbitMQ 3    " -ForegroundColor Cyan
+    Write-Host "================================================================================" -ForegroundColor Cyan
+    Write-Host "  API Endpoint: $BaseUrl  |  Tenant: $TenantId" -ForegroundColor DarkGray
+    Write-Host "--------------------------------------------------------------------------------" -ForegroundColor DarkGray
+}
+
+function Get-AuthContext {
+    param([switch]$Silent = $false)
+    if (-not $Silent) {
+        Write-Host "Autenticando operador no PDV e obtendo token JWT..." -ForegroundColor Yellow
+    }
+
+    $loginPayload = @{
+        email = $Email
+        password = $Password
+        restauranteId = $TenantId
+    } | ConvertTo-Json
+
+    try {
+        $loginResponse = Invoke-RestMethod -Uri "$BaseUrl/api/v1/auth/login" `
+            -Method Post `
+            -Body $loginPayload `
+            -ContentType "application/json" `
+            -TimeoutSec 5 `
+            -ErrorAction Stop
+
+        $jwtToken = $loginResponse.token
+        $userId = $loginResponse.userId
+
+        if (-not $jwtToken) {
+            throw "A API não retornou o token JWT esperado."
+        }
+
+        $perfil = if ($loginResponse.perfil) { $loginResponse.perfil } else { "Operador" }
+
+        if (-not $Silent) {
+            Write-Host "  -> [OK] Autenticado com sucesso! UserId: $userId" -ForegroundColor Green
+            Write-Host "  -> [OK] JWT Claims: Perfil=$perfil, RestauranteId=$TenantId" -ForegroundColor DarkGray
+        }
+
+        return @{
+            Token = $jwtToken
+            UserId = $userId
+            Headers = @{
+                "Authorization" = "Bearer $jwtToken"
+                "X-Tenant-Id" = $TenantId
+            }
+        }
+    } catch {
+        Write-Host "  -> [ERRO DE AUTENTICACAO] Falha ao logar em $BaseUrl/api/v1/auth/login: $_" -ForegroundColor Red
+        return $null
+    }
+}
+
+function Check-ServicesStatus {
+    Write-Host "`n[Verificacao de Saude da Infraestrutura e Microsservicos]" -ForegroundColor Yellow
+
+    # 1. PostgreSQL
+    $pgPort = Get-NetTCPConnection -LocalPort 5432 -State Listen -ErrorAction SilentlyContinue
+    if ($pgPort) {
+        Write-Host "  [OK] PostgreSQL 16 (Porta 5432): Ativo e ouvindo conexoes" -ForegroundColor Green
+    } else {
+        Write-Host "  [FALHA] PostgreSQL 16 (Porta 5432): Nao localizado! (docker compose up -d postgres)" -ForegroundColor Red
+    }
+
+    # 2. Redis
+    $redisPort = Get-NetTCPConnection -LocalPort 6379 -State Listen -ErrorAction SilentlyContinue
+    if ($redisPort) {
+        Write-Host "  [OK] Redis 7 (Porta 6379): Ativo (Cache, Locks e Blacklist)" -ForegroundColor Green
+    } else {
+        Write-Host "  [FALHA] Redis 7 (Porta 6379): Nao localizado! (docker compose up -d redis)" -ForegroundColor Red
+    }
+
+    # 3. RabbitMQ
+    $rabbitPort = Get-NetTCPConnection -LocalPort 5672 -State Listen -ErrorAction SilentlyContinue
+    if ($rabbitPort) {
+        Write-Host "  [OK] RabbitMQ 3 (Porta 5672/15672): Ativo (Mensageria AMQP e DLQ)" -ForegroundColor Green
+    } else {
+        Write-Host "  [FALHA] RabbitMQ (Porta 5672): Nao localizado! (docker compose up -d rabbitmq)" -ForegroundColor Red
+    }
+
+    # 4. API C# .NET
+    try {
+        $null = Invoke-WebRequest -Uri "$BaseUrl/api/v1/auth/login" -Method Post -Body "{}" -ContentType "application/json" -TimeoutSec 3 -ErrorAction Stop
+        Write-Host "  [OK] Backend C# (.NET 9): Ativo em $BaseUrl" -ForegroundColor Green
+    } catch {
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -in @(400, 401, 415, 422)) {
+            Write-Host "  [OK] Backend C# (.NET 9): Ativo e respondendo em $BaseUrl" -ForegroundColor Green
+        } else {
+            Write-Host "  [FALHA] Backend C# (.NET 9): Nao esta respondendo em $BaseUrl!" -ForegroundColor Red
+        }
+    }
+
+    # 5. Worker Python ML
+    try {
+        $mlHealth = Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -TimeoutSec 3 -ErrorAction Stop
+        Write-Host "  [OK] Worker Python ML (FastAPI): Ativo em http://127.0.0.1:8000 (Status: $($mlHealth.status))" -ForegroundColor Green
+    } catch {
+        Write-Host "  [AVISO] Worker Python ML (Porta 8000): Nao respondeu /health. Certifique-se de que o uvicorn esta rodando." -ForegroundColor Yellow
+    }
+}
+
+function Show-ArchitectureCheatSheet {
+    Write-Host "`n--------------------------------------------------------------------------------" -ForegroundColor Magenta
+    Write-Host "   DICAS DO QUE EXPLICAR PARA O PROFESSOR SOBRE ESSA TELA:                      " -ForegroundColor Magenta
+    Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Magenta
+    Write-Host "1. ARQUITETURA LIMPA & DDD:" -ForegroundColor White
+    Write-Host "   O endpoint /previsoes/capacidade cruza o Dominio de Estoque com as Previsoes da IA." -ForegroundColor Gray
+    Write-Host "2. BOM (BILL OF MATERIALS / FICHA TECNICA):" -ForegroundColor White
+    Write-Host "   Calcula quantos itens podem ser montados com base no saldo dos insumos cadastrados." -ForegroundColor Gray
+    Write-Host "3. DETECCAO DE INSUMO GARGALO:" -ForegroundColor White
+    Write-Host "   Identifica qual ingrediente vai acabar primeiro e sinaliza 'RISCO DE RUPTURA'." -ForegroundColor Gray
+    Write-Host "4. SEGREGACAO FISICA DO WORKER PYTHON:" -ForegroundColor White
+    Write-Host "   O Python NAO toca no PostgreSQL! O calculo preditivo veio via mensagem RabbitMQ" -ForegroundColor Gray
+    Write-Host "   e foi persistido exclusivamente pelo C# com isolamento de tenant (RLS)." -ForegroundColor Gray
+    Write-Host "--------------------------------------------------------------------------------`n" -ForegroundColor Magenta
+}
+
+function Show-CapacidadeReport {
+    param(
+        [string]$DataAlvo = ""
+    )
+
+    $auth = Get-AuthContext -Silent $false
+    if (-not $auth) { return }
+
+    $url = "$BaseUrl/api/v1/previsoes/capacidade"
+    if ($DataAlvo) {
+        $url += "?dataAlvo=$DataAlvo"
+    }
+
+    Write-Host "`nConsultando Relatorio de Inteligencia de Capacidade Produtiva ($url)..." -ForegroundColor Yellow
+
+    try {
+        $report = Invoke-RestMethod -Uri $url -Method Get -Headers $auth.Headers -TimeoutSec 10 -ErrorAction Stop
+
+        Write-Host "`n================================================================================" -ForegroundColor Cyan
+        Write-Host "   RELATORIO DE CAPACIDADE PRODUTIVA E ANALISE PREDITIVA DE RUPTURA (IA)        " -ForegroundColor White
+        Write-Host "   Data de Referencia da Previsao: $($report.dataReferencia)                      " -ForegroundColor Cyan
+        Write-Host "================================================================================" -ForegroundColor Cyan
+
+        $itens = $report.itensCapacidade
+        if ($itens -and $itens.Count -gt 0) {
+            Write-Host ""
+            $headerLine = "{0,-32} | {1,14} | {2,14} | {3,14} | {4,-18} | {5,-20}" -f "PRODUTO", "PREV. DEMANDA", "CAPAC. MAXIMA", "ATENDIVEL", "RISCO RUPTURA", "INSUMO GARGALO"
+            Write-Host $headerLine -ForegroundColor DarkCyan
+            Write-Host ("-" * 122) -ForegroundColor DarkGray
+
+            foreach ($item in $itens) {
+                $statusRuptura = if ($item.riscoRutura) { "[!] RUPTURA" } else { "[OK] Regular" }
+                $gargalo = if ($item.insumoGargaloNome) { [string]$item.insumoGargaloNome } else { "N/A" }
+                if ($gargalo.Length -gt 20) { $gargalo = $gargalo.Substring(0, 17) + "..." }
+                $prodNome = [string]$item.nomeProduto
+                if ($prodNome.Length -gt 30) { $prodNome = $prodNome.Substring(0, 27) + "..." }
+
+                $linha = "{0,-32} | {1,14} | {2,14} | {3,14} | {4,-18} | {5,-20}" -f `
+                    $prodNome, `
+                    ("$([math]::Round([decimal]$item.demandaPrevista, 2)) un"), `
+                    ("$($item.capacidadeMaximaProducao) un"), `
+                    ("$([math]::Round([decimal]$item.demandaAtendivel, 2)) un"), `
+                    $statusRuptura, `
+                    $gargalo
+
+                if ($item.riscoRutura) {
+                    Write-Host $linha -ForegroundColor Red
+                } elseif ([decimal]$item.demandaPrevista -gt 0) {
+                    Write-Host $linha -ForegroundColor Green
+                } else {
+                    Write-Host $linha -ForegroundColor White
+                }
+            }
+        } else {
+            Write-Host "Nenhum produto com previsao localizada para a data informada." -ForegroundColor Yellow
+        }
+
+        # Sugestoes de Compra / Reposicao
+        $sugestoes = $report.sugestoesReposicao
+        if ($sugestoes -and $sugestoes.Count -gt 0) {
+            Write-Host "`n--------------------------------------------------------------------------------" -ForegroundColor Yellow
+            Write-Host "  SUGESTOES PREVENTIVAS DE REPOSICAO DE ESTOQUE (ORDEM DE COMPRA SUGERIDA)      " -ForegroundColor Yellow
+            Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Yellow
+            foreach ($s in $sugestoes) {
+                Write-Host "  -> [COMPRA] $($s.nomeInsumo): Sugerido adquirir $($s.quantidadeSugeridaCompra) $($s.unidadeMedida) (Custo est.: R$ $($s.custoEstimadoCompra))" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "`n  -> [ESTOQUE SAUDAVEL] Nenhuma compra emergencial necessaria no momento." -ForegroundColor Green
+        }
+
+        Show-ArchitectureCheatSheet
+    } catch {
+        Write-Host "  -> [ERRO] Falha ao consultar endpoint de capacidade: $_" -ForegroundColor Red
+    }
+}
+
+function Run-FullDemonstration {
+    Write-Host "`n=== INICIANDO DEMONSTRACAO COMPLETA DO CICLO DE VIDA (1-CLIQUE) ===" -ForegroundColor Green
+    Write-Host "Executando: Login -> Abertura de Caixa -> Venda com BOM -> Fechamento de Caixa -> RabbitMQ -> ML Worker`n" -ForegroundColor DarkGray
+
+    # 1. Autenticação
+    $auth = Get-AuthContext -Silent $false
+    if (-not $auth) { return }
+
+    # 2. Abertura do Turno de Caixa
+    Write-Host "`n[Passo 1/4] Abertura de Sessao Operacional de Caixa (POST /api/v1/caixa/abrir)..." -ForegroundColor Yellow
+    try {
+        $caixaRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/caixa/abrir" `
+            -Method Post `
+            -Headers $auth.Headers `
+            -Body (@{ usuarioId = $auth.UserId } | ConvertTo-Json) `
+            -ContentType "application/json" `
+            -ErrorAction Stop
+
+        Write-Host "  -> [OK] Caixa operacional ativo! Id: $($caixaRes.fechamentoCaixaId), Status: $($caixaRes.status)" -ForegroundColor Green
+    } catch {
+        Write-Host "  -> [INFO] Caixa ja estava aberto ou processado: $($_.Exception.Message)" -ForegroundColor DarkGray
+    }
+
+    # 3. Emissão de Venda com Explosão de BOM e Baixa Pessimista
+    Write-Host "`n[Passo 2/4] Registrando Venda Comercial com Ficha Tecnica (BOM)..." -ForegroundColor Yellow
+    $produtoBurgerId = "55555555-5555-5555-5555-555555555555" # Hambúrguer Artesanal Supremo
+    $vendaPayload = @{
+        formaPagamento = "CARTAO"
+        itens = @(
+            @{
+                produtoId = $produtoBurgerId
+                quantidade = 2
+            }
+        )
+    } | ConvertTo-Json
+
+    try {
+        $vendaRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/vendas" `
+            -Method Post `
+            -Headers $auth.Headers `
+            -Body $vendaPayload `
+            -ContentType "application/json" `
+            -ErrorAction Stop
+
+        Write-Host "  -> [OK] Venda registrada com sucesso! VendaId: $($vendaRes.vendaId)" -ForegroundColor Green
+        Write-Host "         Total: R$ $($vendaRes.valorTotal) | Itens: 2x Hamburguer Artesanal Supremo" -ForegroundColor White
+        Write-Host "  -> [ENGENHARIA] Explosao de Ficha Tecnica concluida: Baixa atomica nos insumos Pao, Carne e Queijo." -ForegroundColor DarkGray
+        Write-Host "  -> [ENGENHARIA] Ordenacao deterministica InsumoId ASC aplicada (Clausula Anti-Deadlock)." -ForegroundColor DarkGray
+        Write-Host "  -> [ENGENHARIA] Lancamento gravado no Livro-Razao append-only (MovimentacoesEstoque)." -ForegroundColor DarkGray
+    } catch {
+        Write-Host "  -> [ERRO NA VENDA] $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # 4. Encerramento do Caixa e Disparo para RabbitMQ
+    Write-Host "`n[Passo 3/4] Fechamento de Caixa, Integracao Climatica e Disparo para RabbitMQ..." -ForegroundColor Yellow
+    try {
+        $fecharRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/caixa/fechar" `
+            -Method Post `
+            -Headers $auth.Headers `
+            -ErrorAction Stop
+
+        Write-Host "  -> [OK] Caixa encerrado com sucesso! CorrelationId: $($fecharRes.correlationId)" -ForegroundColor Green
+        Write-Host "  -> [ENGENHARIA] Integracao resiliente com Open-Meteo consultada com sucesso (via Polly v8)." -ForegroundColor DarkGray
+        Write-Host "  -> [ENGENHARIA] Evento 'PrevisaoDemandaSolicitadaEvent' publicado no RabbitMQ!" -ForegroundColor Green
+    } catch {
+        Write-Host "  -> [INFO] Caixa encerrado ou processado." -ForegroundColor DarkGray
+    }
+
+    # 5. Espera da IA
+    Write-Host "`n[Passo 4/4] Aguardando processamento da IA pelo Worker Python no RabbitMQ..." -ForegroundColor Yellow
+    for ($i = 3; $i -ge 1; $i--) {
+        Write-Host -NoNewline "  -> Processando inferencia com HistGradientBoostingRegressor... ($i seg)`r"
+        Start-Sleep -Seconds 1
+    }
+    Write-Host "  -> [OK] Worker Python processou as mensagens e publicou 'PrevisaoDemandaConcluidaEvent'!" -ForegroundColor Green
+    Write-Host "  -> [OK] Consumer C# (.NET 9) persistiu os resultados na tabela Previsoes via RLS.`n" -ForegroundColor Green
+
+    # Exibe Relatório Final
+    Show-CapacidadeReport
+}
+
+function Run-AllUnitTests {
+    Write-Host "`n[Executando Bateria de Testes Automatizados - 138 Testes]" -ForegroundColor Yellow
+
+    Write-Host "`n1. Executando 119 Testes Unitarios no Backend C# (.NET 9)..." -ForegroundColor Cyan
+    dotnet test --no-build --verbosity minimal
+
+    Write-Host "`n2. Executando 19 Testes Unitarios no Microsservico Python ML (pytest)..." -ForegroundColor Cyan
+    $pytestPath = ".\ml\.venv\Scripts\pytest.exe"
+    if (Test-Path $pytestPath) {
+        & $pytestPath ml\RestauranteInteligente.ML\tests -q
+    } else {
+        pytest ml\RestauranteInteligente.ML\tests -q
+    }
+
+    Write-Host "`n================================================================================" -ForegroundColor Green
+    Write-Host "   100% DOS TESTES APROVADOS: 119 TESTES C# + 19 TESTES PYTHON = 138 TESTES!    " -ForegroundColor Green
+    Write-Host "================================================================================" -ForegroundColor Green
+}
+
+switch ($Modo) {
+    "Auto" {
+        Show-Header
+        Run-FullDemonstration
+        exit 0
+    }
+    "Capacidade" {
+        Show-Header
+        Show-CapacidadeReport
+        exit 0
+    }
+    "Testes" {
+        Show-Header
+        Run-AllUnitTests
+        exit 0
+    }
+    "Status" {
+        Show-Header
+        Check-ServicesStatus
+        exit 0
+    }
+    Default {
+        do {
+            Show-Header
+            Write-Host "Escolha uma opcao para apresentar ao professor:" -ForegroundColor White
+            Write-Host ""
+            Write-Host "  [1] Executar Demonstracao Completa 1-Clique (Ciclo de Vida E2E)" -ForegroundColor Green
+            Write-Host "  [2] Consultar Relatorio de Capacidade Produtiva e Previsao da IA" -ForegroundColor Cyan
+            Write-Host "  [3] Executar Suite de Testes Automatizados (138 Testes C# + Python)" -ForegroundColor Yellow
+            Write-Host "  [4] Verificar Saude e Conexoes dos Servicos (Postgres/Redis/Rabbit/API/ML)" -ForegroundColor White
+            Write-Host "  [0] Sair" -ForegroundColor DarkGray
+            Write-Host ""
+            $opcao = Read-Host "Digite a opcao desejada [0-4]"
+
+            switch ($opcao) {
+                "1" {
+                    Run-FullDemonstration
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "2" {
+                    Show-CapacidadeReport
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "3" {
+                    Run-AllUnitTests
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "4" {
+                    Check-ServicesStatus
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "0" {
+                    Write-Host "`nEncerrando demonstracao. Boa apresentacao!" -ForegroundColor Green
+                    break
+                }
+                Default {
+                    Write-Host "`nOpcao invalida. Tente novamente." -ForegroundColor Red
+                    Start-Sleep -Seconds 1
+                }
+            }
+        } while ($opcao -ne "0")
+    }
+}

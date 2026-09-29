@@ -12,6 +12,19 @@ try
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
 
+    // Configuração de CORS: Permite conexões do Expo Web (localhost) e clientes web com suporte a credenciais e cabeçalhos customizados
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.SetIsOriginAllowed(_ => true)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials()
+                  .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After");
+        });
+    });
+
     // Camada de Aplicação: Contexto de Tenant escopado e Use Cases
     builder.Services.AddScoped<ITenantContext, TenantContext>();
     builder.Services.AddApplicationServices();
@@ -31,6 +44,9 @@ try
 
     app.UseHttpsRedirection();
 
+    // CORS deve ser avaliado antes de Authentication e middlewares de segurança/tenant
+    app.UseCors();
+
     // 1. Autenticação JWT (Valida assinatura e checa Blacklist no Redis)
     app.UseAuthentication();
 
@@ -42,6 +58,10 @@ try
 
     // 4. Rate Limiting Distribuído (Sliding Window via Script Lua no Redis)
     app.UseMiddleware<RateLimitingMiddleware>();
+
+    // Endpoint de Health Check leve para sondagem de conectividade do frontend e orquestradores
+    app.MapGet("/api/v1/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
+       .AllowAnonymous();
 
     app.MapControllers();
 

@@ -7,10 +7,11 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { InsumoEstoque, EntradaEstoqueInput } from '../types';
 import { InsumoSelectorScroll } from './InsumoSelectorScroll';
 import { ModalAuditCallout } from './ModalAuditCallout';
@@ -32,6 +33,7 @@ export function ModalEntradaEstoque({
   onConfirmar,
   isEnviando = false,
 }: ModalEntradaEstoqueProps) {
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   const [insumoSelecionadoId, setInsumoSelecionadoId] = useState<string>('');
   const [quantidadeTexto, setQuantidadeTexto] = useState<string>('');
   const [custoTexto, setCustoTexto] = useState<string>('');
@@ -64,12 +66,12 @@ export function ModalEntradaEstoque({
   const handleConfirmar = async () => {
     const qtd = parseFloat(quantidadeTexto.replace(',', '.'));
     if (isNaN(qtd) || qtd <= 0) {
-      Alert.alert('Valor Inválido', 'Informe uma quantidade válida e positiva.');
+      AppDialog.warning('Valor Inválido', 'Informe uma quantidade válida e positiva.');
       return;
     }
 
     if (!insumoSelecionadoId) {
-      Alert.alert('Seleção Obrigatória', 'Selecione o insumo para registro de entrada.');
+      AppDialog.warning('Seleção Obrigatória', 'Selecione o insumo para registro de entrada.');
       return;
     }
 
@@ -180,14 +182,14 @@ export function ModalEntradaEstoque({
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleConfirmar}
-              disabled={isEnviando}
-              style={[styles.confirmarButton, isEnviando && styles.buttonDisabled]}
+              disabled={isEnviando || !isApiOnline}
+              style={[styles.confirmarButton, (isEnviando || !isApiOnline) && styles.buttonDisabled]}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
                 <ThemedText variant="body" style={styles.confirmarText}>
-                  Confirmar Entrada
+                  {!isApiOnline ? 'Servidor Offline' : 'Confirmar Entrada'}
                 </ThemedText>
               )}
             </TouchableOpacity>

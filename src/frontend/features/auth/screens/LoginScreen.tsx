@@ -4,10 +4,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useLoginMutation } from '../hooks/useLoginMutation';
 import { authService, TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
@@ -44,16 +44,16 @@ export function LoginScreen() {
 
   const handleIniciarTurno = () => {
     if (!identificador.trim()) {
-      Alert.alert('Campo Obrigatório', 'Informe seu e-mail ou matrícula de operador.');
+      AppDialog.warning('Campo Obrigatório', 'Informe seu e-mail ou matrícula de operador.');
       return;
     }
 
     if (!palavraPasse.trim()) {
-      Alert.alert('Campo Obrigatório', 'Informe sua senha de acesso ou PIN de 6 dígitos.');
+      AppDialog.warning('Campo Obrigatório', 'Informe sua senha de acesso ou PIN de 6 dígitos.');
       return;
     }
 
-    const tenantId = currentTenant?.id || tenants[0]?.id;
+    const tenantId = currentTenant?.id || tenants[0]?.id || '99999999-9999-9999-9999-999999999999';
 
     loginMutation.mutate(
       {
@@ -63,7 +63,7 @@ export function LoginScreen() {
       },
       {
         onError: (err) => {
-          Alert.alert('Falha na Autenticação', err.message || 'Credenciais inválidas.');
+          AppDialog.error('Falha na Autenticação', err.message || 'Credenciais inválidas.');
         },
       }
     );

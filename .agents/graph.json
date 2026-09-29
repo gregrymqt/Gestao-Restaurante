@@ -1,0 +1,2008 @@
+{
+  "metadata": {
+    "system": "Restaurante Inteligente",
+    "generator": "generate_knowledge_graph.py",
+    "node_count": 91,
+    "edge_count": 136
+  },
+  "nodes": [
+    {
+      "id": "table:Restaurantes",
+      "type": "DatabaseTable",
+      "label": "Restaurantes",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": false,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Usuarios",
+      "type": "DatabaseTable",
+      "label": "Usuarios",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Produtos",
+      "type": "DatabaseTable",
+      "label": "Produtos",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Insumos",
+      "type": "DatabaseTable",
+      "label": "Insumos",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:ProdutosInsumos",
+      "type": "DatabaseTable",
+      "label": "ProdutosInsumos",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:FechamentosCaixa",
+      "type": "DatabaseTable",
+      "label": "FechamentosCaixa",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Vendas",
+      "type": "DatabaseTable",
+      "label": "Vendas",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:ItensVenda",
+      "type": "DatabaseTable",
+      "label": "ItensVenda",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:MovimentacoesEstoque",
+      "type": "DatabaseTable",
+      "label": "MovimentacoesEstoque",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": true,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:DadosClimaticos",
+      "type": "DatabaseTable",
+      "label": "DadosClimaticos",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Previsoes",
+      "type": "DatabaseTable",
+      "label": "Previsoes",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "policy:restaurante_usuarios_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_usuarios_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Usuarios",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_produtos_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_produtos_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Produtos",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_insumos_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_insumos_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Insumos",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_fechamentos_caixa_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_fechamentos_caixa_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "FechamentosCaixa",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_vendas_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_vendas_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Vendas",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_movimentacoes_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_movimentacoes_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "MovimentacoesEstoque",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_dados_climaticos_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_dados_climaticos_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "DadosClimaticos",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_previsoes_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_previsoes_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Previsoes",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_produtos_insumos_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_produtos_insumos_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "ProdutosInsumos",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_itens_venda_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_itens_venda_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "ItensVenda",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "interceptor:PostgresRlsTransactionInterceptor",
+      "type": "SecurityPolicy",
+      "label": "PostgresRlsTransactionInterceptor",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Interceptors/PostgresRlsTransactionInterceptor.cs",
+      "metadata": {
+        "scope": "C# EF Core Connection Interceptor",
+        "command": "SET LOCAL app.current_restaurante_id"
+      }
+    },
+    {
+      "id": "queue:previsao.demanda.solicitada",
+      "type": "MessageQueue",
+      "label": "previsao.demanda.solicitada",
+      "file": "",
+      "metadata": {
+        "exchange": "previsao.demanda.solicitada",
+        "type": "fanout"
+      }
+    },
+    {
+      "id": "queue:previsao.demanda.concluida",
+      "type": "MessageQueue",
+      "label": "previsao.demanda.concluida",
+      "file": "",
+      "metadata": {
+        "exchange": "previsao.demanda.concluida",
+        "type": "fanout"
+      }
+    },
+    {
+      "id": "queue:dlq.previsao.demanda.solicitada",
+      "type": "MessageQueue",
+      "label": "dlq.previsao.demanda.solicitada",
+      "file": "",
+      "metadata": {
+        "dlx": "dlx.restaurante",
+        "type": "direct"
+      }
+    },
+    {
+      "id": "repo:DadosClimaticosRepository",
+      "type": "CoreRepository",
+      "label": "DadosClimaticosRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/DadosClimaticosRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:FechamentoCaixaRepository",
+      "type": "CoreRepository",
+      "label": "FechamentoCaixaRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/FechamentoCaixaRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:InsumoRepository",
+      "type": "CoreRepository",
+      "label": "InsumoRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/InsumoRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:PrevisaoRepository",
+      "type": "CoreRepository",
+      "label": "PrevisaoRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/PrevisaoRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:ProdutoRepository",
+      "type": "CoreRepository",
+      "label": "ProdutoRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/ProdutoRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:RestauranteRepository",
+      "type": "CoreRepository",
+      "label": "RestauranteRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/RestauranteRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:VendaRepository",
+      "type": "CoreRepository",
+      "label": "VendaRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/VendaRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "redis_service:RedisCacheService",
+      "type": "RedisService",
+      "label": "RedisCacheService",
+      "file": "src/RestauranteInteligente.Infrastructure/Redis/RedisCacheService.cs",
+      "metadata": {
+        "provider": "StackExchange.Redis"
+      }
+    },
+    {
+      "id": "redis_service:RedisDistributedLockService",
+      "type": "RedisService",
+      "label": "RedisDistributedLockService",
+      "file": "src/RestauranteInteligente.Infrastructure/Redis/RedisDistributedLockService.cs",
+      "metadata": {
+        "provider": "StackExchange.Redis"
+      }
+    },
+    {
+      "id": "redis_service:RedisIdempotencyService",
+      "type": "RedisService",
+      "label": "RedisIdempotencyService",
+      "file": "src/RestauranteInteligente.Infrastructure/Redis/RedisIdempotencyService.cs",
+      "metadata": {
+        "provider": "StackExchange.Redis"
+      }
+    },
+    {
+      "id": "redis_service:RedisStreamService",
+      "type": "RedisService",
+      "label": "RedisStreamService",
+      "file": "src/RestauranteInteligente.Infrastructure/Redis/RedisStreamService.cs",
+      "metadata": {
+        "provider": "StackExchange.Redis"
+      }
+    },
+    {
+      "id": "usecase:RegistrarVendaUseCase",
+      "type": "UseCase",
+      "label": "RegistrarVendaUseCase",
+      "file": "src/RestauranteInteligente.Application/Vendas/UseCases/RegistrarVendaUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:CalcularCapacidadeProducaoUseCase",
+      "type": "UseCase",
+      "label": "CalcularCapacidadeProducaoUseCase",
+      "file": "src/RestauranteInteligente.Application/Previsoes/UseCases/CalcularCapacidadeProducaoUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:BaixaEstoqueService",
+      "type": "UseCase",
+      "label": "BaixaEstoqueService",
+      "file": "src/RestauranteInteligente.Application/Estoque/Services/BaixaEstoqueService.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:AbrirCaixaUseCase",
+      "type": "UseCase",
+      "label": "AbrirCaixaUseCase",
+      "file": "src/RestauranteInteligente.Application/Caixa/UseCases/AbrirCaixaUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:FecharCaixaUseCase",
+      "type": "UseCase",
+      "label": "FecharCaixaUseCase",
+      "file": "src/RestauranteInteligente.Application/Caixa/UseCases/FecharCaixaUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "consumer:PrevisaoDemandaConcluidaConsumer",
+      "type": "MassTransitConsumer",
+      "label": "PrevisaoDemandaConcluidaConsumer",
+      "file": "src/RestauranteInteligente.Infrastructure/Messaging/Consumers/PrevisaoDemandaConcluidaConsumer.cs",
+      "metadata": {
+        "framework": "MassTransit Raw AMQP"
+      }
+    },
+    {
+      "id": "controller:AuthController",
+      "type": "ApiController",
+      "label": "AuthController",
+      "file": "src/RestauranteInteligente.Api/Controllers/AuthController.cs",
+      "metadata": {
+        "base_route": "/api/v1/auth",
+        "endpoints": [
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/auth/login",
+            "normalized_route": "/api/v1/auth/login",
+            "action": "Login",
+            "controller": "AuthController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/auth/refresh",
+            "normalized_route": "/api/v1/auth/refresh",
+            "action": "Refresh",
+            "controller": "AuthController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/auth/logout",
+            "normalized_route": "/api/v1/auth/logout",
+            "action": "Logout",
+            "controller": "AuthController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:EstoqueController",
+      "type": "ApiController",
+      "label": "EstoqueController",
+      "file": "src/RestauranteInteligente.Api/Controllers/EstoqueController.cs",
+      "metadata": {
+        "base_route": "/api/v1/estoque",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/estoque/insumos",
+            "normalized_route": "/api/v1/estoque/insumos",
+            "action": "ObterInsumos",
+            "controller": "EstoqueController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/estoque/insumos",
+            "normalized_route": "/api/v1/estoque/insumos",
+            "action": "CadastrarInsumo",
+            "controller": "EstoqueController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/estoque/entrada",
+            "normalized_route": "/api/v1/estoque/entrada",
+            "action": "RegistrarEntrada",
+            "controller": "EstoqueController"
+          },
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/estoque/fichas-tecnicas",
+            "normalized_route": "/api/v1/estoque/fichas-tecnicas",
+            "action": "ObterFichasTecnicas",
+            "controller": "EstoqueController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/estoque/baixa",
+            "normalized_route": "/api/v1/estoque/baixa",
+            "action": "BaixarEstoque",
+            "controller": "EstoqueController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:EventsController",
+      "type": "ApiController",
+      "label": "EventsController",
+      "file": "src/RestauranteInteligente.Api/Controllers/EventsController.cs",
+      "metadata": {
+        "base_route": "/api/v1/events",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/events/stream",
+            "normalized_route": "/api/v1/events/stream",
+            "action": "StreamEventsAsync",
+            "controller": "EventsController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/events/publish",
+            "normalized_route": "/api/v1/events/publish",
+            "action": "PublishEventAsync",
+            "controller": "EventsController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:FechamentosController",
+      "type": "ApiController",
+      "label": "FechamentosController",
+      "file": "src/RestauranteInteligente.Api/Controllers/FechamentosController.cs",
+      "metadata": {
+        "base_route": "/api/v1/caixa",
+        "endpoints": [
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/caixa/abrir",
+            "normalized_route": "/api/v1/caixa/abrir",
+            "action": "AbrirCaixa",
+            "controller": "FechamentosController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/caixa/fechar",
+            "normalized_route": "/api/v1/caixa/fechar",
+            "action": "FecharCaixa",
+            "controller": "FechamentosController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:PrevisoesController",
+      "type": "ApiController",
+      "label": "PrevisoesController",
+      "file": "src/RestauranteInteligente.Api/Controllers/PrevisoesController.cs",
+      "metadata": {
+        "base_route": "/api/v1/previsoes",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/previsoes/capacidade",
+            "normalized_route": "/api/v1/previsoes/capacidade",
+            "action": "ObterCapacidadeProducao",
+            "controller": "PrevisoesController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:ProdutosController",
+      "type": "ApiController",
+      "label": "ProdutosController",
+      "file": "src/RestauranteInteligente.Api/Controllers/ProdutosController.cs",
+      "metadata": {
+        "base_route": "/api/v1/produtos",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/produtos",
+            "normalized_route": "/api/v1/produtos",
+            "action": "ListarProdutos",
+            "controller": "ProdutosController"
+          },
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/produtos/{id:guid}",
+            "normalized_route": "/api/v1/produtos/:id",
+            "action": "ObterPorId",
+            "controller": "ProdutosController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/produtos",
+            "normalized_route": "/api/v1/produtos",
+            "action": "CriarProduto",
+            "controller": "ProdutosController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "controller:VendasController",
+      "type": "ApiController",
+      "label": "VendasController",
+      "file": "src/RestauranteInteligente.Api/Controllers/VendasController.cs",
+      "metadata": {
+        "base_route": "/api/v1/vendas",
+        "endpoints": [
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/vendas",
+            "normalized_route": "/api/v1/vendas",
+            "action": "RegistrarVenda",
+            "controller": "VendasController"
+          }
+        ],
+        "layer": "Api"
+      }
+    },
+    {
+      "id": "fastapi:ml_service",
+      "type": "FastAPIService",
+      "label": "RestauranteInteligente.ML",
+      "file": "ml/RestauranteInteligente.ML/app/main.py",
+      "metadata": {
+        "endpoints": [
+          {
+            "verb": "GET",
+            "route": "/health",
+            "purpose": "Liveness/Readiness"
+          }
+        ],
+        "port": 8000
+      }
+    },
+    {
+      "id": "worker:RabbitConsumer",
+      "type": "PythonWorker",
+      "label": "RabbitConsumer",
+      "file": "ml/RestauranteInteligente.ML/app/services/rabbit_consumer.py",
+      "metadata": {
+        "client": "aio-pika",
+        "manual_ack": true,
+        "sql_free": true
+      }
+    },
+    {
+      "id": "service:MLPredictionService",
+      "type": "MLPipeline",
+      "label": "MLPredictionService",
+      "file": "ml/RestauranteInteligente.ML/app/services/ml_service.py",
+      "metadata": {
+        "algorithm": "HistGradientBoostingRegressor",
+        "feature_engineering": [
+          "day_of_week",
+          "month",
+          "lag_1",
+          "rolling_mean_7"
+        ]
+      }
+    },
+    {
+      "id": "feature:auth",
+      "type": "FrontendFeature",
+      "label": "auth",
+      "file": "src/frontend/features/auth/index.ts",
+      "metadata": {
+        "bounded_context": "auth"
+      }
+    },
+    {
+      "id": "hook:useAuthStore",
+      "type": "FrontendHook",
+      "label": "useAuthStore",
+      "file": "src/frontend/features/auth/hooks/useAuthStore.ts",
+      "metadata": {
+        "feature": "auth"
+      }
+    },
+    {
+      "id": "hook:useLoginMutation",
+      "type": "FrontendHook",
+      "label": "useLoginMutation",
+      "file": "src/frontend/features/auth/hooks/useLoginMutation.ts",
+      "metadata": {
+        "feature": "auth"
+      }
+    },
+    {
+      "id": "frontend_service:authService",
+      "type": "FrontendService",
+      "label": "authService",
+      "file": "src/frontend/features/auth/services/authService.ts",
+      "metadata": {
+        "feature": "auth"
+      }
+    },
+    {
+      "id": "feature:caixa",
+      "type": "FrontendFeature",
+      "label": "caixa",
+      "file": "src/frontend/features/caixa/index.ts",
+      "metadata": {
+        "bounded_context": "caixa"
+      }
+    },
+    {
+      "id": "hook:useCaixaAtual",
+      "type": "FrontendHook",
+      "label": "useCaixaAtual",
+      "file": "src/frontend/features/caixa/hooks/useCaixaAtual.ts",
+      "metadata": {
+        "feature": "caixa"
+      }
+    },
+    {
+      "id": "hook:useFecharCaixa",
+      "type": "FrontendHook",
+      "label": "useFecharCaixa",
+      "file": "src/frontend/features/caixa/hooks/useFecharCaixa.ts",
+      "metadata": {
+        "feature": "caixa"
+      }
+    },
+    {
+      "id": "frontend_service:caixaService",
+      "type": "FrontendService",
+      "label": "caixaService",
+      "file": "src/frontend/features/caixa/services/caixaService.ts",
+      "metadata": {
+        "feature": "caixa"
+      }
+    },
+    {
+      "id": "feature:estoque",
+      "type": "FrontendFeature",
+      "label": "estoque",
+      "file": "src/frontend/features/estoque/index.ts",
+      "metadata": {
+        "bounded_context": "estoque"
+      }
+    },
+    {
+      "id": "hook:useCadastrarInsumo",
+      "type": "FrontendHook",
+      "label": "useCadastrarInsumo",
+      "file": "src/frontend/features/estoque/hooks/useCadastrarInsumo.ts",
+      "metadata": {
+        "feature": "estoque"
+      }
+    },
+    {
+      "id": "hook:useInsumosEstoque",
+      "type": "FrontendHook",
+      "label": "useInsumosEstoque",
+      "file": "src/frontend/features/estoque/hooks/useInsumosEstoque.ts",
+      "metadata": {
+        "feature": "estoque"
+      }
+    },
+    {
+      "id": "hook:useRegistrarEntradaEstoque",
+      "type": "FrontendHook",
+      "label": "useRegistrarEntradaEstoque",
+      "file": "src/frontend/features/estoque/hooks/useRegistrarEntradaEstoque.ts",
+      "metadata": {
+        "feature": "estoque"
+      }
+    },
+    {
+      "id": "frontend_service:estoqueService",
+      "type": "FrontendService",
+      "label": "estoqueService",
+      "file": "src/frontend/features/estoque/services/estoqueService.ts",
+      "metadata": {
+        "feature": "estoque"
+      }
+    },
+    {
+      "id": "feature:perfil",
+      "type": "FrontendFeature",
+      "label": "perfil",
+      "file": "src/frontend/features/perfil/index.ts",
+      "metadata": {
+        "bounded_context": "perfil"
+      }
+    },
+    {
+      "id": "hook:usePerfil",
+      "type": "FrontendHook",
+      "label": "usePerfil",
+      "file": "src/frontend/features/perfil/hooks/usePerfil.ts",
+      "metadata": {
+        "feature": "perfil"
+      }
+    },
+    {
+      "id": "frontend_service:perfilService",
+      "type": "FrontendService",
+      "label": "perfilService",
+      "file": "src/frontend/features/perfil/services/perfilService.ts",
+      "metadata": {
+        "feature": "perfil"
+      }
+    },
+    {
+      "id": "feature:previsoes",
+      "type": "FrontendFeature",
+      "label": "previsoes",
+      "file": "src/frontend/features/previsoes/index.ts",
+      "metadata": {
+        "bounded_context": "previsoes"
+      }
+    },
+    {
+      "id": "hook:useCapacidadeProducao",
+      "type": "FrontendHook",
+      "label": "useCapacidadeProducao",
+      "file": "src/frontend/features/previsoes/hooks/useCapacidadeProducao.ts",
+      "metadata": {
+        "feature": "previsoes"
+      }
+    },
+    {
+      "id": "frontend_service:previsoesService",
+      "type": "FrontendService",
+      "label": "previsoesService",
+      "file": "src/frontend/features/previsoes/services/previsoesService.ts",
+      "metadata": {
+        "feature": "previsoes"
+      }
+    },
+    {
+      "id": "feature:vendas",
+      "type": "FrontendFeature",
+      "label": "vendas",
+      "file": "src/frontend/features/vendas/index.ts",
+      "metadata": {
+        "bounded_context": "vendas"
+      }
+    },
+    {
+      "id": "hook:useCarrinho",
+      "type": "FrontendHook",
+      "label": "useCarrinho",
+      "file": "src/frontend/features/vendas/hooks/useCarrinho.ts",
+      "metadata": {
+        "feature": "vendas"
+      }
+    },
+    {
+      "id": "hook:useCatalogoProdutos",
+      "type": "FrontendHook",
+      "label": "useCatalogoProdutos",
+      "file": "src/frontend/features/vendas/hooks/useCatalogoProdutos.ts",
+      "metadata": {
+        "feature": "vendas"
+      }
+    },
+    {
+      "id": "hook:useCriarProduto",
+      "type": "FrontendHook",
+      "label": "useCriarProduto",
+      "file": "src/frontend/features/vendas/hooks/useCriarProduto.ts",
+      "metadata": {
+        "feature": "vendas"
+      }
+    },
+    {
+      "id": "hook:useRegistrarVenda",
+      "type": "FrontendHook",
+      "label": "useRegistrarVenda",
+      "file": "src/frontend/features/vendas/hooks/useRegistrarVenda.ts",
+      "metadata": {
+        "feature": "vendas"
+      }
+    },
+    {
+      "id": "frontend_service:vendasService",
+      "type": "FrontendService",
+      "label": "vendasService",
+      "file": "src/frontend/features/vendas/services/vendasService.ts",
+      "metadata": {
+        "feature": "vendas"
+      }
+    },
+    {
+      "id": "hook:useRealtimeEvents",
+      "type": "FrontendHook",
+      "label": "useRealtimeEvents",
+      "file": "src/frontend/shared/hooks/useRealtimeEvents.ts",
+      "metadata": {
+        "type": "SSE Subscriber"
+      }
+    },
+    {
+      "id": "frontend_service:storage",
+      "type": "FrontendService",
+      "label": "storage (MMKV)",
+      "file": "src/frontend/shared/services/storage.ts",
+      "metadata": {
+        "provider": "react-native-mmkv",
+        "fast_kv": true
+      }
+    },
+    {
+      "id": "page:index.tsx",
+      "type": "FrontendPage",
+      "label": "index.tsx",
+      "file": "src/frontend/app/index.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(auth)/login.tsx",
+      "type": "FrontendPage",
+      "label": "(auth)/login.tsx",
+      "file": "src/frontend/app/(auth)/login.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(tabs)/caixa.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/caixa.tsx",
+      "file": "src/frontend/app/(tabs)/caixa.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(tabs)/estoque.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/estoque.tsx",
+      "file": "src/frontend/app/(tabs)/estoque.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(tabs)/index.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/index.tsx",
+      "file": "src/frontend/app/(tabs)/index.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(tabs)/perfil.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/perfil.tsx",
+      "file": "src/frontend/app/(tabs)/perfil.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "page:(tabs)/previsoes.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/previsoes.tsx",
+      "file": "src/frontend/app/(tabs)/previsoes.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
+      "id": "container:postgres",
+      "type": "DockerContainer",
+      "label": "postgres",
+      "file": "docker-compose.yml",
+      "metadata": {
+        "orchestration": "docker-compose"
+      }
+    },
+    {
+      "id": "container:redis",
+      "type": "DockerContainer",
+      "label": "redis",
+      "file": "docker-compose.yml",
+      "metadata": {
+        "orchestration": "docker-compose"
+      }
+    },
+    {
+      "id": "container:rabbitmq",
+      "type": "DockerContainer",
+      "label": "rabbitmq",
+      "file": "docker-compose.yml",
+      "metadata": {
+        "orchestration": "docker-compose"
+      }
+    },
+    {
+      "id": "container:webapi",
+      "type": "DockerContainer",
+      "label": "webapi",
+      "file": "docker-compose.yml",
+      "metadata": {
+        "orchestration": "docker-compose"
+      }
+    },
+    {
+      "id": "container:ml-worker",
+      "type": "DockerContainer",
+      "label": "ml-worker",
+      "file": "docker-compose.yml",
+      "metadata": {
+        "orchestration": "docker-compose"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "consumer:PrevisaoDemandaConcluidaConsumer",
+      "target": "queue:previsao.demanda.concluida",
+      "relationship": "consumes_from",
+      "metadata": {}
+    },
+    {
+      "source": "consumer:PrevisaoDemandaConcluidaConsumer",
+      "target": "repo:PrevisaoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "consumer:PrevisaoDemandaConcluidaConsumer",
+      "target": "table:Previsoes",
+      "relationship": "writes_to",
+      "metadata": {
+        "operation": "Upsert Forecast"
+      }
+    },
+    {
+      "source": "container:ml-worker",
+      "target": "container:rabbitmq",
+      "relationship": "references",
+      "metadata": {
+        "type": "depends_on"
+      }
+    },
+    {
+      "source": "container:ml-worker",
+      "target": "container:redis",
+      "relationship": "references",
+      "metadata": {
+        "type": "depends_on"
+      }
+    },
+    {
+      "source": "container:webapi",
+      "target": "container:postgres",
+      "relationship": "references",
+      "metadata": {
+        "type": "depends_on"
+      }
+    },
+    {
+      "source": "container:webapi",
+      "target": "container:rabbitmq",
+      "relationship": "references",
+      "metadata": {
+        "type": "depends_on"
+      }
+    },
+    {
+      "source": "container:webapi",
+      "target": "container:redis",
+      "relationship": "references",
+      "metadata": {
+        "type": "depends_on"
+      }
+    },
+    {
+      "source": "controller:EstoqueController",
+      "target": "usecase:BaixaEstoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:FechamentosController",
+      "target": "usecase:AbrirCaixaUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:FechamentosController",
+      "target": "usecase:FecharCaixaUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:PrevisoesController",
+      "target": "usecase:CalcularCapacidadeProducaoUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:VendasController",
+      "target": "usecase:RegistrarVendaUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:auth",
+      "target": "frontend_service:authService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:auth",
+      "target": "hook:useAuthStore",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:auth",
+      "target": "hook:useLoginMutation",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:caixa",
+      "target": "frontend_service:caixaService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:caixa",
+      "target": "hook:useCaixaAtual",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:caixa",
+      "target": "hook:useFecharCaixa",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:estoque",
+      "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:estoque",
+      "target": "hook:useCadastrarInsumo",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:estoque",
+      "target": "hook:useInsumosEstoque",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:estoque",
+      "target": "hook:useRegistrarEntradaEstoque",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:perfil",
+      "target": "frontend_service:perfilService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:perfil",
+      "target": "hook:usePerfil",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:previsoes",
+      "target": "frontend_service:previsoesService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:previsoes",
+      "target": "hook:useCapacidadeProducao",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:vendas",
+      "target": "frontend_service:vendasService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:vendas",
+      "target": "hook:useCarrinho",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:vendas",
+      "target": "hook:useCatalogoProdutos",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:vendas",
+      "target": "hook:useCriarProduto",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:vendas",
+      "target": "hook:useRegistrarVenda",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "frontend_service:authService",
+      "target": "controller:AuthController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/auth/login",
+        "path": "/auth/login",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:authService",
+      "target": "controller:AuthController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/auth/tenants",
+        "path": "/auth/tenants",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:caixaService",
+      "target": "controller:FechamentosController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/caixa/fechar",
+        "path": "/caixa/fechar",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:estoqueService",
+      "target": "controller:EstoqueController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/estoque/entrada",
+        "path": "/estoque/entrada",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:estoqueService",
+      "target": "controller:EstoqueController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/estoque/fichas-tecnicas",
+        "path": "/estoque/fichas-tecnicas",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:estoqueService",
+      "target": "controller:EstoqueController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/estoque/insumos",
+        "path": "/estoque/insumos",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:estoqueService",
+      "target": "controller:EstoqueController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/estoque/insumos",
+        "path": "/estoque/insumos",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:previsoesService",
+      "target": "controller:PrevisoesController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/previsoes/capacidade",
+        "path": "/previsoes/capacidade",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:vendasService",
+      "target": "controller:ProdutosController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/produtos",
+        "path": "/produtos",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:vendasService",
+      "target": "controller:ProdutosController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/produtos",
+        "path": "/produtos",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:vendasService",
+      "target": "controller:VendasController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/vendas",
+        "path": "/vendas",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "hook:useAuthStore",
+      "target": "frontend_service:authService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCadastrarInsumo",
+      "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCaixaAtual",
+      "target": "frontend_service:caixaService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCapacidadeProducao",
+      "target": "frontend_service:previsoesService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCatalogoProdutos",
+      "target": "frontend_service:vendasService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCriarProduto",
+      "target": "frontend_service:vendasService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useFecharCaixa",
+      "target": "frontend_service:caixaService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useInsumosEstoque",
+      "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useLoginMutation",
+      "target": "frontend_service:authService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:usePerfil",
+      "target": "frontend_service:perfilService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useRealtimeEvents",
+      "target": "controller:EventsController",
+      "relationship": "subscribes_sse",
+      "metadata": {
+        "channel": "Redis SSE Stream"
+      }
+    },
+    {
+      "source": "hook:useRegistrarEntradaEstoque",
+      "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useRegistrarVenda",
+      "target": "frontend_service:vendasService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:DadosClimaticos",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:FechamentosCaixa",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Insumos",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:ItensVenda",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:MovimentacoesEstoque",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Previsoes",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Produtos",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:ProdutosInsumos",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Usuarios",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Vendas",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "page:(auth)/login.tsx",
+      "target": "feature:auth",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:(tabs)/caixa.tsx",
+      "target": "feature:caixa",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:(tabs)/estoque.tsx",
+      "target": "feature:estoque",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:(tabs)/index.tsx",
+      "target": "feature:vendas",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:(tabs)/perfil.tsx",
+      "target": "feature:perfil",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:(tabs)/previsoes.tsx",
+      "target": "feature:previsoes",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "page:index.tsx",
+      "target": "feature:auth",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
+      "source": "policy:restaurante_dados_climaticos_isolation",
+      "target": "table:DadosClimaticos",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_fechamentos_caixa_isolation",
+      "target": "table:FechamentosCaixa",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_insumos_isolation",
+      "target": "table:Insumos",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_itens_venda_isolation",
+      "target": "table:ItensVenda",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_movimentacoes_isolation",
+      "target": "table:MovimentacoesEstoque",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_previsoes_isolation",
+      "target": "table:Previsoes",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_produtos_insumos_isolation",
+      "target": "table:ProdutosInsumos",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_produtos_isolation",
+      "target": "table:Produtos",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_usuarios_isolation",
+      "target": "table:Usuarios",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "policy:restaurante_vendas_isolation",
+      "target": "table:Vendas",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
+      "source": "repo:DadosClimaticosRepository",
+      "target": "table:DadosClimaticos",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:DadosClimaticosRepository",
+      "target": "table:DadosClimaticos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:FechamentoCaixaRepository",
+      "target": "table:FechamentosCaixa",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:FechamentoCaixaRepository",
+      "target": "table:FechamentosCaixa",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:InsumoRepository",
+      "target": "table:Insumos",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:InsumoRepository",
+      "target": "table:Insumos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:InsumoRepository",
+      "target": "table:MovimentacoesEstoque",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:InsumoRepository",
+      "target": "table:MovimentacoesEstoque",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:PrevisaoRepository",
+      "target": "table:Previsoes",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:PrevisaoRepository",
+      "target": "table:Previsoes",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:ProdutoRepository",
+      "target": "table:Produtos",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:ProdutoRepository",
+      "target": "table:Produtos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:ProdutoRepository",
+      "target": "table:ProdutosInsumos",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:ProdutoRepository",
+      "target": "table:ProdutosInsumos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:RestauranteRepository",
+      "target": "table:Restaurantes",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:VendaRepository",
+      "target": "table:Vendas",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:VendaRepository",
+      "target": "table:Vendas",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "table:DadosClimaticos",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:FechamentosCaixa",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:FechamentosCaixa",
+      "target": "table:Usuarios",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Insumos",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ItensVenda",
+      "target": "table:Produtos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ItensVenda",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ItensVenda",
+      "target": "table:Vendas",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:MovimentacoesEstoque",
+      "target": "table:Insumos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:MovimentacoesEstoque",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Previsoes",
+      "target": "table:Produtos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Previsoes",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Produtos",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ProdutosInsumos",
+      "target": "table:Insumos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ProdutosInsumos",
+      "target": "table:Produtos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:ProdutosInsumos",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Usuarios",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Vendas",
+      "target": "table:FechamentosCaixa",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Vendas",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "usecase:AbrirCaixaUseCase",
+      "target": "repo:FechamentoCaixaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:BaixaEstoqueService",
+      "target": "repo:InsumoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:CalcularCapacidadeProducaoUseCase",
+      "target": "repo:PrevisaoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:CalcularCapacidadeProducaoUseCase",
+      "target": "repo:ProdutoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "queue:previsao.demanda.solicitada",
+      "relationship": "publishes_to",
+      "metadata": {
+        "event": "PrevisaoDemandaSolicitadaEvent_v1"
+      }
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "repo:DadosClimaticosRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "repo:FechamentoCaixaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "repo:ProdutoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "repo:RestauranteRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:FecharCaixaUseCase",
+      "target": "repo:VendaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:RegistrarVendaUseCase",
+      "target": "repo:FechamentoCaixaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:RegistrarVendaUseCase",
+      "target": "repo:InsumoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:RegistrarVendaUseCase",
+      "target": "repo:ProdutoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:RegistrarVendaUseCase",
+      "target": "repo:VendaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "worker:RabbitConsumer",
+      "target": "queue:dlq.previsao.demanda.solicitada",
+      "relationship": "publishes_to",
+      "metadata": {
+        "on_error": "Dead Lettering"
+      }
+    },
+    {
+      "source": "worker:RabbitConsumer",
+      "target": "queue:previsao.demanda.concluida",
+      "relationship": "publishes_to",
+      "metadata": {
+        "format": "Raw JSON"
+      }
+    },
+    {
+      "source": "worker:RabbitConsumer",
+      "target": "queue:previsao.demanda.solicitada",
+      "relationship": "consumes_from",
+      "metadata": {
+        "qos": 10
+      }
+    },
+    {
+      "source": "worker:RabbitConsumer",
+      "target": "service:MLPredictionService",
+      "relationship": "invokes",
+      "metadata": {}
+    }
+  ]
+}

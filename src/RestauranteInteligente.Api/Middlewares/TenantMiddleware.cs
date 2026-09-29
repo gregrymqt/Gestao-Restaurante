@@ -40,6 +40,13 @@ public sealed class TenantMiddleware
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
     {
+        // Ignora requisições de preflight CORS (OPTIONS)
+        if (HttpMethods.IsOptions(context.Request.Method))
+        {
+            await _next(context);
+            return;
+        }
+
         // 1. Usuário autenticado via JWT
         if (context.User.Identity?.IsAuthenticated == true)
         {

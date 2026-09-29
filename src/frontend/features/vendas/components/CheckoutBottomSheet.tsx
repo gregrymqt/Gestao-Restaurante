@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 import { FormaPagamento } from '../types';
 import { useCarrinho } from '../hooks/useCarrinho';
 import { useRegistrarVenda } from '../hooks/useRegistrarVenda';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { ResumoComandaBox } from './ResumoComandaBox';
 import { GradeFormasPagamento } from './GradeFormasPagamento';
 import { PainelDinheiroTroco } from './PainelDinheiroTroco';
@@ -22,6 +23,7 @@ interface CheckoutBottomSheetProps {
 }
 
 export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetProps) {
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   const itens = useCarrinho((state) => state.itens);
   const totalItens = useCarrinho((state) => state.obterTotalItens());
   const subtotal = useCarrinho((state) => state.obterSubtotal());
@@ -180,13 +182,13 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
             {/* Botão de Confirmação da Venda */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Confirmar pagamento e emitir venda"
-              accessibilityState={{ disabled: isValorInsuficiente || isPending || totalItens === 0 }}
-              disabled={isValorInsuficiente || isPending || totalItens === 0}
+              accessibilityLabel={!isApiOnline ? 'Servidor offline - emissão bloqueada' : 'Confirmar pagamento e emitir venda'}
+              accessibilityState={{ disabled: isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline }}
+              disabled={isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline}
               style={({ pressed }) => [
                 styles.botaoConfirmar,
-                (isValorInsuficiente || totalItens === 0) && styles.botaoConfirmarDesabilitado,
-                pressed && !isValorInsuficiente && styles.botaoConfirmarPressionado,
+                (isValorInsuficiente || totalItens === 0 || !isApiOnline) && styles.botaoConfirmarDesabilitado,
+                pressed && !isValorInsuficiente && isApiOnline && styles.botaoConfirmarPressionado,
               ]}
               onPress={handleConfirmar}
             >
@@ -195,7 +197,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
               ) : (
                 <View style={styles.botaoConfirmarConteudo}>
                   <ThemedText variant="title" style={styles.iconeImpressora}>
-                    🖨️
+                    {!isApiOnline ? '📡' : '🖨️'}
                   </ThemedText>
                   <ThemedText
                     variant="subtitle"
@@ -203,7 +205,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
                     color={tokens.colors.white}
                     style={styles.textoConfirmar}
                   >
-                    Confirmar Pagamento e Emitir Venda
+                    {!isApiOnline ? 'Servidor Offline - Venda Suspensa' : 'Confirmar Pagamento e Emitir Venda'}
                   </ThemedText>
                 </View>
               )}
@@ -211,7 +213,9 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
 
             {/* Microcópia de Transparência Operacional */}
             <ThemedText variant="caption" style={styles.microcopiaRodape}>
-              A confirmação deduz imediatamente os insumos do estoque no servidor.
+              {!isApiOnline
+                ? 'Conectividade interrompida: aguarde a reconexão para emitir a venda e atualizar o estoque.'
+                : 'A confirmação deduz imediatamente os insumos do estoque no servidor.'}
             </ThemedText>
           </ScrollView>
         </View>

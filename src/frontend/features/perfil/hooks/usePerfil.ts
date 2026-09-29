@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore, RestauranteTenant, TENANTS_PADRAO } from '@/features/auth';
 import { useSseStatus } from '@/shared/hooks/useSseStatus';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { perfilService } from '../services/perfilService';
 import { ShiftMetrics, TerminalStatus } from '../types';
 
@@ -31,7 +31,7 @@ export function usePerfil() {
   }, [isSseConnected]);
 
   const handleEncerrarTurno = () => {
-    Alert.alert(
+    AppDialog.alert(
       'Encerrar Turno & Sair',
       'Deseja fechar o caixa e sincronizar os registros fiscais antes de finalizar o turno local?',
       [
@@ -49,7 +49,7 @@ export function usePerfil() {
   };
 
   const handleBloquearTela = () => {
-    Alert.alert(
+    AppDialog.alert(
       'Bloqueio do Terminal',
       'Terminal temporariamente bloqueado para segurança operacional.',
       [

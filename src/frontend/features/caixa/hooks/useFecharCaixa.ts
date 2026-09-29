@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { caixaService } from '../services/caixaService';
 import { FecharCaixaResponseDto } from '../types';
 
@@ -23,14 +23,13 @@ export function useFecharCaixa(options?: UseFecharCaixaOptions) {
       }
 
       // 3. Alerta de sucesso com feedback do RabbitMQ e IA
-      Alert.alert(
+      AppDialog.success(
         'Caixa Encerrado com Sucesso! 🔒',
-        `Fechamento ID: #${data.fechamentoCaixaId}\nTotal Consolidado: R$ ${data.valorTotalVendas.toFixed(2).replace('.', ',')}\nVendas: ${data.quantidadeVendas} transações\n\n🤖 Evento publicado no RabbitMQ! O pipeline de Machine Learning iniciou o cálculo preditivo para o próximo turno.`,
-        [{ text: 'Entendido', style: 'default' }]
+        `Fechamento ID: #${data.fechamentoCaixaId}\nTotal Consolidado: R$ ${data.valorTotalVendas.toFixed(2).replace('.', ',')}\nVendas: ${data.quantidadeVendas} transações\n\n🤖 Evento publicado no RabbitMQ! O pipeline de Machine Learning iniciou o cálculo preditivo para o próximo turno.`
       );
     },
     onError: (error: Error) => {
-      Alert.alert(
+      AppDialog.error(
         'Erro ao Encerrar Caixa',
         error.message || 'Não foi possível encerrar a sessão do caixa. Tente novamente.'
       );

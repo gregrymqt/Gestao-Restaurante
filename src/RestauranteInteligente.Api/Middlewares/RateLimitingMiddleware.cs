@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RestauranteInteligente.Domain.Common.Interfaces;
 
@@ -23,6 +24,13 @@ public sealed class RateLimitingMiddleware
 
     public async Task InvokeAsync(HttpContext context, IRateLimiterService rateLimiter)
     {
+        // Ignora requisições de preflight CORS (OPTIONS)
+        if (HttpMethods.IsOptions(context.Request.Method))
+        {
+            await _next(context);
+            return;
+        }
+
         var (clientKey, maxRequests, window) = ResolveRateLimitPolicy(context);
 
         var result = await rateLimiter.CheckRateLimitAsync(clientKey, maxRequests, window, context.RequestAborted);

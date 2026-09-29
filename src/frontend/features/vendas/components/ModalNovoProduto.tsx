@@ -7,30 +7,23 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { CategoriaProduto, CriarProdutoInput, ItemFichaTecnicaInput } from '../types';
 import { estoqueService, InsumoEstoque } from '@/features/estoque';
+import {
+  SecaoFichaTecnicaProduto,
+  IngredienteLinha,
+} from './SecaoFichaTecnicaProduto';
+import { ModalNovoProdutoCategorias } from './ModalNovoProdutoCategorias';
 
 interface ModalNovoProdutoProps {
   visible: boolean;
   onClose: () => void;
   onConfirmar: (dados: CriarProdutoInput) => Promise<void>;
   isEnviando?: boolean;
-}
-
-const CATEGORIAS_PRODUTO: CategoriaProduto[] = [
-  'Hambúrgueres',
-  'Porções',
-  'Bebidas',
-  'Sobremesas',
-];
-
-interface IngredienteLinha {
-  insumoId: string;
-  quantidadeTexto: string;
 }
 
 export function ModalNovoProduto({
@@ -73,14 +66,14 @@ export function ModalNovoProduto({
 
   const adicionarLinhaIngrediente = () => {
     if (insumosDisponiveis.length === 0) {
-      Alert.alert('Sem Insumos', 'Nenhum insumo disponível no estoque para vincular.');
+      AppDialog.warning('Sem Insumos', 'Nenhum insumo disponível no estoque para vincular.');
       return;
     }
     const jaSelecionados = new Set(ingredientes.map((i) => i.insumoId));
     const proximoDisponivel = insumosDisponiveis.find((i) => !jaSelecionados.has(i.id));
 
     if (!proximoDisponivel) {
-      Alert.alert('Limite', 'Todos os insumos cadastrados já foram adicionados à receita.');
+      AppDialog.warning('Limite', 'Todos os insumos cadastrados já foram adicionados à receita.');
       return;
     }
 
@@ -99,13 +92,13 @@ export function ModalNovoProduto({
 
   const handleSalvar = async () => {
     if (!nome.trim()) {
-      Alert.alert('Campo Obrigatório', 'Informe o nome do produto.');
+      AppDialog.warning('Campo Obrigatório', 'Informe o nome do produto.');
       return;
     }
 
     const preco = parseFloat(precoTexto.replace(',', '.'));
     if (isNaN(preco) || preco < 0) {
-      Alert.alert('Valor Inválido', 'Informe um preço de venda válido (>= 0).');
+      AppDialog.warning('Valor Inválido', 'Informe um preço de venda válido (>= 0).');
       return;
     }
 
@@ -113,7 +106,7 @@ export function ModalNovoProduto({
     for (const ing of ingredientes) {
       const qtd = parseFloat(ing.quantidadeTexto.replace(',', '.'));
       if (isNaN(qtd) || qtd <= 0) {
-        Alert.alert('Quantidade Inválida', 'A quantidade de cada ingrediente na receita deve ser maior que zero.');
+        AppDialog.warning('Quantidade Inválida', 'A quantidade de cada ingrediente na receita deve ser maior que zero.');
         return;
       }
       fichaTecnicaFormatada.push({
@@ -134,7 +127,7 @@ export function ModalNovoProduto({
       onClose();
     } catch (error: any) {
       const msg = error?.response?.data?.error || error?.message || 'Erro ao cadastrar produto.';
-      Alert.alert('Erro ao Salvar', String(msg));
+      AppDialog.error('Erro ao Salvar', String(msg));
     }
   };
 
@@ -166,22 +159,10 @@ export function ModalNovoProduto({
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <ThemedText style={styles.label}>Categoria *</ThemedText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillsScroll}>
-                {CATEGORIAS_PRODUTO.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.pill, categoria === cat && styles.pillSelected]}
-                    onPress={() => setCategoria(cat)}
-                  >
-                    <ThemedText style={[styles.pillText, categoria === cat && styles.pillTextSelected]}>
-                      {cat}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+            <ModalNovoProdutoCategorias
+              categoriaSelecionada={categoria}
+              onSelectCategoria={setCategoria}
+            />
 
             <View style={styles.inputGroup}>
               <ThemedText style={styles.label}>Preço de Venda (R$) *</ThemedText>
@@ -209,49 +190,14 @@ export function ModalNovoProduto({
             </View>
 
             {/* Seção Ficha Técnica Opcional */}
-            <View style={styles.bomSection}>
-              <View style={styles.bomHeaderRow}>
-                <View>
-                  <ThemedText style={styles.bomTitle}>Receita & Baixa de Estoque</ThemedText>
-                  <ThemedText style={styles.bomSubtitle}>
-                    {ingredientes.length === 0
-                      ? 'Nenhum insumo (venda direta sem baixa de matéria-prima)'
-                      : `${ingredientes.length} insumo(s) consumido(s) por venda`}
-                  </ThemedText>
-                </View>
-                <TouchableOpacity style={styles.btnAddIngrediente} onPress={adicionarLinhaIngrediente}>
-                  <ThemedText style={styles.btnAddIngredienteText}>+ Ingrediente</ThemedText>
-                </TouchableOpacity>
-              </View>
-
-              {carregandoInsumos ? (
-                <ActivityIndicator size="small" color={tokens.colors.primary} style={styles.loader} />
-              ) : (
-                ingredientes.map((linha, idx) => {
-                  const insumo = insumosDisponiveis.find((i) => i.id === linha.insumoId);
-                  return (
-                    <View key={linha.insumoId} style={styles.ingredienteRow}>
-                      <ThemedText style={styles.ingredienteNome} numberOfLines={1}>
-                        {insumo?.nome || 'Insumo'}
-                      </ThemedText>
-                      <TextInput
-                        style={styles.ingredienteQtdInput}
-                        placeholder="Qtd"
-                        keyboardType="numeric"
-                        value={linha.quantidadeTexto}
-                        onChangeText={(txt) => alterarQuantidade(idx, txt)}
-                      />
-                      <ThemedText style={styles.ingredienteUn}>
-                        {insumo?.unidadeMedida || 'un'}
-                      </ThemedText>
-                      <TouchableOpacity onPress={() => removerLinhaIngrediente(idx)} style={styles.btnRemoverIngrediente}>
-                        <ThemedText style={styles.btnRemoverText}>✕</ThemedText>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })
-              )}
-            </View>
+            <SecaoFichaTecnicaProduto
+              ingredientes={ingredientes}
+              insumosDisponiveis={insumosDisponiveis}
+              carregandoInsumos={carregandoInsumos}
+              onAdicionarIngrediente={adicionarLinhaIngrediente}
+              onRemoverIngrediente={removerLinhaIngrediente}
+              onAlterarQuantidade={alterarQuantidade}
+            />
           </ScrollView>
 
           <View style={styles.footer}>
@@ -347,111 +293,6 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 56,
     textAlignVertical: 'top',
-  },
-  pillsScroll: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pill: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  pillSelected: {
-    backgroundColor: tokens.colors.primary,
-    borderColor: tokens.colors.primary,
-  },
-  pillText: {
-    fontSize: 13,
-    color: tokens.colors.textSecondary,
-    fontWeight: '500',
-  },
-  pillTextSelected: {
-    color: tokens.colors.white,
-    fontWeight: '700',
-  },
-  bomSection: {
-    backgroundColor: tokens.colors.background,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  bomHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  bomTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-  },
-  bomSubtitle: {
-    fontSize: 11,
-    color: tokens.colors.textSecondary,
-    marginTop: 2,
-  },
-  btnAddIngrediente: {
-    backgroundColor: tokens.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  btnAddIngredienteText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: tokens.colors.white,
-  },
-  loader: {
-    marginVertical: 10,
-  },
-  ingredienteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.card,
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    gap: 8,
-  },
-  ingredienteNome: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: tokens.colors.textPrimary,
-  },
-  ingredienteQtdInput: {
-    width: 60,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    fontSize: 13,
-    textAlign: 'center',
-    color: tokens.colors.textPrimary,
-  },
-  ingredienteUn: {
-    fontSize: 12,
-    color: tokens.colors.textSecondary,
-    width: 25,
-  },
-  btnRemoverIngrediente: {
-    padding: 6,
-  },
-  btnRemoverText: {
-    fontSize: 14,
-    color: tokens.colors.status.redText,
-    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',

@@ -53,6 +53,11 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
    - Aplicação obrigatória do padrão RTK para comandos de terminal (saídas > 30 linhas proibidas na memória ativa, resumidas no formato `[Status]`, `[Alvo]`, `[Erros]`).
    - Teto estrito de 300 linhas de texto para qualquer arquivo de documentação interna ou memória ativa.
 
+10. **Navegação Determinística via Grafo de Conhecimento (`graph.json`):**
+    - É **mandatório** consultar o Grafo de Conhecimento em `.agents/graph.json` e o sumário executivo em `.agents/GRAPH_REPORT.md` para busca de arquivos, tipos, dependências e conexões entre camadas antes de realizar buscas cegas ou explorações recursivas no monorepo.
+    - O grafo indexa deterministicamente os nós (`DatabaseTable`, `SecurityPolicy`, `ApiController`, `UseCase`, `CoreRepository`, `MassTransitConsumer`, `MessageQueue`, `FastAPIService`, `PythonWorker`, `FrontendPage`, `FrontendFeature`, `FrontendHook`, `FrontendService`, `DockerContainer`) e suas conexões semânticas (`calls_endpoint`, `invokes`, `queries`, `writes_to`, `consumes_from`, `publishes_to`, `protects`, `references`, `subscribes_sse`).
+    - Sempre que novas rotas, tabelas, use cases, consumers ou telas forem criados ou alterados, mantenha o grafo sincronizado executando: `py .agents/scripts/generate_knowledge_graph.py`.
+
 ---
 
 ## 2. Skills do Projeto

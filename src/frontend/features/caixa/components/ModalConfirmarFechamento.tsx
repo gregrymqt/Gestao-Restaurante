@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { SessaoCaixaResumo } from '../types';
 import { ConferenciaGavetaBox } from './ConferenciaGavetaBox';
 
@@ -27,6 +28,7 @@ export function ModalConfirmarFechamento({
   onConfirmar,
   onClose,
 }: ModalConfirmarFechamentoProps) {
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   // Localiza o valor apurado em dinheiro na gaveta
   const valorDinheiro =
     sessao.pagamentos.find((p) => p.tipo === 'Dinheiro')?.valor || 0;
@@ -107,12 +109,13 @@ export function ModalConfirmarFechamento({
             <View style={styles.acoesContainer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Confirmar e fechar caixa"
-                disabled={isPending}
+                accessibilityLabel={!isApiOnline ? 'Servidor offline - fechamento suspenso' : 'Confirmar e fechar caixa'}
+                accessibilityState={{ disabled: isPending || !isApiOnline }}
+                disabled={isPending || !isApiOnline}
                 style={({ pressed }) => [
                   styles.botaoConfirmar,
-                  isPending && styles.botaoConfirmarDesabilitado,
-                  pressed && styles.botaoConfirmarPressionado,
+                  (isPending || !isApiOnline) && styles.botaoConfirmarDesabilitado,
+                  pressed && isApiOnline && styles.botaoConfirmarPressionado,
                 ]}
                 onPress={onConfirmar}
               >
@@ -121,7 +124,7 @@ export function ModalConfirmarFechamento({
                 ) : (
                   <View style={styles.conteudoBotao}>
                     <ThemedText variant="title" style={styles.iconeBotao}>
-                      🔒
+                      {!isApiOnline ? '📡' : '🔒'}
                     </ThemedText>
                     <ThemedText
                       variant="subtitle"
@@ -129,7 +132,7 @@ export function ModalConfirmarFechamento({
                       color={tokens.colors.white}
                       style={styles.textoBotao}
                     >
-                      Confirmar Fechamento e Enviar para IA
+                      {!isApiOnline ? 'Servidor Offline - Fechamento Suspenso' : 'Confirmar Fechamento e Enviar para IA'}
                     </ThemedText>
                   </View>
                 )}

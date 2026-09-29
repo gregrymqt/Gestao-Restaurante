@@ -7,11 +7,12 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { CadastrarInsumoInput } from '../types';
+import { ModalNovoInsumoPills, CATEGORIAS_PADRAO } from './ModalNovoInsumoPills';
 
 interface ModalNovoInsumoProps {
   visible: boolean;
@@ -19,17 +20,6 @@ interface ModalNovoInsumoProps {
   onConfirmar: (dados: CadastrarInsumoInput) => Promise<void>;
   isEnviando?: boolean;
 }
-
-const CATEGORIAS_PADRAO = [
-  'Proteínas / Carnes',
-  'Panificação',
-  'Laticínios',
-  'Hortifrúti',
-  'Bebidas / Embalagens',
-  'Geral / Mercearia',
-];
-
-const UNIDADES_PADRAO = ['UN', 'KG', 'L', 'G'];
 
 export function ModalNovoInsumo({
   visible,
@@ -60,19 +50,19 @@ export function ModalNovoInsumo({
 
   const handleSalvar = async () => {
     if (!nome.trim()) {
-      Alert.alert('Campo Obrigatório', 'Informe o nome do insumo.');
+      AppDialog.warning('Campo Obrigatório', 'Informe o nome do insumo.');
       return;
     }
 
     const custo = parseFloat(custoTexto.replace(',', '.'));
     if (isNaN(custo) || custo < 0) {
-      Alert.alert('Valor Inválido', 'Informe um custo unitário válido (>= 0).');
+      AppDialog.warning('Valor Inválido', 'Informe um custo unitário válido (>= 0).');
       return;
     }
 
     const minimo = parseFloat(minimoTexto.replace(',', '.'));
     if (isNaN(minimo) || minimo < 0) {
-      Alert.alert('Valor Inválido', 'Informe um estoque mínimo válido (>= 0).');
+      AppDialog.warning('Valor Inválido', 'Informe um estoque mínimo válido (>= 0).');
       return;
     }
 
@@ -81,7 +71,7 @@ export function ModalNovoInsumo({
       : undefined;
 
     if (saldoInicial !== undefined && (isNaN(saldoInicial) || saldoInicial < 0)) {
-      Alert.alert('Valor Inválido', 'O saldo inicial não pode ser negativo.');
+      AppDialog.warning('Valor Inválido', 'O saldo inicial não pode ser negativo.');
       return;
     }
 
@@ -98,7 +88,7 @@ export function ModalNovoInsumo({
       onClose();
     } catch (error: any) {
       const msg = error?.response?.data?.error || error?.message || 'Erro ao cadastrar insumo.';
-      Alert.alert('Erro ao Salvar Insumo', String(msg));
+      AppDialog.error('Erro ao Salvar Insumo', String(msg));
     }
   };
 
@@ -130,39 +120,12 @@ export function ModalNovoInsumo({
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <ThemedText style={styles.label}>Categoria</ThemedText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillsScroll}>
-                {CATEGORIAS_PADRAO.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.pill, categoria === cat && styles.pillSelected]}
-                    onPress={() => setCategoria(cat)}
-                  >
-                    <ThemedText style={[styles.pillText, categoria === cat && styles.pillTextSelected]}>
-                      {cat}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <ThemedText style={styles.label}>Unidade de Medida *</ThemedText>
-              <View style={styles.rowPills}>
-                {UNIDADES_PADRAO.map((un) => (
-                  <TouchableOpacity
-                    key={un}
-                    style={[styles.unPill, unidadeMedida === un && styles.unPillSelected]}
-                    onPress={() => setUnidadeMedida(un)}
-                  >
-                    <ThemedText style={[styles.unPillText, unidadeMedida === un && styles.unPillTextSelected]}>
-                      {un}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <ModalNovoInsumoPills
+              categoria={categoria}
+              onSelectCategoria={setCategoria}
+              unidadeMedida={unidadeMedida}
+              onSelectUnidadeMedida={setUnidadeMedida}
+            />
 
             <View style={styles.rowInputs}>
               <View style={[styles.inputGroup, styles.flex1]}>
@@ -292,58 +255,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
     color: tokens.colors.textPrimary,
-  },
-  pillsScroll: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pill: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  pillSelected: {
-    backgroundColor: tokens.colors.primary,
-    borderColor: tokens.colors.primary,
-  },
-  pillText: {
-    fontSize: 13,
-    color: tokens.colors.textSecondary,
-    fontWeight: '500',
-  },
-  pillTextSelected: {
-    color: tokens.colors.white,
-    fontWeight: '700',
-  },
-  rowPills: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  unPill: {
-    flex: 1,
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingVertical: 9,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  unPillSelected: {
-    backgroundColor: tokens.colors.primary,
-    borderColor: tokens.colors.primary,
-  },
-  unPillText: {
-    fontSize: 13,
-    color: tokens.colors.textSecondary,
-    fontWeight: '600',
-  },
-  unPillTextSelected: {
-    color: tokens.colors.white,
-    fontWeight: '700',
   },
   rowInputs: {
     flexDirection: 'row',

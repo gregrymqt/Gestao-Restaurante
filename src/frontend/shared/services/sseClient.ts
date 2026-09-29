@@ -125,6 +125,7 @@ class SseClient {
           'X-Tenant-Id': this.currentOptions.tenantId,
           Accept: 'text/event-stream',
           'Cache-Control': 'no-cache',
+          'ngrok-skip-browser-warning': 'true',
         },
         signal: this.abortController.signal,
       });

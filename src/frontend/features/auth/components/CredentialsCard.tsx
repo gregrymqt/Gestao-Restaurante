@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { AppDialog } from '@/shared/components/AppDialog';
 
 interface CredentialsCardProps {
   identificador: string;
@@ -112,7 +113,7 @@ export function CredentialsCard({
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() =>
-              Alert.alert(
+              AppDialog.info(
                 'Recuperação de Chave',
                 'Solicite o reset do seu PIN de operador junto ao Gerente do Restaurante.'
               )

@@ -5,11 +5,11 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { useCapacidadeProducao } from '../hooks/useCapacidadeProducao';
 import { PrevisoesHeader } from '../components/PrevisoesHeader';
 import { GargaloCriticoCard } from '../components/GargaloCriticoCard';
@@ -48,12 +48,12 @@ export function PrevisoesScreen() {
   }) => {
     try {
       const res = await ordemCompraMutation.mutateAsync(pedido);
-      Alert.alert(
+      AppDialog.success(
         'Ordem de Compra Emitida',
         `Pedido registrado com sucesso sob protocolo ${res.protocolo}. Solicitação enviada aos fornecedores homologados.`
       );
     } catch {
-      Alert.alert('Erro', 'Não foi possível registrar a ordem de compra.');
+      AppDialog.error('Erro', 'Não foi possível registrar a ordem de compra.');
     }
   };
 

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { storage, STORAGE_KEYS } from './storage';
 import { env } from '../config/env';
+import { useConnectionStore } from '../hooks/useConnectionStore';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiUrl,
@@ -44,10 +45,29 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor de Resposta: Trata expiração e 401
+// Interceptor de Resposta: Trata recuperação de conexão, expiração de sessão e quedas da API
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Se a conexão estava marcada como offline, qualquer resposta válida restabelece o estado
+    if (!useConnectionStore.getState().isApiOnline) {
+      useConnectionStore.getState().setApiOnline(true);
+    }
+    return response;
+  },
   (error) => {
+    // Detecta indisponibilidade da API: falhas de rede, timeouts, CORS ou erros 502/503/504
+    const isNetworkError =
+      !error.response ||
+      error.code === 'ERR_NETWORK' ||
+      error.code === 'ECONNABORTED' ||
+      error.message === 'Network Error';
+
+    const isServerError = error.response?.status >= 502 && error.response?.status <= 504;
+
+    if (isNetworkError || isServerError) {
+      useConnectionStore.getState().setApiOnline(false, error.message || 'Servidor indisponível');
+    }
+
     if (error.response?.status === 401) {
       // Sessão expirada: limpa credenciais para redirecionamento pelo Auth Guard
       storage.delete(STORAGE_KEYS.AUTH_TOKEN);

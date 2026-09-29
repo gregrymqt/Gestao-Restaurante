@@ -5,12 +5,12 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { useInsumosEstoque } from '../hooks/useInsumosEstoque';
 import { useRegistrarEntradaEstoque } from '../hooks/useRegistrarEntradaEstoque';
 import { useCadastrarInsumo } from '../hooks/useCadastrarInsumo';
@@ -54,19 +54,19 @@ export function EstoqueScreen() {
     try {
       const res = await registrarEntradaMutation.mutateAsync(dados);
       fecharModalEntrada();
-      Alert.alert(
+      AppDialog.success(
         'Entrada Registrada no Ledger',
         `Entrada de +${dados.quantidade} confirmada com sucesso!\nNovo saldo: ${res.novoSaldo}.\nProtocolo: ${res.protocoloLedger}`
       );
     } catch {
-      Alert.alert('Erro', 'Não foi possível registrar a entrada de estoque.');
+      AppDialog.error('Erro ao Registrar Entrada', 'Não foi possível registrar a entrada de estoque.');
     }
   };
 
   const handleConfirmarNovoInsumo = async (dados: CadastrarInsumoInput) => {
     await cadastrarInsumoMutation.mutateAsync(dados);
     setIsModalNovoInsumoOpen(false);
-    Alert.alert('Insumo Cadastrado! 📦', `O insumo "${dados.nome}" foi cadastrado com sucesso.`);
+    AppDialog.success('Insumo Cadastrado! 📦', `O insumo "${dados.nome}" foi cadastrado com sucesso.`);
   };
 
   return (

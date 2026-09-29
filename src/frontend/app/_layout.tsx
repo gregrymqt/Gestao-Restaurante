@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRealtimeEvents } from '@/shared/hooks/useRealtimeEvents';
 import { RealtimeStatusBar } from '@/shared/components/RealtimeStatusBar';
 import { RealtimeEventToast } from '@/shared/components/RealtimeEventToast';
+import { OfflineBanner } from '@/shared/components/OfflineBanner';
+import { AppDialogHost } from '@/shared/components/AppDialog';
 
 function RealtimeAppContainer() {
   // Orquestração de tempo real via SSE e invalidação cirúrgica de cache
@@ -14,6 +16,7 @@ function RealtimeAppContainer() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -21,6 +24,7 @@ function RealtimeAppContainer() {
       </Stack>
       <RealtimeStatusBar />
       <RealtimeEventToast />
+      <AppDialogHost />
     </View>
   );
 }

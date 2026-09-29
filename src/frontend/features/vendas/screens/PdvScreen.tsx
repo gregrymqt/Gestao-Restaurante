@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { AppDialog } from '@/shared/components/AppDialog';
 import { CategoriaProduto, CriarProdutoInput, Produto } from '../types';
 import { useCarrinho } from '../hooks/useCarrinho';
 import { useCatalogoProdutos } from '../hooks/useCatalogoProdutos';
@@ -38,7 +39,7 @@ export function PdvScreen() {
   const handleConfirmarNovoProduto = async (dados: CriarProdutoInput) => {
     await criarProdutoMutation.mutateAsync(dados);
     setIsNovoProdutoOpen(false);
-    Alert.alert('Produto Cadastrado! 🍔', `O produto "${dados.nome}" já está disponível para vendas.`);
+    AppDialog.success('Produto Cadastrado! 🍔', `O produto "${dados.nome}" já está disponível para vendas.`);
   };
 
   const renderItem = useCallback(
