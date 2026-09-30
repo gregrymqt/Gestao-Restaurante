@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using RestauranteInteligente.Api.Middlewares;
 using RestauranteInteligente.Application;
 using RestauranteInteligente.Application.Common.Interfaces;
@@ -7,6 +8,14 @@ using RestauranteInteligente.Infrastructure;
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    // Suporte a cabeçalhos de proxy reverso (ngrok / reverse proxy)
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
 
     // Configuração de Controladores e OpenAPI
     builder.Services.AddControllers();
@@ -34,6 +43,8 @@ try
 
     var app = builder.Build();
 
+    app.UseForwardedHeaders();
+
     // 0. Tratamento Global de Falhas (RFC 7807 Problem Details com CorrelationId)
     app.UseMiddleware<ExceptionMiddleware>();
 
@@ -42,21 +53,22 @@ try
         app.MapOpenApi().AllowAnonymous();
     }
 
-    app.UseHttpsRedirection();
+    // 1. Roteamento de Endpoints mandatário antes da avaliação de CORS
+    app.UseRouting();
 
-    // CORS deve ser avaliado antes de Authentication e middlewares de segurança/tenant
+    // 2. CORS avaliado imediatamente após o roteamento para interceptar e autorizar requisições preflight (OPTIONS)
     app.UseCors();
 
-    // 1. Autenticação JWT (Valida assinatura e checa Blacklist no Redis)
+    // 3. Autenticação JWT (Valida assinatura e checa Blacklist no Redis)
     app.UseAuthentication();
 
-    // 2. Resolução Soberana de Tenant (Claim JWT ou X-Tenant-Id autenticado por X-API-Key)
+    // 4. Resolução Soberana de Tenant (Claim JWT ou X-Tenant-Id autenticado por X-API-Key)
     app.UseMiddleware<TenantMiddleware>();
 
-    // 3. Autorização baseada em Roles, Policies e TenantContext (Deny-by-Default)
+    // 5. Autorização baseada em Roles, Policies e TenantContext (Deny-by-Default)
     app.UseAuthorization();
 
-    // 4. Rate Limiting Distribuído (Sliding Window via Script Lua no Redis)
+    // 6. Rate Limiting Distribuído (Sliding Window via Script Lua no Redis)
     app.UseMiddleware<RateLimitingMiddleware>();
 
     // Endpoint de Health Check leve para sondagem de conectividade do frontend e orquestradores

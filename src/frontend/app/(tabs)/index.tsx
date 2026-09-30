@@ -1,6 +1,6 @@
 import React from 'react';
-import { PdvScreen } from '@/features/vendas';
+import { DashboardScreen } from '@/features/dashboard';
 
-export default function PdvRoute() {
-  return <PdvScreen />;
+export default function DashboardRoute() {
+  return <DashboardScreen />;
 }

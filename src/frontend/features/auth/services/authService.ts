@@ -3,6 +3,7 @@ import {
   RestauranteTenant,
   OperadorRecente,
   LoginInput,
+  CadastrarRestauranteInput,
   LoginResponse,
 } from '../types';
 
@@ -79,43 +80,59 @@ export const authService = {
           restaurantesVinculados: [tenant],
         },
       };
-    } catch {
-      // Fallback resiliente com credenciais de demonstração do Stitch UI
-      const operadorEncontrado = OPERADORES_RECENTES_PADRAO.find(
-        (o) =>
-          o.email.toLowerCase() === input.identificador.toLowerCase() ||
-          o.matricula === input.identificador
-      ) || {
-        id: `op-${Date.now().toString(36)}`,
-        nome: input.identificador.includes('@')
-          ? input.identificador.split('@')[0]
-          : `Operador ${input.identificador}`,
-        matricula: input.identificador.replace(/\D/g, '') || '05829',
-        email: input.identificador.includes('@') ? input.identificador : 'operador@restaurante.com',
-        iniciais: 'OP',
+    } catch (err: any) {
+      const serverMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.response?.data?.title ||
+        err.message ||
+        'Não foi possível autenticar junto ao servidor.';
+      throw new Error(serverMessage);
+    }
+  },
+
+  async cadastrarRestaurante(input: CadastrarRestauranteInput): Promise<LoginResponse> {
+    try {
+      const response = await apiClient.post<any>('/auth/cadastrar-restaurante', {
+        nomeRestaurante: input.nomeRestaurante.trim(),
+        cnpj: input.cnpj.trim(),
+        cidade: input.cidade?.trim() || 'São Paulo',
+        estado: input.estado?.trim() || 'SP',
+        latitude: -23.5505,
+        longitude: -46.6333,
+        nomeGestor: input.nomeGestor.trim(),
+        emailGestor: input.emailGestor.trim().toLowerCase(),
+        senhaGestor: input.senhaGestor,
+      });
+
+      const backendData = response.data;
+      const tenant: RestauranteTenant = {
+        id: backendData.restauranteId,
+        nome: backendData.nomeRestaurante,
+        cnpj: input.cnpj,
+        filialNumero: 'Matriz (Trial 14d)',
+        ativo: true,
       };
-
-      const tenantEncontrado =
-        TENANTS_PADRAO.find((t) => t.id === input.restauranteId) || TENANTS_PADRAO[0];
-
-      const payloadString = JSON.stringify({ tenantId: tenantEncontrado.id, role: 'Caixa' });
-      const payloadBase64 =
-        typeof btoa !== 'undefined'
-          ? btoa(payloadString)
-          : 'eyJ0ZW5hbnRJZCI6IjExMTExMTExLTExMTEtMTExMS0xMTExLTExMTExMTExMTExMSIsInJvbGUiOiJDYWl4YSJ9';
 
       return {
-        token: `mock-jwt-token-${Date.now()}.${payloadBase64}.signature`,
-        refreshToken: `mock-refresh-token-${Date.now().toString(36)}`,
-        expiracao: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),
+        token: backendData.token,
+        refreshToken: backendData.refreshToken,
+        expiracao: new Date(Date.now() + 1000 * 60 * 15).toISOString(),
         operador: {
-          id: operadorEncontrado.id,
-          nome: operadorEncontrado.nome,
-          email: operadorEncontrado.email,
-          cargo: 'Operador de Balcão & Caixa',
-          restaurantesVinculados: TENANTS_PADRAO,
+          id: backendData.usuarioId,
+          nome: backendData.nomeGestor,
+          email: backendData.email,
+          cargo: 'Proprietário / Gestor',
+          restaurantesVinculados: [tenant],
         },
       };
+    } catch (err: any) {
+      const serverMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.message ||
+        'Não foi possível cadastrar o restaurante. Tente novamente.';
+      throw new Error(serverMessage);
     }
   },
 };

@@ -40,6 +40,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     public DbSet<FechamentoCaixa> FechamentosCaixa => Set<FechamentoCaixa>();
     public DbSet<DadosClimaticos> DadosClimaticos => Set<DadosClimaticos>();
     public DbSet<Previsao> Previsoes => Set<Previsao>();
+    public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
+    public DbSet<Plano> Planos => Set<Plano>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {

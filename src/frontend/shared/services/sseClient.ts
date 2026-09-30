@@ -109,6 +109,11 @@ class SseClient {
 
   private async startStreaming(): Promise<void> {
     if (!this.currentOptions || this.isManualDisconnect) return;
+    if (this.currentOptions.token?.startsWith('mock-jwt-token')) {
+      console.warn('[SSE] Token de simulação (mock) detectado. Abortando conexão de streaming.');
+      this.setStatus('DISCONNECTED');
+      return;
+    }
 
     this.clearTimers();
     this.setStatus(this.reconnectAttempt === 0 ? 'CONNECTING' : 'RECONNECTING');

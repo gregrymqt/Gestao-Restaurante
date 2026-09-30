@@ -6,21 +6,21 @@
 
 ## 1. Métricas do Grafo de Conhecimento
 
-- **Total de Nós Mapeados**: `91`
-- **Total de Arestas Semânticas**: `136`
+- **Total de Nós Mapeados**: `104`
+- **Total de Arestas Semânticas**: `159`
 
 ### Distribuição por Tipo de Nó
 | Tipo de Nó | Quantidade | Descrição / Camada |
 | :--- | :---: | :--- |
-| `FrontendHook` | 14 | Hooks de orquestração de estado e UI |
+| `FrontendHook` | 17 | Hooks de orquestração de estado e UI |
 | `DatabaseTable` | 11 | Tabelas PostgreSQL 16 (Ledger, Vendas, RLS) |
 | `SecurityPolicy` | 11 | Políticas RLS nativas e Interceptor C# |
-| `CoreRepository` | 7 | Repositórios de persistência EF Core |
-| `ApiController` | 7 | Controllers ASP.NET Core (.NET 9) |
-| `FrontendService` | 7 | Camada de rede e transporte (Axios/MMKV) |
+| `CoreRepository` | 9 | Repositórios de persistência EF Core |
+| `FrontendService` | 9 | Camada de rede e transporte (Axios/MMKV) |
+| `UseCase` | 8 | Regras de negócio e handlers (Application) |
+| `ApiController` | 8 | Controllers ASP.NET Core (.NET 9) |
+| `FrontendFeature` | 8 | Bounded Contexts (Feature-First) |
 | `FrontendPage` | 7 | Telas e rotas nativas expo-router |
-| `FrontendFeature` | 6 | Bounded Contexts (Feature-First) |
-| `UseCase` | 5 | Regras de negócio e handlers (Application) |
 | `DockerContainer` | 5 | Serviços locais no docker-compose.yml |
 | `RedisService` | 4 | Cache, Distributed Lock, Streams e Rate Limit |
 | `MessageQueue` | 3 | Filas e Exchanges RabbitMQ (Raw JSON) |
@@ -78,9 +78,13 @@ flowchart LR
 
 | Feature Mobile | Service Frontend | Endpoint C# / Rota | Verbo | Controller C# |
 | :--- | :--- | :--- | :---: | :--- |
+| `assinatura` | `assinaturaService` | `/assinatura/assinar` | **POST** | `AssinaturaController` |
+| `assinatura` | `assinaturaService` | `/assinatura/status` | **GET** | `AssinaturaController` |
+| `auth` | `authService` | `/auth/cadastrar-restaurante` | **POST** | `AuthController` |
 | `auth` | `authService` | `/auth/login` | **POST** | `AuthController` |
 | `auth` | `authService` | `/auth/tenants` | **GET** | `AuthController` |
 | `caixa` | `caixaService` | `/caixa/fechar` | **POST** | `FechamentosController` |
+| `dashboard` | `dashboardService` | `/caixa/status` | **GET** | `FechamentosController` |
 | `estoque` | `estoqueService` | `/estoque/entrada` | **POST** | `EstoqueController` |
 | `estoque` | `estoqueService` | `/estoque/fichas-tecnicas` | **GET** | `EstoqueController` |
 | `estoque` | `estoqueService` | `/estoque/insumos` | **GET** | `EstoqueController` |

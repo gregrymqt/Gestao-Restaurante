@@ -2,8 +2,8 @@
   "metadata": {
     "system": "Restaurante Inteligente",
     "generator": "generate_knowledge_graph.py",
-    "node_count": 91,
-    "edge_count": 136
+    "node_count": 104,
+    "edge_count": 159
   },
   "nodes": [
     {
@@ -288,6 +288,15 @@
       }
     },
     {
+      "id": "repo:AssinaturaRepository",
+      "type": "CoreRepository",
+      "label": "AssinaturaRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/AssinaturaRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
       "id": "repo:DadosClimaticosRepository",
       "type": "CoreRepository",
       "label": "DadosClimaticosRepository",
@@ -337,6 +346,15 @@
       "type": "CoreRepository",
       "label": "RestauranteRepository",
       "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/RestauranteRepository.cs",
+      "metadata": {
+        "layer": "Infrastructure.Persistence"
+      }
+    },
+    {
+      "id": "repo:UsuarioRepository",
+      "type": "CoreRepository",
+      "label": "UsuarioRepository",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Repositories/UsuarioRepository.cs",
       "metadata": {
         "layer": "Infrastructure.Persistence"
       }
@@ -432,12 +450,65 @@
       }
     },
     {
+      "id": "usecase:CadastrarRestauranteUseCase",
+      "type": "UseCase",
+      "label": "CadastrarRestauranteUseCase",
+      "file": "src/RestauranteInteligente.Application/Auth/UseCases/CadastrarRestauranteUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:AtivarAssinaturaPlanoUseCase",
+      "type": "UseCase",
+      "label": "AtivarAssinaturaPlanoUseCase",
+      "file": "src/RestauranteInteligente.Application/Assinaturas/UseCases/AtivarAssinaturaPlanoUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:ObterStatusAssinaturaUseCase",
+      "type": "UseCase",
+      "label": "ObterStatusAssinaturaUseCase",
+      "file": "src/RestauranteInteligente.Application/Assinaturas/UseCases/ObterStatusAssinaturaUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
       "id": "consumer:PrevisaoDemandaConcluidaConsumer",
       "type": "MassTransitConsumer",
       "label": "PrevisaoDemandaConcluidaConsumer",
       "file": "src/RestauranteInteligente.Infrastructure/Messaging/Consumers/PrevisaoDemandaConcluidaConsumer.cs",
       "metadata": {
         "framework": "MassTransit Raw AMQP"
+      }
+    },
+    {
+      "id": "controller:AssinaturaController",
+      "type": "ApiController",
+      "label": "AssinaturaController",
+      "file": "src/RestauranteInteligente.Api/Controllers/AssinaturaController.cs",
+      "metadata": {
+        "base_route": "/api/v1/assinatura",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/assinatura/status",
+            "normalized_route": "/api/v1/assinatura/status",
+            "action": "ObterStatus",
+            "controller": "AssinaturaController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/assinatura/assinar",
+            "normalized_route": "/api/v1/assinatura/assinar",
+            "action": "AtivarPlano",
+            "controller": "AssinaturaController"
+          }
+        ],
+        "layer": "Api"
       }
     },
     {
@@ -467,6 +538,13 @@
             "raw_route": "/api/v1/auth/logout",
             "normalized_route": "/api/v1/auth/logout",
             "action": "Logout",
+            "controller": "AuthController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/auth/cadastrar-restaurante",
+            "normalized_route": "/api/v1/auth/cadastrar-restaurante",
+            "action": "CadastrarRestaurante",
             "controller": "AuthController"
           }
         ],
@@ -686,6 +764,33 @@
       }
     },
     {
+      "id": "feature:assinatura",
+      "type": "FrontendFeature",
+      "label": "assinatura",
+      "file": "src/frontend/features/assinatura/index.ts",
+      "metadata": {
+        "bounded_context": "assinatura"
+      }
+    },
+    {
+      "id": "hook:useAssinatura",
+      "type": "FrontendHook",
+      "label": "useAssinatura",
+      "file": "src/frontend/features/assinatura/hooks/useAssinatura.ts",
+      "metadata": {
+        "feature": "assinatura"
+      }
+    },
+    {
+      "id": "frontend_service:assinaturaService",
+      "type": "FrontendService",
+      "label": "assinaturaService",
+      "file": "src/frontend/features/assinatura/services/assinaturaService.ts",
+      "metadata": {
+        "feature": "assinatura"
+      }
+    },
+    {
       "id": "feature:auth",
       "type": "FrontendFeature",
       "label": "auth",
@@ -699,6 +804,15 @@
       "type": "FrontendHook",
       "label": "useAuthStore",
       "file": "src/frontend/features/auth/hooks/useAuthStore.ts",
+      "metadata": {
+        "feature": "auth"
+      }
+    },
+    {
+      "id": "hook:useCadastroRestauranteMutation",
+      "type": "FrontendHook",
+      "label": "useCadastroRestauranteMutation",
+      "file": "src/frontend/features/auth/hooks/useCadastroRestauranteMutation.ts",
       "metadata": {
         "feature": "auth"
       }
@@ -755,6 +869,33 @@
       "file": "src/frontend/features/caixa/services/caixaService.ts",
       "metadata": {
         "feature": "caixa"
+      }
+    },
+    {
+      "id": "feature:dashboard",
+      "type": "FrontendFeature",
+      "label": "dashboard",
+      "file": "src/frontend/features/dashboard/index.ts",
+      "metadata": {
+        "bounded_context": "dashboard"
+      }
+    },
+    {
+      "id": "hook:useDashboardExecutivo",
+      "type": "FrontendHook",
+      "label": "useDashboardExecutivo",
+      "file": "src/frontend/features/dashboard/hooks/useDashboardExecutivo.ts",
+      "metadata": {
+        "feature": "dashboard"
+      }
+    },
+    {
+      "id": "frontend_service:dashboardService",
+      "type": "FrontendService",
+      "label": "dashboardService",
+      "file": "src/frontend/features/dashboard/services/dashboardService.ts",
+      "metadata": {
+        "feature": "dashboard"
       }
     },
     {
@@ -1107,6 +1248,24 @@
       }
     },
     {
+      "source": "controller:AssinaturaController",
+      "target": "usecase:AtivarAssinaturaPlanoUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:AssinaturaController",
+      "target": "usecase:ObterStatusAssinaturaUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:AuthController",
+      "target": "usecase:CadastrarRestauranteUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "controller:EstoqueController",
       "target": "usecase:BaixaEstoqueService",
       "relationship": "invokes",
@@ -1137,6 +1296,18 @@
       "metadata": {}
     },
     {
+      "source": "feature:assinatura",
+      "target": "frontend_service:assinaturaService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:assinatura",
+      "target": "hook:useAssinatura",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "feature:auth",
       "target": "frontend_service:authService",
       "relationship": "invokes",
@@ -1145,6 +1316,12 @@
     {
       "source": "feature:auth",
       "target": "hook:useAuthStore",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:auth",
+      "target": "hook:useCadastroRestauranteMutation",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1169,6 +1346,18 @@
     {
       "source": "feature:caixa",
       "target": "hook:useFecharCaixa",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:dashboard",
+      "target": "frontend_service:dashboardService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:dashboard",
+      "target": "hook:useDashboardExecutivo",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1251,6 +1440,36 @@
       "metadata": {}
     },
     {
+      "source": "frontend_service:assinaturaService",
+      "target": "controller:AssinaturaController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/assinatura/assinar",
+        "path": "/assinatura/assinar",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:assinaturaService",
+      "target": "controller:AssinaturaController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/assinatura/status",
+        "path": "/assinatura/status",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:authService",
+      "target": "controller:AuthController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/auth/cadastrar-restaurante",
+        "path": "/auth/cadastrar-restaurante",
+        "verb": "POST"
+      }
+    },
+    {
       "source": "frontend_service:authService",
       "target": "controller:AuthController",
       "relationship": "calls_endpoint",
@@ -1278,6 +1497,16 @@
         "normalized": "/api/v1/caixa/fechar",
         "path": "/caixa/fechar",
         "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:dashboardService",
+      "target": "controller:FechamentosController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/caixa/status",
+        "path": "/caixa/status",
+        "verb": "GET"
       }
     },
     {
@@ -1361,6 +1590,12 @@
       }
     },
     {
+      "source": "hook:useAssinatura",
+      "target": "frontend_service:assinaturaService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "hook:useAuthStore",
       "target": "frontend_service:authService",
       "relationship": "invokes",
@@ -1369,6 +1604,12 @@
     {
       "source": "hook:useCadastrarInsumo",
       "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useCadastroRestauranteMutation",
+      "target": "frontend_service:authService",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1393,6 +1634,12 @@
     {
       "source": "hook:useCriarProduto",
       "target": "frontend_service:vendasService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "hook:useDashboardExecutivo",
+      "target": "frontend_service:dashboardService",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1540,7 +1787,7 @@
     },
     {
       "source": "page:(tabs)/index.tsx",
-      "target": "feature:vendas",
+      "target": "feature:dashboard",
       "relationship": "references",
       "metadata": {}
     },
@@ -1733,6 +1980,24 @@
       "metadata": {}
     },
     {
+      "source": "repo:RestauranteRepository",
+      "target": "table:Restaurantes",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:UsuarioRepository",
+      "target": "table:Usuarios",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:UsuarioRepository",
+      "target": "table:Usuarios",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
       "source": "repo:VendaRepository",
       "target": "table:Vendas",
       "relationship": "queries",
@@ -1895,8 +2160,32 @@
       "metadata": {}
     },
     {
+      "source": "usecase:AtivarAssinaturaPlanoUseCase",
+      "target": "repo:AssinaturaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "usecase:BaixaEstoqueService",
       "target": "repo:InsumoRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:CadastrarRestauranteUseCase",
+      "target": "repo:AssinaturaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:CadastrarRestauranteUseCase",
+      "target": "repo:RestauranteRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:CadastrarRestauranteUseCase",
+      "target": "repo:UsuarioRepository",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1947,6 +2236,12 @@
     {
       "source": "usecase:FecharCaixaUseCase",
       "target": "repo:VendaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:ObterStatusAssinaturaUseCase",
+      "target": "repo:AssinaturaRepository",
       "relationship": "invokes",
       "metadata": {}
     },

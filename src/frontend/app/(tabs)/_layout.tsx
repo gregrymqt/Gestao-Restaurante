@@ -23,10 +23,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'PDV',
+          title: 'Gestão',
           tabBarIcon: ({ color }) => (
             <ThemedText variant="subtitle" color={color as string}>
-              🛒
+              📈
             </ThemedText>
           ),
         }}

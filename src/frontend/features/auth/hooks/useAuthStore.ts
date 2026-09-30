@@ -50,6 +50,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = storage.getString(STORAGE_KEYS.AUTH_TOKEN);
       const refreshToken = storage.getString(STORAGE_KEYS.REFRESH_TOKEN);
+
+      // Auto-purga inteligente de tokens mock / legados para exigir autenticação real
+      if (token?.startsWith('mock-jwt-token') || refreshToken?.startsWith('mock-refresh-token')) {
+        console.warn('[Auth] Token de simulação (mock) detectado no storage. Purgando sessão para exigir autenticação real...');
+        storage.delete(STORAGE_KEYS.AUTH_TOKEN);
+        storage.delete(STORAGE_KEYS.REFRESH_TOKEN);
+        storage.delete(STORAGE_KEYS.ACTIVE_OPERATOR);
+        set({
+          token: null,
+          refreshToken: null,
+          operador: null,
+          isAuthenticated: false,
+          isInitialized: true,
+        });
+        return;
+      }
+
       const tenantRaw = storage.getString(STORAGE_KEYS.ACTIVE_TENANT);
       const operadorRaw = storage.getString(STORAGE_KEYS.ACTIVE_OPERATOR);
 

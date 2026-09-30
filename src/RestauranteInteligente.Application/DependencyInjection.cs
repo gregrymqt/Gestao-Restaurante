@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using RestauranteInteligente.Application.Assinaturas.UseCases;
+using RestauranteInteligente.Application.Auth.UseCases;
 using RestauranteInteligente.Application.Caixa.UseCases;
 using RestauranteInteligente.Application.Estoque.Services;
 using RestauranteInteligente.Application.Previsoes.UseCases;
@@ -15,6 +17,9 @@ public static class DependencyInjection
         services.AddScoped<AbrirCaixaUseCase>();
         services.AddScoped<FecharCaixaUseCase>();
         services.AddScoped<CalcularCapacidadeProducaoUseCase>();
+        services.AddScoped<CadastrarRestauranteUseCase>();
+        services.AddScoped<ObterStatusAssinaturaUseCase>();
+        services.AddScoped<AtivarAssinaturaPlanoUseCase>();
         return services;
     }
 }

@@ -25,17 +25,23 @@ apiClient.interceptors.request.use(
 
     const token = storage.getString(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (token.startsWith('mock-jwt-token')) {
+        storage.delete(STORAGE_KEYS.AUTH_TOKEN);
+        storage.delete(STORAGE_KEYS.REFRESH_TOKEN);
+        storage.delete(STORAGE_KEYS.ACTIVE_OPERATOR);
+      } else {
+        config.headers.Authorization = `Bearer ${token}`;
 
-      const tenantRaw = storage.getString(STORAGE_KEYS.ACTIVE_TENANT);
-      if (tenantRaw) {
-        try {
-          const tenant = JSON.parse(tenantRaw);
-          if (tenant?.id) {
-            config.headers['X-Tenant-Id'] = tenant.id;
+        const tenantRaw = storage.getString(STORAGE_KEYS.ACTIVE_TENANT);
+        if (tenantRaw) {
+          try {
+            const tenant = JSON.parse(tenantRaw);
+            if (tenant?.id) {
+              config.headers['X-Tenant-Id'] = tenant.id;
+            }
+          } catch {
+            // Ignora parsing inválido
           }
-        } catch {
-          // Ignora parsing inválido
         }
       }
     }
@@ -72,6 +78,7 @@ apiClient.interceptors.response.use(
       // Sessão expirada: limpa credenciais para redirecionamento pelo Auth Guard
       storage.delete(STORAGE_KEYS.AUTH_TOKEN);
       storage.delete(STORAGE_KEYS.REFRESH_TOKEN);
+      storage.delete(STORAGE_KEYS.ACTIVE_OPERATOR);
     }
     return Promise.reject(error);
   }

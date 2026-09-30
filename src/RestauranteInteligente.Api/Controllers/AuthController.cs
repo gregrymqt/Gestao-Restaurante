@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Api.DTOs.Auth;
+using RestauranteInteligente.Application.Auth.DTOs;
+using RestauranteInteligente.Application.Auth.UseCases;
 using RestauranteInteligente.Domain.Common.Interfaces;
 
 namespace RestauranteInteligente.Api.Controllers;
@@ -210,5 +212,30 @@ public sealed class AuthController : ControllerBase
             revokedAt = DateTimeOffset.UtcNow,
             ttlRestanteSegundos = (int)remainingTtl.TotalSeconds
         });
+    }
+
+    /// <summary>
+    /// Auto-cadastro de novos inquilinos (Tenants) com Free Trial de 14 dias automático e emissão imediata de JWT.
+    /// </summary>
+    [HttpPost("cadastrar-restaurante")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CadastrarRestaurante(
+        [FromBody] CadastrarRestauranteInputDto request,
+        [FromServices] CadastrarRestauranteUseCase useCase,
+        CancellationToken ct)
+    {
+        try
+        {
+            var resultado = await useCase.ExecutarAsync(request, ct);
+            return StatusCode(StatusCodes.Status201Created, resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
     }
 }

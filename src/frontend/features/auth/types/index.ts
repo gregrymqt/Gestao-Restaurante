@@ -22,6 +22,16 @@ export interface LoginInput {
   restauranteId: string;
 }
 
+export interface CadastrarRestauranteInput {
+  nomeRestaurante: string;
+  cnpj: string;
+  cidade?: string;
+  estado?: string;
+  nomeGestor: string;
+  emailGestor: string;
+  senhaGestor: string;
+}
+
 export interface LoginResponse {
   token: string;
   refreshToken: string;

@@ -4,9 +4,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
+import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useLoginMutation } from '../hooks/useLoginMutation';
@@ -17,6 +19,7 @@ import { TenantSelectorModal } from '../components/TenantSelectorModal';
 import { CredentialsCard } from '../components/CredentialsCard';
 import { RecentOperatorsGrid } from '../components/RecentOperatorsGrid';
 import { LoginCtaSection } from '../components/LoginCtaSection';
+import { ModalCadastroRestaurante } from '../components/ModalCadastroRestaurante';
 import { RestauranteTenant, OperadorRecente } from '../types';
 
 export function LoginScreen() {
@@ -28,6 +31,7 @@ export function LoginScreen() {
   const [identificador, setIdentificador] = useState('operador@restaurante.com');
   const [palavraPasse, setPalavraPasse] = useState('123456');
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
   const [tenants, setTenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
   const [operadores] = useState<OperadorRecente[]>(OPERADORES_RECENTES_PADRAO);
   const [operadorAtivoId, setOperadorAtivoId] = useState<string>('99999999-9999-9999-9999-999999999999');
@@ -108,6 +112,21 @@ export function LoginScreen() {
           isLoading={loginMutation.isPending}
           disabled={!identificador.trim() || !palavraPasse.trim()}
         />
+
+        {/* CTA Onboarding de Novo Inquilino (14 Dias Grátis) */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Criar novo restaurante com 14 dias grátis"
+          onPress={() => setIsCadastroModalOpen(true)}
+          style={({ pressed }) => [styles.bannerCadastro, pressed && styles.bannerCadastroPressionado]}
+        >
+          <ThemedText variant="subtitle" weight="bold" color={tokens.colors.primary}>
+            ✨ Novo por aqui? Cadastre seu Restaurante
+          </ThemedText>
+          <ThemedText variant="caption" style={styles.subtextoCadastro}>
+            Ganhe 14 dias de degustação gratuita sem cartão
+          </ThemedText>
+        </Pressable>
       </ScrollView>
 
       {/* Modal de Troca de Tenant */}
@@ -117,6 +136,12 @@ export function LoginScreen() {
         tenantAtivoId={currentTenant?.id || ''}
         onSelectTenant={setTenant}
         onClose={() => setIsTenantModalOpen(false)}
+      />
+
+      {/* Modal de Auto-Cadastro de Inquilino (SaaS Onboarding) */}
+      <ModalCadastroRestaurante
+        visible={isCadastroModalOpen}
+        onClose={() => setIsCadastroModalOpen(false)}
       />
     </KeyboardAvoidingView>
   );
@@ -129,5 +154,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: tokens.spacing.xl,
+  },
+  bannerCadastro: {
+    marginTop: tokens.spacing.lg,
+    marginHorizontal: tokens.spacing.lg,
+    padding: tokens.spacing.md,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.primaryLight,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bannerCadastroPressionado: {
+    opacity: 0.8,
+  },
+  subtextoCadastro: {
+    color: tokens.colors.textSecondary,
+    fontSize: tokens.typography.fontXs,
   },
 });

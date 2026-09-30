@@ -58,6 +58,15 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
     - O grafo indexa deterministicamente os nós (`DatabaseTable`, `SecurityPolicy`, `ApiController`, `UseCase`, `CoreRepository`, `MassTransitConsumer`, `MessageQueue`, `FastAPIService`, `PythonWorker`, `FrontendPage`, `FrontendFeature`, `FrontendHook`, `FrontendService`, `DockerContainer`) e suas conexões semânticas (`calls_endpoint`, `invokes`, `queries`, `writes_to`, `consumes_from`, `publishes_to`, `protects`, `references`, `subscribes_sse`).
     - Sempre que novas rotas, tabelas, use cases, consumers ou telas forem criados ou alterados, mantenha o grafo sincronizado executando: `py .agents/scripts/generate_knowledge_graph.py`.
 
+11. **Diretriz de Produto - Aplicativo Mobile Focado no Gestor:**
+    - O aplicativo mobile é arquitetado para o **Dono / Gestor do Restaurante**.
+    - A rota inicial (`app/(tabs)/index.tsx`) atua como **Dashboard Executivo de Operações & Decisão**, consolidando faturamento do dia, alertas reativos de estoque crítico (SSE), status do caixa e recomendações preditivas de compras da IA. O PDV de balcão é uma funcionalidade secundária/auxiliar de testes.
+
+12. **Ciclo de Vida SaaS e Auto-Cadastro de Inquilinos (Tenants):**
+    - Novos inquilinos entram via fluxo de auto-cadastro gerando seu próprio `RestauranteId` e usuário administrador/gestor.
+    - Todo novo tenant recebe automaticamente 14 dias de degustação gratuita (`TrialPeriod`).
+    - O acesso aos recursos é condicionado ao ciclo de vida da assinatura (`TRIAL`, `ATIVA`, `EXPIRADA`, `CANCELADA`), com interceptor de Paywall no frontend e checagem de vigência no backend.
+
 ---
 
 ## 2. Skills do Projeto
