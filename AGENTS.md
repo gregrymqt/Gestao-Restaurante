@@ -67,6 +67,16 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
     - Todo novo tenant recebe automaticamente 14 dias de degustação gratuita (`TrialPeriod`).
     - O acesso aos recursos é condicionado ao ciclo de vida da assinatura (`TRIAL`, `ATIVA`, `EXPIRADA`, `CANCELADA`), com interceptor de Paywall no frontend e checagem de vigência no backend.
 
+13. **Segregação e Execução em Lotes Multi-Stack (Anti-Context Bloat e Anti-Alucinação):**
+    - Sempre que uma tarefa demandar alterações que atravessem mais de uma camada tecnológica (ex: C#/.NET, Python/ML e React Native/Frontend), é **terminantemente proibido** misturar edições entre stacks no mesmo passo ou tentar resolver todas as camadas em uma única passagem.
+    - **Declaração Prévia Obrigatória:** Antes de editar qualquer código, o agente deve anunciar explicitamente a decomposição da tarefa em lotes isolados de responsabilidade única segundo a ordem canônica de dependência:
+      1. *Lote 1 (Contratos e Persistência):* Modelos de banco, migrações, Use Cases e endpoints na API .NET (C#).
+      2. *Lote 2 (Workers e Eventos):* Consumers RabbitMQ, modelos Pydantic e lógica de processamento no Worker Python.
+      3. *Lote 3 (Interface e Consumo):* Tipos TypeScript, services, hooks e componentes no React Native.
+      4. *Lote 4 (Governança e Grafo):* Sincronização mandatória do Grafo de Conhecimento (`graph.json`).
+    - **Portões de Validação Estritos (Gates):** A transição entre lotes só é permitida após validação mandatória da camada atual via terminal (ex: compilação com `dotnet build` para C#, validação de sintaxe/testes para Python e verificação de tipos/lint para React Native). Se houver qualquer falha ou erro de compilação, é terminantemente proibido tocar no lote seguinte até a resolução completa do problema no escopo atual.
+    - **Isolamento de Contexto:** Durante a execução de um lote, o agente deve restringir sua leitura e escrita estritamente aos diretórios da respectiva stack, prevenindo contaminação de contexto e alucinações por excesso de responsabilidade.
+
 ---
 
 ## 2. Skills do Projeto
