@@ -49,4 +49,12 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
         await _context.Usuarios.AddAsync(usuario, ct);
     }
+
+    public async Task<IReadOnlyList<Usuario>> ObterTodosAsync(CancellationToken ct = default)
+    {
+        return await _context.Usuarios
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
 }

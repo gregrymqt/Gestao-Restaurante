@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
+  Pressable,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { TenantSelectorModal } from '@/features/auth';
+import { AdminBackofficeScreen } from '@/features/admin';
 import { usePerfil } from '../hooks/usePerfil';
 import { OperatorHeroCard } from '../components/OperatorHeroCard';
 import { TenantBranchCard } from '../components/TenantBranchCard';
@@ -31,6 +34,8 @@ export function PerfilScreen() {
     handleBloquearTela,
     handleNavegarCaixa,
   } = usePerfil();
+
+  const [isAdminBackofficeOpen, setIsAdminBackofficeOpen] = useState(false);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -118,6 +123,26 @@ export function PerfilScreen() {
           onBloquearTela={handleBloquearTela}
           onEncerrarTurno={handleEncerrarTurno}
         />
+
+        {/* 6. Acesso SuperAdmin Backoffice SaaS */}
+        <View style={styles.superAdminContainer}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Abrir Backoffice SuperAdmin SaaS"
+            onPress={() => setIsAdminBackofficeOpen(true)}
+            style={({ pressed }) => [styles.botaoSuperAdmin, pressed && styles.pressedSuperAdmin]}
+          >
+            <ThemedText style={styles.iconeSuperAdmin}>🛡️</ThemedText>
+            <View style={styles.textosSuperAdmin}>
+              <ThemedText variant="subtitle" weight="bold" color="#FFFFFF">
+                Backoffice SuperAdmin SaaS
+              </ThemedText>
+              <ThemedText variant="caption" style={styles.subtextoSuperAdmin}>
+                Gestão visual de inquilinos, trials e assinaturas sem CLI
+              </ThemedText>
+            </View>
+          </Pressable>
+        </View>
       </ScrollView>
 
       {/* Modal de Seleção de Filiais */}
@@ -128,6 +153,15 @@ export function PerfilScreen() {
         onSelectTenant={handleSelectTenant}
         onClose={() => setIsTenantModalOpen(false)}
       />
+
+      {/* Modal do Backoffice SuperAdmin */}
+      <Modal
+        visible={isAdminBackofficeOpen}
+        animationType="slide"
+        onRequestClose={() => setIsAdminBackofficeOpen(false)}
+      >
+        <AdminBackofficeScreen onVoltar={() => setIsAdminBackofficeOpen(false)} />
+      </Modal>
     </View>
   );
 }
@@ -241,5 +275,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: tokens.colors.textSecondary,
+  },
+  superAdminContainer: {
+    paddingHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.md,
+    marginBottom: tokens.spacing.xl,
+  },
+  botaoSuperAdmin: {
+    backgroundColor: '#1E1E2C',
+    borderRadius: tokens.radii.lg,
+    padding: tokens.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.md,
+    borderWidth: 1,
+    borderColor: '#3F3F5A',
+  },
+  pressedSuperAdmin: {
+    opacity: 0.85,
+  },
+  iconeSuperAdmin: {
+    fontSize: 26,
+  },
+  textosSuperAdmin: {
+    flex: 1,
+  },
+  subtextoSuperAdmin: {
+    color: '#A0A0B8',
+    fontSize: 11,
+    marginTop: 2,
   },
 });

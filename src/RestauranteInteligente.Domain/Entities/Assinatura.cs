@@ -105,4 +105,29 @@ public sealed class Assinatura : IRestauranteEntity
     {
         Status = StatusAssinatura.Cancelada;
     }
+
+    /// <summary>
+    /// Operação administrativa: estende a data final de Free Trial para o inquilino.
+    /// </summary>
+    public void EstenderTrial(int diasAdicionais)
+    {
+        if (diasAdicionais <= 0)
+            throw new ArgumentOutOfRangeException(nameof(diasAdicionais), "A quantidade de dias adicionais deve ser maior que zero.");
+
+        var baseCalculo = DataFimTrial > DateTimeOffset.UtcNow ? DataFimTrial : DateTimeOffset.UtcNow;
+        DataFimTrial = baseCalculo.AddDays(diasAdicionais);
+        Status = StatusAssinatura.Trial;
+    }
+
+    /// <summary>
+    /// Operação administrativa: altera diretamente o status da assinatura pelo Backoffice.
+    /// </summary>
+    public void AlterarStatus(StatusAssinatura novoStatus)
+    {
+        Status = novoStatus;
+        if (novoStatus == StatusAssinatura.Ativa && DataExpiracao == null)
+        {
+            DataExpiracao = DateTimeOffset.UtcNow.AddMonths(1);
+        }
+    }
 }

@@ -12,4 +12,5 @@ public interface IAssinaturaRepository
     Task AtualizarAsync(Assinatura assinatura, CancellationToken ct = default);
     Task<IReadOnlyList<Plano>> ObterPlanosAtivosAsync(CancellationToken ct = default);
     Task<Plano?> ObterPlanoPorIdAsync(Guid planoId, CancellationToken ct = default);
+    Task<IReadOnlyList<Assinatura>> ObterTodasAssinaturasAsync(CancellationToken ct = default);
 }

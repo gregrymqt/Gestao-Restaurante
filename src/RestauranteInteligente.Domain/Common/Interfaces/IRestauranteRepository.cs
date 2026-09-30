@@ -10,4 +10,5 @@ public interface IRestauranteRepository
     Task<Restaurante?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
     Task<bool> ExisteCnpjAsync(string cnpj, CancellationToken ct = default);
     Task AdicionarAsync(Restaurante restaurante, CancellationToken ct = default);
+    Task<IReadOnlyList<Restaurante>> ObterTodosAsync(CancellationToken ct = default);
 }

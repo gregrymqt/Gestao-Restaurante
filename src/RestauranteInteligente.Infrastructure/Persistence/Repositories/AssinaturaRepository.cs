@@ -83,4 +83,12 @@ public sealed class AssinaturaRepository : IAssinaturaRepository
 
         return PlanosPadrao.FirstOrDefault(p => p.Id == planoId);
     }
+
+    public async Task<IReadOnlyList<Assinatura>> ObterTodasAssinaturasAsync(CancellationToken ct = default)
+    {
+        return await _context.Assinaturas
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
 }

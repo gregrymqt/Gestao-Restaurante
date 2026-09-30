@@ -41,4 +41,12 @@ public sealed class RestauranteRepository : IRestauranteRepository
 
         await _context.Restaurantes.AddAsync(restaurante, ct);
     }
+
+    public async Task<IReadOnlyList<Restaurante>> ObterTodosAsync(CancellationToken ct = default)
+    {
+        return await _context.Restaurantes
+            .AsNoTracking()
+            .OrderBy(r => r.Nome)
+            .ToListAsync(ct);
+    }
 }

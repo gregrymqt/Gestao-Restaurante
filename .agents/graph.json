@@ -2,8 +2,8 @@
   "metadata": {
     "system": "Restaurante Inteligente",
     "generator": "generate_knowledge_graph.py",
-    "node_count": 104,
-    "edge_count": 159
+    "node_count": 111,
+    "edge_count": 175
   },
   "nodes": [
     {
@@ -477,12 +477,72 @@
       }
     },
     {
+      "id": "usecase:AlterarStatusAssinaturaAdminUseCase",
+      "type": "UseCase",
+      "label": "AlterarStatusAssinaturaAdminUseCase",
+      "file": "src/RestauranteInteligente.Application/Admin/UseCases/AlterarStatusAssinaturaAdminUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:EstenderTrialTenantUseCase",
+      "type": "UseCase",
+      "label": "EstenderTrialTenantUseCase",
+      "file": "src/RestauranteInteligente.Application/Admin/UseCases/EstenderTrialTenantUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
+      "id": "usecase:ListarTenantsAdminUseCase",
+      "type": "UseCase",
+      "label": "ListarTenantsAdminUseCase",
+      "file": "src/RestauranteInteligente.Application/Admin/UseCases/ListarTenantsAdminUseCase.cs",
+      "metadata": {
+        "layer": "Application"
+      }
+    },
+    {
       "id": "consumer:PrevisaoDemandaConcluidaConsumer",
       "type": "MassTransitConsumer",
       "label": "PrevisaoDemandaConcluidaConsumer",
       "file": "src/RestauranteInteligente.Infrastructure/Messaging/Consumers/PrevisaoDemandaConcluidaConsumer.cs",
       "metadata": {
         "framework": "MassTransit Raw AMQP"
+      }
+    },
+    {
+      "id": "controller:AdminController",
+      "type": "ApiController",
+      "label": "AdminController",
+      "file": "src/RestauranteInteligente.Api/Controllers/AdminController.cs",
+      "metadata": {
+        "base_route": "/api/v1/admin",
+        "endpoints": [
+          {
+            "verb": "GET",
+            "raw_route": "/api/v1/admin/tenants",
+            "normalized_route": "/api/v1/admin/tenants",
+            "action": "ListarTenants",
+            "controller": "AdminController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/admin/tenants/{restauranteId:guid}/estender-trial",
+            "normalized_route": "/api/v1/admin/tenants/:restauranteId/estender-trial",
+            "action": "EstenderTrial",
+            "controller": "AdminController"
+          },
+          {
+            "verb": "POST",
+            "raw_route": "/api/v1/admin/tenants/{restauranteId:guid}/alterar-status",
+            "normalized_route": "/api/v1/admin/tenants/:restauranteId/alterar-status",
+            "action": "AlterarStatus",
+            "controller": "AdminController"
+          }
+        ],
+        "layer": "Api"
       }
     },
     {
@@ -761,6 +821,33 @@
           "lag_1",
           "rolling_mean_7"
         ]
+      }
+    },
+    {
+      "id": "feature:admin",
+      "type": "FrontendFeature",
+      "label": "admin",
+      "file": "src/frontend/features/admin/index.ts",
+      "metadata": {
+        "bounded_context": "admin"
+      }
+    },
+    {
+      "id": "hook:useAdminTenants",
+      "type": "FrontendHook",
+      "label": "useAdminTenants",
+      "file": "src/frontend/features/admin/hooks/useAdminTenants.ts",
+      "metadata": {
+        "feature": "admin"
+      }
+    },
+    {
+      "id": "frontend_service:adminService",
+      "type": "FrontendService",
+      "label": "adminService",
+      "file": "src/frontend/features/admin/services/adminService.ts",
+      "metadata": {
+        "feature": "admin"
       }
     },
     {
@@ -1248,6 +1335,24 @@
       }
     },
     {
+      "source": "controller:AdminController",
+      "target": "usecase:AlterarStatusAssinaturaAdminUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:AdminController",
+      "target": "usecase:EstenderTrialTenantUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "controller:AdminController",
+      "target": "usecase:ListarTenantsAdminUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "controller:AssinaturaController",
       "target": "usecase:AtivarAssinaturaPlanoUseCase",
       "relationship": "invokes",
@@ -1292,6 +1397,18 @@
     {
       "source": "controller:VendasController",
       "target": "usecase:RegistrarVendaUseCase",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:admin",
+      "target": "frontend_service:adminService",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:admin",
+      "target": "hook:useAdminTenants",
       "relationship": "invokes",
       "metadata": {}
     },
@@ -1438,6 +1555,36 @@
       "target": "hook:useRegistrarVenda",
       "relationship": "invokes",
       "metadata": {}
+    },
+    {
+      "source": "frontend_service:adminService",
+      "target": "controller:AdminController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/admin/tenants",
+        "path": "/admin/tenants",
+        "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:adminService",
+      "target": "controller:AdminController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/admin/tenants/:param/alterar-status",
+        "path": "/admin/tenants/${restauranteId}/alterar-status",
+        "verb": "POST"
+      }
+    },
+    {
+      "source": "frontend_service:adminService",
+      "target": "controller:AdminController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/admin/tenants/:param/estender-trial",
+        "path": "/admin/tenants/${restauranteId}/estender-trial",
+        "verb": "POST"
+      }
     },
     {
       "source": "frontend_service:assinaturaService",
@@ -1588,6 +1735,12 @@
         "path": "/vendas",
         "verb": "POST"
       }
+    },
+    {
+      "source": "hook:useAdminTenants",
+      "target": "frontend_service:adminService",
+      "relationship": "invokes",
+      "metadata": {}
     },
     {
       "source": "hook:useAssinatura",
@@ -2160,6 +2313,18 @@
       "metadata": {}
     },
     {
+      "source": "usecase:AlterarStatusAssinaturaAdminUseCase",
+      "target": "repo:AssinaturaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:AlterarStatusAssinaturaAdminUseCase",
+      "target": "repo:RestauranteRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "usecase:AtivarAssinaturaPlanoUseCase",
       "target": "repo:AssinaturaRepository",
       "relationship": "invokes",
@@ -2202,6 +2367,18 @@
       "metadata": {}
     },
     {
+      "source": "usecase:EstenderTrialTenantUseCase",
+      "target": "repo:AssinaturaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:EstenderTrialTenantUseCase",
+      "target": "repo:RestauranteRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
       "source": "usecase:FecharCaixaUseCase",
       "target": "queue:previsao.demanda.solicitada",
       "relationship": "publishes_to",
@@ -2236,6 +2413,24 @@
     {
       "source": "usecase:FecharCaixaUseCase",
       "target": "repo:VendaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:ListarTenantsAdminUseCase",
+      "target": "repo:AssinaturaRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:ListarTenantsAdminUseCase",
+      "target": "repo:RestauranteRepository",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "usecase:ListarTenantsAdminUseCase",
+      "target": "repo:UsuarioRepository",
       "relationship": "invokes",
       "metadata": {}
     },

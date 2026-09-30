@@ -15,12 +15,16 @@ public sealed class ProdutosControllerTests
 {
     private readonly Guid _tenantId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     private readonly Mock<IProdutoRepository> _produtoRepositoryMock;
+    private readonly Mock<IInsumoRepository> _insumoRepositoryMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ITenantContext> _tenantContextMock;
     private readonly ProdutosController _controller;
 
     public ProdutosControllerTests()
     {
         _produtoRepositoryMock = new Mock<IProdutoRepository>();
+        _insumoRepositoryMock = new Mock<IInsumoRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _tenantContextMock = new Mock<ITenantContext>();
 
         _tenantContextMock.Setup(t => t.RestauranteId).Returns(_tenantId);
@@ -28,6 +32,8 @@ public sealed class ProdutosControllerTests
 
         _controller = new ProdutosController(
             _produtoRepositoryMock.Object,
+            _insumoRepositoryMock.Object,
+            _unitOfWorkMock.Object,
             _tenantContextMock.Object,
             NullLogger<ProdutosController>.Instance
         );
@@ -92,7 +98,12 @@ public sealed class ProdutosControllerTests
     [Fact]
     public async Task CriarProduto_ComDadosValidos_DeveRetornar201CreatedAtActionComTenantInjetado()
     {
-        var request = new CriarProdutoRequest("Suco Natural de Laranja", "Copo 500ml", 12.00m);
+        var request = new CriarProdutoRequest
+        {
+            Nome = "Suco Natural de Laranja",
+            Descricao = "Copo 500ml",
+            Preco = 12.00m
+        };
 
         var result = await _controller.CriarProduto(request, CancellationToken.None);
 

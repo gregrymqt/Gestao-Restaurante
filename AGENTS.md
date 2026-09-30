@@ -77,6 +77,10 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
     - **Portões de Validação Estritos (Gates):** A transição entre lotes só é permitida após validação mandatória da camada atual via terminal (ex: compilação com `dotnet build` para C#, validação de sintaxe/testes para Python e verificação de tipos/lint para React Native). Se houver qualquer falha ou erro de compilação, é terminantemente proibido tocar no lote seguinte até a resolução completa do problema no escopo atual.
     - **Isolamento de Contexto:** Durante a execução de um lote, o agente deve restringir sua leitura e escrita estritamente aos diretórios da respectiva stack, prevenindo contaminação de contexto e alucinações por excesso de responsabilidade.
 
+14. **Governança de Plataforma SaaS e Backoffice SuperAdmin:**
+    - O sistema segrega inquilinos locais (`Role = Manager/Owner`) de administradores da plataforma (`Role = SuperAdmin`).
+    - Administradores da plataforma possuem acesso a endpoints administrativos no backend (`/api/v1/admin/*`) com permissão para listar inquilinos, auditar faturamentos, estender períodos de degustação e gerenciar planos através de uma interface visual dedicada, sem necessidade de manipulação manual via CLI ou SQL.
+
 ---
 
 ## 2. Skills do Projeto

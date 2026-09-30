@@ -11,7 +11,7 @@
 [CmdletBinding()]
 param(
     [string]$BaseUrl = "",
-    [ValidateSet("Menu", "Auto", "Capacidade", "Testes", "Status")]
+    [ValidateSet("Menu", "Auto", "Capacidade", "Testes", "Status", "Onboarding", "Admin")]
     [string]$Modo = "Menu",
     [string]$TenantId = "11111111-1111-1111-1111-111111111111",
     [string]$Email = "operador@restaurante.com",
@@ -307,6 +307,135 @@ function Run-FullDemonstration {
     Show-CapacidadeReport
 }
 
+function Test-TenantOnboarding {
+    Write-Host "`n================================================================================" -ForegroundColor Cyan
+    Write-Host "   DEMONSTRACAO DE ONBOARDING SAAS: AUTO-CADASTRO & FREE TRIAL DE 14 DIAS       " -ForegroundColor White
+    Write-Host "================================================================================" -ForegroundColor Cyan
+
+    $timestamp = (Get-Date).ToString("yyyyMMddHHmmss")
+    $cnpjUnico = "99.$($timestamp.Substring(6,3)).$($timestamp.Substring(9,3))/0001-99"
+    $lojaNome = "Hamburgueria Demo $timestamp"
+    $gestorEmail = "demo.$timestamp@restaurante.com"
+
+    Write-Host "`n[Passo 1/3] Realizando Auto-Cadastro de Inquilino ($lojaNome)..." -ForegroundColor Yellow
+
+    $cadastroPayload = @{
+        nomeRestaurante = $lojaNome
+        cnpj = $cnpjUnico
+        cidade = "Sao Paulo"
+        estado = "SP"
+        latitude = -23.5505
+        longitude = -46.6333
+        nomeGestor = "Roberto Carlos"
+        emailGestor = $gestorEmail
+        senhaGestor = "123456"
+    } | ConvertTo-Json
+
+    try {
+        $cadastroRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/auth/cadastrar-restaurante" `
+            -Method Post `
+            -Body $cadastroPayload `
+            -ContentType "application/json" `
+            -ErrorAction Stop
+
+        Write-Host "  -> [OK] Inquilino cadastrado com sucesso!" -ForegroundColor Green
+        Write-Host "         RestauranteId: $($cadastroRes.restauranteId)" -ForegroundColor White
+        Write-Host "         Gestor: $($cadastroRes.nomeGestor) ($($cadastroRes.email))" -ForegroundColor White
+        Write-Host "         Periodo de Degustacao: $($cadastroRes.diasRestantesTrial) dias restantes (Status: $($cadastroRes.statusAssinatura))" -ForegroundColor Green
+        Write-Host "  -> [OK] JWT emitido imediatamente com isolamento multi-tenant (RLS)!" -ForegroundColor DarkGray
+
+        $novoAuthHeaders = @{
+            "Authorization" = "Bearer $($cadastroRes.token)"
+            "X-Tenant-Id" = [string]$cadastroRes.restauranteId
+        }
+
+        # 2. Consulta Status da Assinatura
+        Write-Host "`n[Passo 2/3] Consultando Vigencia e Catalogo de Planos SaaS..." -ForegroundColor Yellow
+        $statusRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/assinatura/status" `
+            -Method Get `
+            -Headers $novoAuthHeaders `
+            -ErrorAction Stop
+
+        Write-Host "  -> [OK] Vigencia da Conta: $($statusRes.estaVigente) | Status: $($statusRes.status)" -ForegroundColor Green
+        Write-Host "  -> [OK] Planos Disponiveis no Catalogo: $($statusRes.planosDisponiveis.Count)" -ForegroundColor White
+        foreach ($p in $statusRes.planosDisponiveis) {
+            $iaTag = if ($p.possuiModuloIa) { "[Com IA HistGradientBoosting]" } else { "[Basico]" }
+            Write-Host "       * $($p.nome): R$ $($p.precoMensal)/mes $iaTag" -ForegroundColor DarkCyan
+        }
+
+        # 3. Contratação do Plano Pro Inteligente
+        Write-Host "`n[Passo 3/3] Simulando Contratacao Comercial do 'Plano Pro Inteligente (IA)'..." -ForegroundColor Yellow
+        $planoPro = $statusRes.planosDisponiveis | Where-Object { $_.possuiModuloIa } | Select-Object -First 1
+
+        if ($planoPro) {
+            $assinarPayload = @{
+                planoId = $planoPro.id
+                mesesVigencia = 1
+            } | ConvertTo-Json
+
+            $assinarRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/assinatura/assinar" `
+                -Method Post `
+                -Headers $novoAuthHeaders `
+                -Body $assinarPayload `
+                -ContentType "application/json" `
+                -ErrorAction Stop
+
+            Write-Host "  -> [OK] Assinatura ativada com sucesso!" -ForegroundColor Green
+            Write-Host "         Plano Atual: $($assinarRes.planoAtual.nome) (R$ $($assinarRes.planoAtual.precoMensal)/mes)" -ForegroundColor White
+            Write-Host "         Novo Status: $($assinarRes.status) (Ate: $($assinarRes.dataExpiracao))`n" -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "  -> [ERRO NO ONBOARDING] $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+function Show-SuperAdminTenants {
+    Write-Host "`n================================================================================" -ForegroundColor Cyan
+    Write-Host "   BACKOFFICE SUPERADMIN SAAS: LISTAGEM GLOBAL DE INQUILINOS E ASSINATURAS       " -ForegroundColor White
+    Write-Host "================================================================================" -ForegroundColor Cyan
+
+    $auth = Get-AuthContext -Silent $true
+    if (-not $auth) { return }
+
+    try {
+        $tenants = Invoke-RestMethod -Uri "$BaseUrl/api/v1/admin/tenants" `
+            -Method Get `
+            -Headers $auth.Headers `
+            -ErrorAction Stop
+
+        Write-Host "`nTotal de Inquilinos Cadastrados na Plataforma: $($tenants.Count)`n" -ForegroundColor Yellow
+
+        $headerLine = "{0,-30} | {1,-18} | {2,-18} | {3,-12} | {4,-24}" -f "RESTAURANTE", "CNPJ", "GESTOR", "STATUS", "PLANO VIGENTE"
+        Write-Host $headerLine -ForegroundColor DarkCyan
+        Write-Host ("-" * 115) -ForegroundColor DarkGray
+
+        foreach ($t in $tenants) {
+            $nome = [string]$t.nomeRestaurante
+            if ($nome.Length -gt 28) { $nome = $nome.Substring(0, 25) + "..." }
+            $gestor = [string]$t.gestorNome
+            if ($gestor.Length -gt 16) { $gestor = $gestor.Substring(0, 13) + "..." }
+            $plano = [string]$t.planoNome
+            if ($t.statusAssinatura -eq "TRIAL") {
+                $plano = "Trial ($($t.diasRestantesTrial)d rest.)"
+            }
+
+            $linha = "{0,-30} | {1,-18} | {2,-18} | {3,-12} | {4,-24}" -f `
+                $nome, $t.cnpj, $gestor, $t.statusAssinatura, $plano
+
+            if ($t.statusAssinatura -eq "ATIVA") {
+                Write-Host $linha -ForegroundColor Green
+            } elseif ($t.statusAssinatura -eq "TRIAL") {
+                Write-Host $linha -ForegroundColor Yellow
+            } else {
+                Write-Host $linha -ForegroundColor Red
+            }
+        }
+        Write-Host ""
+    } catch {
+        Write-Host "  -> [ERRO NO BACKOFFICE] $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
 function Run-AllUnitTests {
     Write-Host "`n[Executando Bateria de Testes Automatizados - 138 Testes]" -ForegroundColor Yellow
 
@@ -347,6 +476,16 @@ switch ($Modo) {
         Check-ServicesStatus
         exit 0
     }
+    "Onboarding" {
+        Show-Header
+        Test-TenantOnboarding
+        exit 0
+    }
+    "Admin" {
+        Show-Header
+        Show-SuperAdminTenants
+        exit 0
+    }
     Default {
         do {
             Show-Header
@@ -356,9 +495,11 @@ switch ($Modo) {
             Write-Host "  [2] Consultar Relatorio de Capacidade Produtiva e Previsao da IA" -ForegroundColor Cyan
             Write-Host "  [3] Executar Suite de Testes Automatizados (138 Testes C# + Python)" -ForegroundColor Yellow
             Write-Host "  [4] Verificar Saude e Conexoes dos Servicos (Postgres/Redis/Rabbit/API/ML)" -ForegroundColor White
+            Write-Host "  [5] Demonstrar Onboarding SaaS (Auto-Cadastro de Tenant & Trial 14d)" -ForegroundColor Magenta
+            Write-Host "  [6] Visao SuperAdmin Backoffice (Gestao Global de Tenants & Planos)" -ForegroundColor Blue
             Write-Host "  [0] Sair" -ForegroundColor DarkGray
             Write-Host ""
-            $opcao = Read-Host "Digite a opcao desejada [0-4]"
+            $opcao = Read-Host "Digite a opcao desejada [0-6]"
 
             switch ($opcao) {
                 "1" {
@@ -378,6 +519,16 @@ switch ($Modo) {
                 }
                 "4" {
                     Check-ServicesStatus
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "5" {
+                    Test-TenantOnboarding
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "6" {
+                    Show-SuperAdminTenants
                     Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
                     $null = Read-Host
                 }

@@ -6,20 +6,20 @@
 
 ## 1. Métricas do Grafo de Conhecimento
 
-- **Total de Nós Mapeados**: `104`
-- **Total de Arestas Semânticas**: `159`
+- **Total de Nós Mapeados**: `111`
+- **Total de Arestas Semânticas**: `175`
 
 ### Distribuição por Tipo de Nó
 | Tipo de Nó | Quantidade | Descrição / Camada |
 | :--- | :---: | :--- |
-| `FrontendHook` | 17 | Hooks de orquestração de estado e UI |
+| `FrontendHook` | 18 | Hooks de orquestração de estado e UI |
 | `DatabaseTable` | 11 | Tabelas PostgreSQL 16 (Ledger, Vendas, RLS) |
 | `SecurityPolicy` | 11 | Políticas RLS nativas e Interceptor C# |
+| `UseCase` | 11 | Regras de negócio e handlers (Application) |
+| `FrontendService` | 10 | Camada de rede e transporte (Axios/MMKV) |
 | `CoreRepository` | 9 | Repositórios de persistência EF Core |
-| `FrontendService` | 9 | Camada de rede e transporte (Axios/MMKV) |
-| `UseCase` | 8 | Regras de negócio e handlers (Application) |
-| `ApiController` | 8 | Controllers ASP.NET Core (.NET 9) |
-| `FrontendFeature` | 8 | Bounded Contexts (Feature-First) |
+| `ApiController` | 9 | Controllers ASP.NET Core (.NET 9) |
+| `FrontendFeature` | 9 | Bounded Contexts (Feature-First) |
 | `FrontendPage` | 7 | Telas e rotas nativas expo-router |
 | `DockerContainer` | 5 | Serviços locais no docker-compose.yml |
 | `RedisService` | 4 | Cache, Distributed Lock, Streams e Rate Limit |
@@ -78,6 +78,9 @@ flowchart LR
 
 | Feature Mobile | Service Frontend | Endpoint C# / Rota | Verbo | Controller C# |
 | :--- | :--- | :--- | :---: | :--- |
+| `admin` | `adminService` | `/admin/tenants` | **GET** | `AdminController` |
+| `admin` | `adminService` | `/admin/tenants/${restauranteId}/alterar-status` | **POST** | `AdminController` |
+| `admin` | `adminService` | `/admin/tenants/${restauranteId}/estender-trial` | **POST** | `AdminController` |
 | `assinatura` | `assinaturaService` | `/assinatura/assinar` | **POST** | `AssinaturaController` |
 | `assinatura` | `assinaturaService` | `/assinatura/status` | **GET** | `AssinaturaController` |
 | `auth` | `authService` | `/auth/cadastrar-restaurante` | **POST** | `AuthController` |
