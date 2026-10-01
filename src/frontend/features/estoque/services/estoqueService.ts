@@ -5,6 +5,7 @@ import {
   EntradaEstoqueInput,
   EntradaEstoqueResponse,
   CadastrarInsumoInput,
+  BaixaEstoqueInput,
 } from '../types';
 
 export const INSUMOS_MOCK_INICIAL: InsumoEstoque[] = [
@@ -137,4 +138,20 @@ export const estoqueService = {
     const response = await apiClient.post<InsumoEstoque>('/estoque/insumos', dados);
     return response.data;
   },
+
+  async registrarBaixaEstoque(dados: BaixaEstoqueInput): Promise<{ status: string }> {
+    const origemMap: Record<string, number> = {
+      Avaria: 3, // OrigemMovimentacao.Descarte
+      Validade: 3, // OrigemMovimentacao.Descarte
+      Inventario: 2, // OrigemMovimentacao.Inventario
+    };
+
+    const response = await apiClient.post<{ status: string }>('/estoque/baixa', {
+      itens: [{ insumoId: dados.insumoId, quantidade: dados.quantidade }],
+      origem: origemMap[dados.motivo] ?? 3,
+      observacao: `[${dados.motivo}] ${dados.observacao || 'Baixa manual registrada pelo gestor'}`.trim(),
+    });
+    return response.data;
+  },
 };
+

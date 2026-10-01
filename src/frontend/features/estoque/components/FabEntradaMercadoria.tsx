@@ -15,7 +15,7 @@ export function FabEntradaMercadoria({ onPress }: FabEntradaMercadoriaProps) {
       onPress={onPress}
       style={styles.fab}
       accessibilityRole="button"
-      accessibilityLabel="Registrar entrada de mercadoria"
+      accessibilityLabel="Cadastrar novo insumo"
     >
       <ThemedText style={styles.fabIcon}>+</ThemedText>
     </TouchableOpacity>

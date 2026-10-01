@@ -62,8 +62,6 @@ export function useInsumosEstoque() {
     setInsumoSelecionado(null);
   };
 
-  const fichaDestaque = fichas.length > 0 ? fichas[0] : null;
-
   return {
     abaAtiva,
     setAbaAtiva,
@@ -72,7 +70,6 @@ export function useInsumosEstoque() {
     insumos: insumosFiltrados,
     todosInsumos: insumos,
     fichas: fichasFiltradas,
-    fichaDestaque,
     totalInsumos: insumos.length,
     totalFichas: fichas.length,
     isLoading: isLoadingInsumos || isLoadingFichas,

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarQuantidade } from '@/shared/utils/formatters';
 import { InsumoCriticoResumo } from '../types';
 
 interface AlertaEstoqueCriticoCardProps {
@@ -65,13 +66,13 @@ export function AlertaEstoqueCriticoCard({
                 {item.nome}
               </ThemedText>
               <ThemedText variant="caption" style={styles.itemMinimo}>
-                Mínimo exigido: {item.quantidadeMinima} {item.unidadeMedida}
+                Mínimo exigido: {formatarQuantidade(item.quantidadeMinima, item.unidadeMedida)}
               </ThemedText>
             </View>
 
             <View style={styles.badgeQtd}>
               <ThemedText variant="caption" weight="bold" color={tokens.colors.status.redText}>
-                {item.quantidadeAtual} {item.unidadeMedida}
+                {formatarQuantidade(item.quantidadeAtual, item.unidadeMedida)}
               </ThemedText>
             </View>
           </View>

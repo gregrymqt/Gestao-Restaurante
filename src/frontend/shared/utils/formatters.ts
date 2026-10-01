@@ -1,0 +1,52 @@
+/**
+ * Utilitários canônicos de formatação numérica e monetária para o frontend móvel.
+ * Segue estritamente as diretrizes de código minimalista do Ponytail e convenções pt-BR.
+ */
+
+/**
+ * Formata quantidades de insumos de forma inteligente:
+ * - Unidades inteiras (un, cx, pct, etc.): exibe sem decimais (ex: "56 un").
+ * - Unidades fracionadas (kg, l, g, etc.): exibe com decimais significativos e vírgula pt-BR (ex: "3,2 kg").
+ */
+export function formatarQuantidade(valor: number, unidade: string): string {
+  if (isNaN(valor)) return `0 ${unidade || ''}`.trim();
+
+  const u = (unidade || '').trim().toLowerCase();
+  const unidadesInteiras = ['un', 'unid', 'unidade', 'unidades', 'pct', 'cx', 'caixa', 'caixas', 'lata', 'latas', 'garrafa', 'garrafas'];
+
+  if (unidadesInteiras.includes(u)) {
+    return `${Math.round(valor)} ${unidade}`;
+  }
+
+  // Fracionados (kg, l, etc.) com até 3 casas decimais sem zeros à direita inúteis
+  const formatado = Number(valor.toFixed(3)).toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  });
+
+  return `${formatado} ${unidade}`;
+}
+
+/**
+ * Formata valores numéricos para moeda corrente brasileira (ex: "R$ 2,50").
+ */
+export function formatarMoeda(valor: number): string {
+  if (isNaN(valor)) return 'R$ 0,00';
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(valor);
+}
+
+/**
+ * Converte e formata string de digitação contínua para formato monetário pt-BR (ex: "250" -> "2,50").
+ */
+export function formatarMoedaInput(texto: string): string {
+  const apenasNumeros = texto.replace(/\D/g, '');
+  if (!apenasNumeros) return '';
+  const centavos = parseInt(apenasNumeros, 10) / 100;
+  return centavos.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

@@ -8,7 +8,7 @@ export function ModalAuditCallout() {
     <View style={styles.auditCallout}>
       <ThemedText style={styles.auditIcon}>🔒</ThemedText>
       <ThemedText variant="caption" style={styles.auditText}>
-        Transação append-only: o saldo em estoque será atualizado atomicamente e o evento registrado para auditoria.
+        Registro imutável: a movimentação será atualizada no estoque e auditada no histórico.
       </ThemedText>
     </View>
   );

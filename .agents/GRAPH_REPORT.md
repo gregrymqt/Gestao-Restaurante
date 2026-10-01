@@ -6,13 +6,13 @@
 
 ## 1. Métricas do Grafo de Conhecimento
 
-- **Total de Nós Mapeados**: `115`
-- **Total de Arestas Semânticas**: `186`
+- **Total de Nós Mapeados**: `116`
+- **Total de Arestas Semânticas**: `189`
 
 ### Distribuição por Tipo de Nó
 | Tipo de Nó | Quantidade | Descrição / Camada |
 | :--- | :---: | :--- |
-| `FrontendHook` | 18 | Hooks de orquestração de estado e UI |
+| `FrontendHook` | 19 | Hooks de orquestração de estado e UI |
 | `DatabaseTable` | 13 | Tabelas PostgreSQL 16 (Ledger, Vendas, RLS) |
 | `SecurityPolicy` | 12 | Políticas RLS nativas e Interceptor C# |
 | `UseCase` | 11 | Regras de negócio e handlers (Application) |
@@ -88,6 +88,7 @@ flowchart LR
 | `auth` | `authService` | `/auth/tenants` | **GET** | `AuthController` |
 | `caixa` | `caixaService` | `/caixa/fechar` | **POST** | `FechamentosController` |
 | `dashboard` | `dashboardService` | `/caixa/status` | **GET** | `FechamentosController` |
+| `estoque` | `estoqueService` | `/estoque/baixa` | **POST** | `EstoqueController` |
 | `estoque` | `estoqueService` | `/estoque/entrada` | **POST** | `EstoqueController` |
 | `estoque` | `estoqueService` | `/estoque/fichas-tecnicas` | **GET** | `EstoqueController` |
 | `estoque` | `estoqueService` | `/estoque/insumos` | **GET** | `EstoqueController` |

@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, 8);
+  const bottomPadding = Math.max(insets.bottom, 12);
 
   return (
     <Tabs
@@ -15,12 +15,17 @@ export default function TabLayout() {
         freezeOnBlur: true,
         tabBarActiveTintColor: tokens.colors.primary,
         tabBarInactiveTintColor: tokens.colors.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginBottom: 2,
+        },
         tabBarStyle: {
           backgroundColor: tokens.colors.card,
           borderTopColor: tokens.colors.border,
-          height: 52 + bottomPadding,
+          height: 60 + bottomPadding,
           paddingBottom: bottomPadding,
-          paddingTop: 6,
+          paddingTop: 8,
         },
       }}
     >

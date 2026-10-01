@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { formatarMoedaInput } from '@/shared/utils/formatters';
 import { InsumoEstoque, EntradaEstoqueInput } from '../types';
 import { InsumoSelectorScroll } from './InsumoSelectorScroll';
 import { ModalAuditCallout } from './ModalAuditCallout';
@@ -43,10 +44,18 @@ export function ModalEntradaEstoque({
     if (visible) {
       if (insumoInicial) {
         setInsumoSelecionadoId(insumoInicial.id);
-        setCustoTexto(insumoInicial.custoUnitarioMedio ? String(insumoInicial.custoUnitarioMedio) : '');
+        setCustoTexto(
+          insumoInicial.custoUnitarioMedio
+            ? formatarMoedaInput(String(Math.round(insumoInicial.custoUnitarioMedio * 100)))
+            : ''
+        );
       } else if (todosInsumos.length > 0) {
         setInsumoSelecionadoId(todosInsumos[0].id);
-        setCustoTexto(todosInsumos[0].custoUnitarioMedio ? String(todosInsumos[0].custoUnitarioMedio) : '');
+        setCustoTexto(
+          todosInsumos[0].custoUnitarioMedio
+            ? formatarMoedaInput(String(Math.round(todosInsumos[0].custoUnitarioMedio * 100)))
+            : ''
+        );
       }
       setQuantidadeTexto('');
       setObservacao('');
@@ -59,7 +68,7 @@ export function ModalEntradaEstoque({
     setInsumoSelecionadoId(id);
     const item = todosInsumos.find((i) => i.id === id);
     if (item && item.custoUnitarioMedio) {
-      setCustoTexto(String(item.custoUnitarioMedio));
+      setCustoTexto(formatarMoedaInput(String(Math.round(item.custoUnitarioMedio * 100))));
     }
   };
 
@@ -75,7 +84,7 @@ export function ModalEntradaEstoque({
       return;
     }
 
-    const custo = custoTexto ? parseFloat(custoTexto.replace(',', '.')) : undefined;
+    const custo = custoTexto ? parseFloat(custoTexto.replace(/\./g, '').replace(',', '.')) : undefined;
 
     await onConfirmar({
       insumoId: insumoSelecionadoId,
@@ -96,7 +105,7 @@ export function ModalEntradaEstoque({
               Registrar Entrada de Mercadoria
             </ThemedText>
             <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Lançamento auditável e imutável no Ledger de Estoque
+              Lançamento de mercadoria com auditoria de saldo
             </ThemedText>
           </View>
 
@@ -119,7 +128,7 @@ export function ModalEntradaEstoque({
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: 10.500"
+                placeholder={insumoAtual?.unidadeMedida === 'un' ? 'Ex: 10' : 'Ex: 10,50'}
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 value={quantidadeTexto}
@@ -140,11 +149,11 @@ export function ModalEntradaEstoque({
               </ThemedText>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: 38.50"
+                placeholder="0,00"
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 value={custoTexto}
-                onChangeText={setCustoTexto}
+                onChangeText={(t) => setCustoTexto(formatarMoedaInput(t))}
               />
             </View>
 

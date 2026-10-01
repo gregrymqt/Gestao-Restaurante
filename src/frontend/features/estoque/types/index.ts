@@ -68,3 +68,12 @@ export interface CadastrarInsumoInput {
   readonly saldoInicial?: number;
   readonly categoria?: string;
 }
+
+export type MotivoBaixaEstoque = 'Avaria' | 'Validade' | 'Inventario';
+
+export interface BaixaEstoqueInput {
+  insumoId: string;
+  quantidade: number;
+  motivo: MotivoBaixaEstoque;
+  observacao?: string;
+}

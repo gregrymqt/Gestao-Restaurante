@@ -3,16 +3,19 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows } from '@/shared/utils/shadows';
+import { formatarQuantidade } from '@/shared/utils/formatters';
 import { InsumoEstoque } from '../types';
 
 interface InsumoSaldoCardProps {
   item: InsumoEstoque;
   onRegistrarEntrada: (insumo: InsumoEstoque) => void;
+  onRegistrarBaixa: (insumo: InsumoEstoque) => void;
 }
 
 export function InsumoSaldoCard({
   item,
   onRegistrarEntrada,
+  onRegistrarBaixa,
 }: InsumoSaldoCardProps) {
   const isCritico = item.statusNivel === 'critico';
   const isAtencao = item.statusNivel === 'atencao';
@@ -62,14 +65,14 @@ export function InsumoSaldoCard({
       {/* Métricas de Saldo e Limites */}
       <View style={styles.saldoRow}>
         <ThemedText variant="title" style={styles.saldoAtual}>
-          {item.saldoAtual.toFixed(item.unidadeMedida === 'unid' ? 0 : 3)}{' '}
+          {formatarQuantidade(item.saldoAtual, item.unidadeMedida)}{' '}
           <ThemedText variant="body" color={tokens.colors.textMuted}>
-            {item.unidadeMedida} atual
+            atual
           </ThemedText>
         </ThemedText>
 
         <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.estoqueMinimo}>
-          Mínimo: {item.estoqueMinimo.toFixed(item.unidadeMedida === 'unid' ? 0 : 3)} {item.unidadeMedida}
+          Mínimo: {formatarQuantidade(item.estoqueMinimo, item.unidadeMedida)}
         </ThemedText>
       </View>
 
@@ -83,12 +86,12 @@ export function InsumoSaldoCard({
         />
       </View>
 
-      {/* Rodapé: Contexto Operacional + Botão Entrada (+) */}
+      {/* Rodapé: Contexto Operacional + Botões Ajuste/Baixa e Entrada (+) */}
       <View style={styles.footerRow}>
         <View style={styles.contextInfo}>
           {item.deficitQuantidade !== undefined && item.deficitQuantidade > 0 ? (
             <ThemedText variant="caption" style={styles.deficitText}>
-              📉 Déficit: {item.deficitQuantidade.toFixed(1)} {item.unidadeMedida} (-{item.deficitPercentual || 35}%)
+              📉 Déficit: {formatarQuantidade(item.deficitQuantidade, item.unidadeMedida)} (-{item.deficitPercentual || 35}%)
             </ThemedText>
           ) : item.leadTimeHoras ? (
             <ThemedText variant="caption" style={styles.leadTimeText}>
@@ -98,25 +101,37 @@ export function InsumoSaldoCard({
             <ThemedText variant="caption" style={styles.seguroText}>
               🛡️ {item.observacaoConsumo}
             </ThemedText>
-          ) : (
-            <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Estoque monitorado pelo Ledger
-            </ThemedText>
-          )}
+          ) : null}
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => onRegistrarEntrada(item)}
-          style={[styles.entradaButton, isCritico && styles.entradaButtonCritico]}
-        >
-          <ThemedText
-            variant="caption"
-            style={[styles.entradaButtonText, isCritico && styles.entradaButtonTextCritico]}
+        <View style={styles.botoesAcaoRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => onRegistrarBaixa(item)}
+            style={styles.baixaButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Ajuste ou baixa para ${item.nome}`}
           >
-            {isCritico ? '📦 Entrada (+)' : '+ Entrada'}
-          </ThemedText>
-        </TouchableOpacity>
+            <ThemedText variant="caption" style={styles.baixaButtonText}>
+              Ajuste / Baixa
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => onRegistrarEntrada(item)}
+            style={[styles.entradaButton, isCritico && styles.entradaButtonCritico]}
+            accessibilityRole="button"
+            accessibilityLabel={`Registrar entrada para ${item.nome}`}
+          >
+            <ThemedText
+              variant="caption"
+              style={[styles.entradaButtonText, isCritico && styles.entradaButtonTextCritico]}
+            >
+              {isCritico ? '📦 Entrada (+)' : '+ Entrada'}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -229,5 +244,26 @@ const styles = StyleSheet.create({
   },
   entradaButtonTextCritico: {
     color: tokens.colors.status.redText,
+  },
+  botoesAcaoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.xs,
+  },
+  baixaButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radii.sm,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  baixaButtonText: {
+    color: tokens.colors.textMuted,
+    fontWeight: '600',
+    fontSize: tokens.typography.fontXs,
   },
 });

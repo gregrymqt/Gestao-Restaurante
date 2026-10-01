@@ -13,16 +13,17 @@ import { tokens } from '@/components/primitives/tokens';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { useInsumosEstoque } from '../hooks/useInsumosEstoque';
 import { useRegistrarEntradaEstoque } from '../hooks/useRegistrarEntradaEstoque';
+import { useRegistrarBaixaEstoque } from '../hooks/useRegistrarBaixaEstoque';
 import { useCadastrarInsumo } from '../hooks/useCadastrarInsumo';
 import { EstoqueHeader } from '../components/EstoqueHeader';
 import { SegmentedEstoqueControl } from '../components/SegmentedEstoqueControl';
 import { InsumoSaldoCard } from '../components/InsumoSaldoCard';
-import { FichaTecnicaDestaqueCard } from '../components/FichaTecnicaDestaqueCard';
 import { FichasTecnicasList } from '../components/FichasTecnicasList';
 import { FabEntradaMercadoria } from '../components/FabEntradaMercadoria';
 import { ModalEntradaEstoque } from '../components/ModalEntradaEstoque';
+import { ModalBaixaEstoque } from '../components/ModalBaixaEstoque';
 import { ModalNovoInsumo } from '../components/ModalNovoInsumo';
-import { CadastrarInsumoInput, EntradaEstoqueInput } from '../types';
+import { CadastrarInsumoInput, EntradaEstoqueInput, BaixaEstoqueInput, InsumoEstoque } from '../types';
 
 export function EstoqueScreen() {
   const insets = useSafeAreaInsets();
@@ -34,7 +35,6 @@ export function EstoqueScreen() {
     insumos,
     todosInsumos,
     fichas,
-    fichaDestaque,
     totalInsumos,
     totalFichas,
     isLoading,
@@ -47,7 +47,11 @@ export function EstoqueScreen() {
   } = useInsumosEstoque();
 
   const [isModalNovoInsumoOpen, setIsModalNovoInsumoOpen] = useState(false);
+  const [insumoBaixaSelecionado, setInsumoBaixaSelecionado] = useState<InsumoEstoque | null>(null);
+  const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false);
+
   const registrarEntradaMutation = useRegistrarEntradaEstoque();
+  const registrarBaixaMutation = useRegistrarBaixaEstoque();
   const cadastrarInsumoMutation = useCadastrarInsumo();
 
   const handleConfirmarEntrada = async (dados: EntradaEstoqueInput) => {
@@ -55,11 +59,25 @@ export function EstoqueScreen() {
       const res = await registrarEntradaMutation.mutateAsync(dados);
       fecharModalEntrada();
       AppDialog.success(
-        'Entrada Registrada no Ledger',
+        'Entrada Registrada com Sucesso',
         `Entrada de +${dados.quantidade} confirmada com sucesso!\nNovo saldo: ${res.novoSaldo}.\nProtocolo: ${res.protocoloLedger}`
       );
     } catch {
       AppDialog.error('Erro ao Registrar Entrada', 'Não foi possível registrar a entrada de estoque.');
+    }
+  };
+
+  const handleConfirmarBaixa = async (dados: BaixaEstoqueInput) => {
+    try {
+      await registrarBaixaMutation.mutateAsync(dados);
+      setIsModalBaixaOpen(false);
+      setInsumoBaixaSelecionado(null);
+      AppDialog.success(
+        'Baixa Registrada com Sucesso',
+        `A baixa de ${dados.quantidade} foi debitada do estoque e registrada no histórico.`
+      );
+    } catch {
+      AppDialog.error('Erro ao Registrar Baixa', 'Não foi possível registrar a baixa de estoque.');
     }
   };
 
@@ -106,42 +124,32 @@ export function EstoqueScreen() {
           </View>
         ) : abaAtiva === 'insumos' ? (
           <>
-            {/* Seção Níveis de Estoque com Botão Novo Insumo e Legenda */}
+            {/* Seção Níveis de Estoque com Legenda */}
             <View style={styles.secaoNiveisHeader}>
               <ThemedText variant="title" style={styles.secaoTitulo}>
                 Níveis de Estoque
               </ThemedText>
 
-              <View style={styles.acoesHeaderRow}>
-                <TouchableOpacity
-                  style={styles.btnNovoInsumo}
-                  onPress={() => setIsModalNovoInsumoOpen(true)}
-                  activeOpacity={0.8}
-                >
-                  <ThemedText style={styles.btnNovoInsumoText}>+ Novo Insumo</ThemedText>
-                </TouchableOpacity>
+              <View style={styles.legendaRow}>
+                <View style={styles.legendaItem}>
+                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.redText }]} />
+                  <ThemedText variant="caption" style={styles.legendaTexto}>
+                    Crítico
+                  </ThemedText>
+                </View>
 
-                <View style={styles.legendaRow}>
-                  <View style={styles.legendaItem}>
-                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.redText }]} />
-                    <ThemedText variant="caption" style={styles.legendaTexto}>
-                      Crítico
-                    </ThemedText>
-                  </View>
+                <View style={styles.legendaItem}>
+                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.orangeText }]} />
+                  <ThemedText variant="caption" style={styles.legendaTexto}>
+                    Atenção
+                  </ThemedText>
+                </View>
 
-                  <View style={styles.legendaItem}>
-                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.orangeText }]} />
-                    <ThemedText variant="caption" style={styles.legendaTexto}>
-                      Atenção
-                    </ThemedText>
-                  </View>
-
-                  <View style={styles.legendaItem}>
-                    <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.greenText }]} />
-                    <ThemedText variant="caption" style={styles.legendaTexto}>
-                      Normal
-                    </ThemedText>
-                  </View>
+                <View style={styles.legendaItem}>
+                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.greenText }]} />
+                  <ThemedText variant="caption" style={styles.legendaTexto}>
+                    Normal
+                  </ThemedText>
                 </View>
               </View>
             </View>
@@ -164,17 +172,14 @@ export function EstoqueScreen() {
                     key={item.id}
                     item={item}
                     onRegistrarEntrada={abrirModalEntrada}
+                    onRegistrarBaixa={(insumo) => {
+                      setInsumoBaixaSelecionado(insumo);
+                      setIsModalBaixaOpen(true);
+                    }}
                   />
                 ))
               )}
             </View>
-
-            {/* Ficha Técnica em Destaque */}
-            <FichaTecnicaDestaqueCard
-              ficha={fichaDestaque}
-              totalFichas={totalFichas}
-              onVerTodas={() => setAbaAtiva('fichas')}
-            />
           </>
         ) : (
           /* Aba Fichas Técnicas */
@@ -182,10 +187,10 @@ export function EstoqueScreen() {
         )}
       </ScrollView>
 
-      {/* FAB Flutuante para Registro de Entrada Geral */}
-      <FabEntradaMercadoria onPress={() => abrirModalEntrada()} />
+      {/* FAB Flutuante para Cadastro de Novo Insumo (Despoluição visual YAGNI) */}
+      <FabEntradaMercadoria onPress={() => setIsModalNovoInsumoOpen(true)} />
 
-      {/* Modal Deslizante para Entrada no Ledger */}
+      {/* Modal Deslizante para Entrada no Estoque */}
       <ModalEntradaEstoque
         visible={isModalEntradaOpen}
         insumoInicial={insumoSelecionado}
@@ -193,6 +198,18 @@ export function EstoqueScreen() {
         onClose={fecharModalEntrada}
         onConfirmar={handleConfirmarEntrada}
         isEnviando={registrarEntradaMutation.isPending}
+      />
+
+      {/* Modal Deslizante para Baixa / Ajuste Manual */}
+      <ModalBaixaEstoque
+        visible={isModalBaixaOpen}
+        insumo={insumoBaixaSelecionado}
+        onClose={() => {
+          setIsModalBaixaOpen(false);
+          setInsumoBaixaSelecionado(null);
+        }}
+        onConfirmar={handleConfirmarBaixa}
+        isEnviando={registrarBaixaMutation.isPending}
       />
 
       {/* Modal para Cadastro de Novo Insumo */}
@@ -236,22 +253,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.typography.fontMd,
     fontWeight: '800',
     color: tokens.colors.textPrimary,
-  },
-  acoesHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  btnNovoInsumo: {
-    backgroundColor: tokens.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  btnNovoInsumoText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: tokens.colors.white,
   },
   legendaRow: {
     flexDirection: 'row',

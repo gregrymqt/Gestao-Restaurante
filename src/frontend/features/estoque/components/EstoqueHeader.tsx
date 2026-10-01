@@ -61,7 +61,7 @@ export function EstoqueHeader({
           <View style={styles.ledgerBadge}>
             <View style={styles.ledgerDot} />
             <ThemedText variant="caption" style={styles.ledgerText}>
-              Ledger Sinc
+              Sincronizado
             </ThemedText>
           </View>
         </View>

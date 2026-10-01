@@ -2,8 +2,8 @@
   "metadata": {
     "system": "Restaurante Inteligente",
     "generator": "generate_knowledge_graph.py",
-    "node_count": 115,
-    "edge_count": 186
+    "node_count": 116,
+    "edge_count": 189
   },
   "nodes": [
     {
@@ -1047,6 +1047,15 @@
       }
     },
     {
+      "id": "hook:useRegistrarBaixaEstoque",
+      "type": "FrontendHook",
+      "label": "useRegistrarBaixaEstoque",
+      "file": "src/frontend/features/estoque/hooks/useRegistrarBaixaEstoque.ts",
+      "metadata": {
+        "feature": "estoque"
+      }
+    },
+    {
       "id": "hook:useRegistrarEntradaEstoque",
       "type": "FrontendHook",
       "label": "useRegistrarEntradaEstoque",
@@ -1542,6 +1551,12 @@
     },
     {
       "source": "feature:estoque",
+      "target": "hook:useRegistrarBaixaEstoque",
+      "relationship": "invokes",
+      "metadata": {}
+    },
+    {
+      "source": "feature:estoque",
       "target": "hook:useRegistrarEntradaEstoque",
       "relationship": "invokes",
       "metadata": {}
@@ -1698,6 +1713,16 @@
         "normalized": "/api/v1/caixa/status",
         "path": "/caixa/status",
         "verb": "GET"
+      }
+    },
+    {
+      "source": "frontend_service:estoqueService",
+      "target": "controller:EstoqueController",
+      "relationship": "calls_endpoint",
+      "metadata": {
+        "normalized": "/api/v1/estoque/baixa",
+        "path": "/estoque/baixa",
+        "verb": "POST"
       }
     },
     {
@@ -1871,6 +1896,12 @@
       "metadata": {
         "channel": "Redis SSE Stream"
       }
+    },
+    {
+      "source": "hook:useRegistrarBaixaEstoque",
+      "target": "frontend_service:estoqueService",
+      "relationship": "invokes",
+      "metadata": {}
     },
     {
       "source": "hook:useRegistrarEntradaEstoque",
