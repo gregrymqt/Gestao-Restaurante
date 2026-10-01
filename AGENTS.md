@@ -96,6 +96,7 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
 - [python-ml-worker-canonical](.agents/skills/python-ml-worker-canonical/SKILL.md): Diretrizes normativas de Machine Learning e Workers em Python 3.12, aio-pika com DLX/DLQ, Pydantic V2, Feature Engineering e HistGradientBoosting.
 - [react-native-canonical](.agents/skills/react-native-canonical/SKILL.md): Diretrizes normativas anti-alucinação para React Native e Expo SDK 54+, expo-router, Zustand, MMKV, FlashList e validação em malha fechada.
 - [token-density](.agents/skills/token-density/SKILL.md): Diretrizes canônicas de densidade de tokens, leitura cirúrgica por janela (Surgical Windowing) e padrão RTK.
+- [ponytail](.agents/skills/ponytail/SKILL.md): Diretrizes canônicas de engenharia minimalista de código, aplicação da Escada YAGNI, priorização de recursos nativos (.NET 9, Python 3.12, React Native/Expo), revisão cirúrgica de diffs e rastreamento de débitos conscientes.
 
 
 
