@@ -1,4 +1,9 @@
-import { ShiftMetrics, TerminalStatus } from '../types';
+import {
+  ShiftMetrics,
+  TerminalStatus,
+  MovimentacaoCaixaInput,
+  MovimentacaoCaixaResult,
+} from '../types';
 
 export const perfilService = {
   async obterMetricasTurno(): Promise<ShiftMetrics> {
@@ -25,8 +30,26 @@ export const perfilService = {
       sseLatency: '18ms',
       impressoraNome: 'Bluetooth 80mm • Bobina 75%',
       impressoraStatus: 'Pronta',
-      versaoApp: 'Expo SDK 57 • v1.0.0',
+      versaoApp: 'Versão 1.0.0',
       buildNumero: 'Build 104',
+    };
+  },
+
+  async registrarMovimentacao(
+    dados: MovimentacaoCaixaInput,
+    saldoAtual: number
+  ): Promise<MovimentacaoCaixaResult> {
+    const delta = dados.tipo === 'SUPRIMENTO' ? dados.valor : -dados.valor;
+    const novoSaldo = Math.max(0, saldoAtual + delta);
+    const protocolo = `${dados.tipo.substring(0, 3)}-${Date.now().toString(36).toUpperCase()}`;
+
+    return {
+      sucesso: true,
+      protocolo,
+      novoSaldoDinheiro: novoSaldo,
+      mensagem: `${
+        dados.tipo === 'SUPRIMENTO' ? 'Suprimento de troco' : 'Sangria de caixa'
+      } registrada com sucesso sob protocolo ${protocolo}.`,
     };
   },
 };

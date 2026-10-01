@@ -48,9 +48,8 @@ export function ConferenciaGavetaBox({ valorDinheiro }: ConferenciaGavetaBoxProp
             Ação Irreversível de Encerramento
           </ThemedText>
           <ThemedText variant="caption" style={styles.textoAviso}>
-            O encerramento fechará a sessão ativa, consolidará o livro-razão
-            de vendas e despachará o evento assíncrono para o RabbitMQ para
-            treinamento do modelo de Machine Learning.
+            O encerramento fechará a sessão ativa, consolidará as vendas
+            do turno e sincronizará os registros fiscais com a gestão central.
           </ThemedText>
         </View>
       </View>

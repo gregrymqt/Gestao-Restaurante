@@ -5,24 +5,26 @@ import { tokens } from '@/components/primitives/tokens';
 import { shadows, createShadow } from '@/shared/utils/shadows';
 
 interface OperationalActionsSectionProps {
-  onNavegarCaixa: () => void;
-  onBloquearTela: () => void;
+  onAbrirSuprimento: () => void;
+  onAbrirSangria: () => void;
+  onBloquearTerminal: () => void;
   onEncerrarTurno: () => void;
 }
 
 export function OperationalActionsSection({
-  onNavegarCaixa,
-  onBloquearTela,
+  onAbrirSuprimento,
+  onAbrirSangria,
+  onBloquearTerminal,
   onEncerrarTurno,
 }: OperationalActionsSectionProps) {
   return (
     <View style={styles.container}>
-      {/* Atalhos Rápidos Operacionais de Caixa */}
+      {/* Atalhos Rápidos Operacionais de Caixa (Abertura de Bottom Sheet) */}
       <View style={styles.quickToolsGrid}>
         <TouchableOpacity
           style={styles.toolButton}
           activeOpacity={0.8}
-          onPress={onNavegarCaixa}
+          onPress={onAbrirSuprimento}
         >
           <ThemedText style={styles.toolIcon}>➕</ThemedText>
           <ThemedText style={styles.toolText}>Suprimento</ThemedText>
@@ -31,7 +33,7 @@ export function OperationalActionsSection({
         <TouchableOpacity
           style={styles.toolButton}
           activeOpacity={0.8}
-          onPress={onNavegarCaixa}
+          onPress={onAbrirSangria}
         >
           <ThemedText style={styles.toolIcon}>➖</ThemedText>
           <ThemedText style={styles.toolText}>Sangria Caixa</ThemedText>
@@ -40,19 +42,19 @@ export function OperationalActionsSection({
 
       {/* Ações de Alta Prioridade e Segurança */}
       <View style={styles.actionGroup}>
-        {/* Bloqueio de Tela */}
+        {/* Bloqueio de Terminal */}
         <TouchableOpacity
           style={styles.lockButton}
           activeOpacity={0.85}
-          onPress={onBloquearTela}
+          onPress={onBloquearTerminal}
         >
           <ThemedText style={styles.lockIcon}>🔒</ThemedText>
           <ThemedText style={styles.lockButtonText}>
-            Bloquear Tela / Trocar Operador
+            Bloquear Terminal (Manter Caixa Aberto)
           </ThemedText>
         </TouchableOpacity>
 
-        {/* Encerrar Turno & Sair (Botão Destrutivo Principal) */}
+        {/* Fechar Caixa & Encerrar Turno */}
         <TouchableOpacity
           style={styles.logoutButton}
           activeOpacity={0.85}
@@ -60,7 +62,7 @@ export function OperationalActionsSection({
         >
           <ThemedText style={styles.logoutIcon}>⏻</ThemedText>
           <ThemedText style={styles.logoutButtonText}>
-            Encerrar Turno & Sair
+            Fechar Caixa & Encerrar Turno
           </ThemedText>
         </TouchableOpacity>
 
@@ -68,7 +70,7 @@ export function OperationalActionsSection({
         <View style={styles.noteRow}>
           <ThemedText style={styles.noteIcon}>🛡️</ThemedText>
           <ThemedText style={styles.noteText}>
-            O encerramento sincroniza registros fiscais e finaliza a gaveta local.
+            O encerramento confere a gaveta física e consolida as vendas do turno.
           </ThemedText>
         </View>
       </View>

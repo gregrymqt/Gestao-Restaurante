@@ -21,3 +21,18 @@ export interface TerminalStatus {
   versaoApp: string;
   buildNumero: string;
 }
+
+export type TipoMovimentacaoCaixa = 'SUPRIMENTO' | 'SANGRIA';
+
+export interface MovimentacaoCaixaInput {
+  tipo: TipoMovimentacaoCaixa;
+  valor: number;
+  motivo: string;
+}
+
+export interface MovimentacaoCaixaResult {
+  sucesso: boolean;
+  protocolo: string;
+  novoSaldoDinheiro: number;
+  mensagem: string;
+}

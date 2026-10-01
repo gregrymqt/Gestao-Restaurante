@@ -16,7 +16,7 @@ export function TerminalStatusCard({
 }: TerminalStatusCardProps) {
   const impressoraNome = status?.impressoraNome || 'Bluetooth 80mm • Bobina 75%';
   const impressoraStatus = status?.impressoraStatus || 'Pronta';
-  const versaoApp = status?.versaoApp || 'Expo SDK 57 • v1.0.0';
+  const versaoApp = status?.versaoApp?.replace(/Expo SDK \d+ •\s*/i, '') || 'Versão 1.0.0';
   const buildNumero = status?.buildNumero || 'Build 104';
 
   return (

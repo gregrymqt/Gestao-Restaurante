@@ -11,12 +11,16 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { TenantSelectorModal } from '@/features/auth';
 import { AdminBackofficeScreen } from '@/features/admin';
+import { ModalConfirmarFechamento } from '@/features/caixa/components/ModalConfirmarFechamento';
 import { usePerfil } from '../hooks/usePerfil';
 import { OperatorHeroCard } from '../components/OperatorHeroCard';
 import { TenantBranchCard } from '../components/TenantBranchCard';
 import { ShiftMetricsSection } from '../components/ShiftMetricsSection';
 import { TerminalStatusCard } from '../components/TerminalStatusCard';
 import { OperationalActionsSection } from '../components/OperationalActionsSection';
+import { ModalMovimentacaoCaixa } from '../components/ModalMovimentacaoCaixa';
+import { ModalBloqueioTerminal } from '../components/ModalBloqueioTerminal';
+import { PerfilHeader } from '../components/PerfilHeader';
 
 export function PerfilScreen() {
   const insets = useSafeAreaInsets();
@@ -30,9 +34,27 @@ export function PerfilScreen() {
     isTenantModalOpen,
     setIsTenantModalOpen,
     handleSelectTenant,
-    handleEncerrarTurno,
-    handleBloquearTela,
-    handleNavegarCaixa,
+    // Suprimento & Sangria
+    isMovimentacaoOpen,
+    tipoMovimentacao,
+    isSubmittingMovimentacao,
+    saldoDinheiroGaveta,
+    handleAbrirSuprimento,
+    handleAbrirSangria,
+    handleFecharMovimentacao,
+    handleSubmitMovimentacao,
+    // Bloqueio
+    isBloqueado,
+    handleBloquearTerminal,
+    handleDesbloquearTerminal,
+    handleLogout,
+    // Fechamento com Gaveta
+    isConfirmarFechamentoOpen,
+    isFechandoCaixa,
+    sessaoFechamento,
+    handleAbrirFechamentoTurno,
+    handleFecharFechamentoTurno,
+    handleConfirmarFechamentoTurno,
   } = usePerfil();
 
   const [isAdminBackofficeOpen, setIsAdminBackofficeOpen] = useState(false);
@@ -40,25 +62,7 @@ export function PerfilScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Top App Bar Customizado */}
-      <View style={styles.topBar}>
-        <View style={styles.brandContainer}>
-          <ThemedText style={styles.brandSubtitle}>GASTROBURGER POS</ThemedText>
-          <ThemedText variant="title" style={styles.brandTitle}>
-            Perfil do Operador
-          </ThemedText>
-        </View>
-
-        <View style={styles.topBarActions}>
-          <View style={styles.wifiBox}>
-            <ThemedText style={styles.wifiIcon}>📶</ThemedText>
-          </View>
-          <View style={styles.miniAvatar}>
-            <ThemedText style={styles.miniAvatarText}>
-              {operador?.iniciais || 'OH'}
-            </ThemedText>
-          </View>
-        </View>
-      </View>
+      <PerfilHeader iniciais={operador?.iniciais || 'OH'} />
 
       {/* Conteúdo com Rolagem Fluida */}
       <ScrollView
@@ -93,10 +97,12 @@ export function PerfilScreen() {
             </ThemedText>
           </View>
 
-          <View style={styles.latencyBadge}>
-            <ThemedText style={styles.boltIcon}>⚡</ThemedText>
-            <ThemedText style={styles.latencyText}>18ms</ThemedText>
-          </View>
+          {isSseConnected ? (
+            <View style={styles.latencyBadge}>
+              <ThemedText style={styles.boltIcon}>⚡</ThemedText>
+              <ThemedText style={styles.latencyText}>18ms</ThemedText>
+            </View>
+          ) : null}
         </View>
 
         {/* 1. Hero Card do Operador */}
@@ -119,30 +125,33 @@ export function PerfilScreen() {
 
         {/* 5. Ações Operacionais & Logout Seguro */}
         <OperationalActionsSection
-          onNavegarCaixa={handleNavegarCaixa}
-          onBloquearTela={handleBloquearTela}
-          onEncerrarTurno={handleEncerrarTurno}
+          onAbrirSuprimento={handleAbrirSuprimento}
+          onAbrirSangria={handleAbrirSangria}
+          onBloquearTerminal={handleBloquearTerminal}
+          onEncerrarTurno={handleAbrirFechamentoTurno}
         />
 
-        {/* 6. Acesso SuperAdmin Backoffice SaaS */}
-        <View style={styles.superAdminContainer}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Abrir Backoffice SuperAdmin SaaS"
-            onPress={() => setIsAdminBackofficeOpen(true)}
-            style={({ pressed }) => [styles.botaoSuperAdmin, pressed && styles.pressedSuperAdmin]}
-          >
-            <ThemedText style={styles.iconeSuperAdmin}>🛡️</ThemedText>
-            <View style={styles.textosSuperAdmin}>
-              <ThemedText variant="subtitle" weight="bold" color="#FFFFFF">
-                Backoffice SuperAdmin SaaS
-              </ThemedText>
-              <ThemedText variant="caption" style={styles.subtextoSuperAdmin}>
-                Gestão visual de inquilinos, trials e assinaturas sem CLI
-              </ThemedText>
-            </View>
-          </Pressable>
-        </View>
+        {/* 6. Acesso SuperAdmin Backoffice SaaS (Restrito por RBAC) */}
+        {operador?.role === 'SuperAdmin' ? (
+          <View style={styles.superAdminContainer}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Abrir Backoffice SuperAdmin SaaS"
+              onPress={() => setIsAdminBackofficeOpen(true)}
+              style={({ pressed }) => [styles.botaoSuperAdmin, pressed && styles.pressedSuperAdmin]}
+            >
+              <ThemedText style={styles.iconeSuperAdmin}>🛡️</ThemedText>
+              <View style={styles.textosSuperAdmin}>
+                <ThemedText variant="subtitle" weight="bold" color="#FFFFFF">
+                  Backoffice SuperAdmin SaaS
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.subtextoSuperAdmin}>
+                  Gestão visual de inquilinos, trials e assinaturas sem CLI
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* Modal de Seleção de Filiais */}
@@ -154,14 +163,44 @@ export function PerfilScreen() {
         onClose={() => setIsTenantModalOpen(false)}
       />
 
+      {/* Modal de Suprimento e Sangria em 2 toques */}
+      <ModalMovimentacaoCaixa
+        visible={isMovimentacaoOpen}
+        tipo={tipoMovimentacao}
+        saldoDisponivel={saldoDinheiroGaveta}
+        isSubmitting={isSubmittingMovimentacao}
+        onClose={handleFecharMovimentacao}
+        onSubmit={handleSubmitMovimentacao}
+      />
+
+      {/* Overlay de Bloqueio de Terminal com PIN */}
+      <ModalBloqueioTerminal
+        visible={isBloqueado}
+        operadorNome={operador?.nome || 'Operador Homologação'}
+        operadorIniciais={operador?.iniciais || 'OH'}
+        onDesbloquear={handleDesbloquearTerminal}
+        onLogout={handleLogout}
+      />
+
+      {/* Modal de Conferência Física da Gaveta antes do Logout */}
+      <ModalConfirmarFechamento
+        visible={isConfirmarFechamentoOpen}
+        sessao={sessaoFechamento}
+        isPending={isFechandoCaixa}
+        onConfirmar={handleConfirmarFechamentoTurno}
+        onClose={handleFecharFechamentoTurno}
+      />
+
       {/* Modal do Backoffice SuperAdmin */}
-      <Modal
-        visible={isAdminBackofficeOpen}
-        animationType="slide"
-        onRequestClose={() => setIsAdminBackofficeOpen(false)}
-      >
-        <AdminBackofficeScreen onVoltar={() => setIsAdminBackofficeOpen(false)} />
-      </Modal>
+      {operador?.role === 'SuperAdmin' ? (
+        <Modal
+          visible={isAdminBackofficeOpen}
+          animationType="slide"
+          onRequestClose={() => setIsAdminBackofficeOpen(false)}
+        >
+          <AdminBackofficeScreen onVoltar={() => setIsAdminBackofficeOpen(false)} />
+        </Modal>
+      ) : null}
     </View>
   );
 }
@@ -170,62 +209,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: tokens.colors.background,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    backgroundColor: tokens.colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-  },
-  brandContainer: {
-    flex: 1,
-  },
-  brandSubtitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: tokens.colors.primary,
-    letterSpacing: 1,
-  },
-  brandTitle: {
-    fontSize: tokens.typography.fontLg,
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginTop: 1,
-  },
-  topBarActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  wifiBox: {
-    width: 34,
-    height: 34,
-    borderRadius: tokens.radii.full,
-    backgroundColor: tokens.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  wifiIcon: {
-    fontSize: 16,
-  },
-  miniAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: tokens.radii.full,
-    backgroundColor: tokens.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: tokens.colors.primary,
-  },
-  miniAvatarText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: tokens.colors.primaryDark,
   },
   scroll: {
     flex: 1,

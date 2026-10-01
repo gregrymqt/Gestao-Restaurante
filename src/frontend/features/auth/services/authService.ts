@@ -25,6 +25,8 @@ export const OPERADORES_RECENTES_PADRAO: OperadorRecente[] = [
     email: 'gestor@restaurante.com',
     fotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
     iniciais: 'GR',
+    cargo: 'Gestor & Dono',
+    role: 'Manager',
   },
 ];
 
@@ -76,7 +78,13 @@ export const authService = {
           id: backendData.userId || '99999999-9999-9999-9999-999999999999',
           nome: backendData.nome || (input.identificador.includes('@') ? input.identificador.split('@')[0] : 'Gestor do Restaurante'),
           email: input.identificador.includes('@') ? input.identificador : 'gestor@restaurante.com',
-          cargo: (backendData.role === 'Owner' || backendData.role === 'Manager') ? 'Gestor & Dono' : 'Operador de Balcão & Caixa',
+          cargo:
+            backendData.role === 'Owner' || backendData.role === 'Manager'
+              ? 'Gestor & Dono'
+              : backendData.role === 'SuperAdmin'
+              ? 'Super Administrador SaaS'
+              : 'Operador de Balcão & Caixa',
+          role: backendData.role || (backendData.email?.includes('admin') ? 'SuperAdmin' : 'Cashier'),
           restaurantesVinculados: [tenant],
         },
       };

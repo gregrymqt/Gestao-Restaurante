@@ -13,6 +13,8 @@ export interface OperadorRecente {
   fotoUrl?: string;
   email: string;
   iniciais?: string;
+  cargo?: string;
+  role?: string;
   restaurantesVinculados?: RestauranteTenant[];
 }
 
@@ -41,6 +43,7 @@ export interface LoginResponse {
     nome: string;
     email: string;
     cargo: string;
+    role?: string;
     restaurantesVinculados: RestauranteTenant[];
   };
 }
