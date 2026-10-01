@@ -12,12 +12,14 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 import { useCaixaAtual } from '../hooks/useCaixaAtual';
 import { useFecharCaixa } from '../hooks/useFecharCaixa';
 import { ContextoOperacionalHeader } from '../components/ContextoOperacionalHeader';
+import { useRouter } from 'expo-router';
 import { CardFaturamentoTotal } from '../components/CardFaturamentoTotal';
 import { DistribuicaoPagamentos } from '../components/DistribuicaoPagamentos';
 import { WidgetClimaSessao } from '../components/WidgetClimaSessao';
 import { ModalConfirmarFechamento } from '../components/ModalConfirmarFechamento';
 
 export function CaixaScreen() {
+  const router = useRouter();
   const [isModalVisivel, setIsModalVisivel] = useState(false);
   const { sessao, isLoading, refetch } = useCaixaAtual();
 
@@ -43,6 +45,7 @@ export function CaixaScreen() {
           dataHora={sessao.dataHoraFormatada}
           turno={sessao.turno}
           operador={sessao.operador}
+          onPressVoltar={() => router.push('/(tabs)')}
         />
 
         {/* Conteúdo com Rolagem Vertical */}

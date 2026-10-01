@@ -19,5 +19,6 @@ public interface IJwtTokenGenerator
         Guid restauranteId,
         string email,
         string role,
+        string? nome = null,
         TimeSpan? lifetime = null);
 }

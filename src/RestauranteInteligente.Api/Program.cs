@@ -17,8 +17,12 @@ try
         options.KnownProxies.Clear();
     });
 
-    // Configuração de Controladores e OpenAPI
-    builder.Services.AddControllers();
+    // Configuração de Controladores e OpenAPI com suporte a caracteres UTF-8 relaxados
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        });
     builder.Services.AddOpenApi();
 
     // Configuração de CORS: Permite conexões do Expo Web (localhost) e clientes web com suporte a credenciais e cabeçalhos customizados

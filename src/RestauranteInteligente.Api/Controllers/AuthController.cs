@@ -83,6 +83,7 @@ public sealed class AuthController : ControllerBase
             restauranteId: restauranteId,
             email: user.Email,
             role: user.Role,
+            nome: user.Nome,
             lifetime: TimeSpan.FromMinutes(15) // Access Token higiênico e curto
         );
 
@@ -101,7 +102,9 @@ public sealed class AuthController : ControllerBase
             Jti: tokenResult.Jti,
             ExpiresAt: tokenResult.ExpiresAt,
             RestauranteId: restauranteId,
-            UserId: userId
+            UserId: userId,
+            Nome: user.Nome,
+            Role: user.Role
         ));
     }
 

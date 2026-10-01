@@ -7,6 +7,7 @@ interface HeaderOperacionalProps {
   terminal?: string;
   comanda?: string;
   statusCaixa?: 'Aberto' | 'Fechado';
+  onPressVoltar?: () => void;
   onPressPerfil?: () => void;
   onPressNovoProduto?: () => void;
 }
@@ -15,6 +16,7 @@ export function HeaderOperacional({
   terminal = 'PDV 01',
   comanda = '#042',
   statusCaixa = 'Aberto',
+  onPressVoltar,
   onPressPerfil,
   onPressNovoProduto,
 }: HeaderOperacionalProps) {
@@ -24,6 +26,21 @@ export function HeaderOperacional({
     <View style={styles.container}>
       <View style={styles.infoCol}>
         <View style={styles.row}>
+          {onPressVoltar && (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Voltar para o Painel"
+                onPress={onPressVoltar}
+                style={({ pressed }) => [styles.btnVoltar, pressed && styles.pressed]}
+              >
+                <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+                  ← Painel
+                </ThemedText>
+              </Pressable>
+              <View style={styles.divider} />
+            </>
+          )}
           <ThemedText variant="title" style={styles.terminalText}>
             {terminal}
           </ThemedText>
@@ -202,5 +219,16 @@ const styles = StyleSheet.create({
     color: tokens.colors.primary,
     fontWeight: '700',
     fontSize: tokens.typography.fontMd,
+  },
+  btnVoltar: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#FFF5F5',
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

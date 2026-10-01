@@ -20,11 +20,11 @@ export const TENANTS_PADRAO: RestauranteTenant[] = [
 export const OPERADORES_RECENTES_PADRAO: OperadorRecente[] = [
   {
     id: '99999999-9999-9999-9999-999999999999',
-    nome: 'Operador Homologação',
+    nome: 'Gestor do Restaurante',
     matricula: '05829',
-    email: 'operador@restaurante.com',
+    email: 'gestor@restaurante.com',
     fotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
-    iniciais: 'OH',
+    iniciais: 'GR',
   },
 ];
 
@@ -74,9 +74,9 @@ export const authService = {
         expiracao: backendData.expiresAt || new Date(Date.now() + 1000 * 60 * 15).toISOString(),
         operador: {
           id: backendData.userId || '99999999-9999-9999-9999-999999999999',
-          nome: 'Operador Homologação',
-          email: input.identificador.includes('@') ? input.identificador : 'operador@restaurante.com',
-          cargo: 'Operador de Balcão & Caixa',
+          nome: backendData.nome || (input.identificador.includes('@') ? input.identificador.split('@')[0] : 'Gestor do Restaurante'),
+          email: input.identificador.includes('@') ? input.identificador : 'gestor@restaurante.com',
+          cargo: (backendData.role === 'Owner' || backendData.role === 'Manager') ? 'Gestor & Dono' : 'Operador de Balcão & Caixa',
           restaurantesVinculados: [tenant],
         },
       };

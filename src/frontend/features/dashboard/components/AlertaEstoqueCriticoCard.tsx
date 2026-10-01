@@ -7,9 +7,14 @@ import { InsumoCriticoResumo } from '../types';
 interface AlertaEstoqueCriticoCardProps {
   insumos: readonly InsumoCriticoResumo[];
   onNavegarEstoque: () => void;
+  onAbrirOrdemCompra?: () => void;
 }
 
-export function AlertaEstoqueCriticoCard({ insumos, onNavegarEstoque }: AlertaEstoqueCriticoCardProps) {
+export function AlertaEstoqueCriticoCard({
+  insumos,
+  onNavegarEstoque,
+  onAbrirOrdemCompra,
+}: AlertaEstoqueCriticoCardProps) {
   if (!insumos || insumos.length === 0) {
     return (
       <View style={styles.cardOk}>
@@ -49,7 +54,7 @@ export function AlertaEstoqueCriticoCard({ insumos, onNavegarEstoque }: AlertaEs
       </View>
 
       <ThemedText variant="caption" style={styles.descricao}>
-        Itens com saldo próximo de esgotar detectados pelo ledger contábil:
+        Itens abaixo do estoque mínimo de segurança em tempo real:
       </ThemedText>
 
       <View style={styles.listaInsumos}>
@@ -72,6 +77,19 @@ export function AlertaEstoqueCriticoCard({ insumos, onNavegarEstoque }: AlertaEs
           </View>
         ))}
       </View>
+
+      {onAbrirOrdemCompra && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Gerar pedido de compra para insumos críticos"
+          onPress={onAbrirOrdemCompra}
+          style={({ pressed }) => [styles.botaoOrdemCompra, pressed && styles.pressed]}
+        >
+          <ThemedText variant="caption" weight="bold" color={tokens.colors.white}>
+            📋 Gerar Pedido de Compra ({insumos.length})
+          </ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -160,5 +178,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 2,
     borderRadius: tokens.radii.full,
+  },
+  botaoOrdemCompra: {
+    backgroundColor: tokens.colors.primary,
+    borderRadius: tokens.radii.md,
+    paddingVertical: tokens.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacing.md,
   },
 });

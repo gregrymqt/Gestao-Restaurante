@@ -36,6 +36,7 @@ public sealed class EfAuthUserService : IAuthUserService
         return new UserAccount(
             UserId: user.Id,
             RestauranteId: user.RestauranteId,
+            Nome: user.Nome,
             Email: user.Email,
             PasswordHash: user.SenhaHash,
             Role: user.Role

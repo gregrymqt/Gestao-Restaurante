@@ -5,6 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { useRouter } from 'expo-router';
 import { CategoriaProduto, CriarProdutoInput, Produto } from '../types';
 import { useCarrinho } from '../hooks/useCarrinho';
 import { useCatalogoProdutos } from '../hooks/useCatalogoProdutos';
@@ -18,6 +19,7 @@ import { CheckoutBottomSheet } from '../components/CheckoutBottomSheet';
 import { ModalNovoProduto } from '../components/ModalNovoProduto';
 
 export function PdvScreen() {
+  const router = useRouter();
   const [categoria, setCategoria] = useState<CategoriaProduto>('Todos');
   const [termoBusca, setTermoBusca] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -52,7 +54,10 @@ export function PdvScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        <HeaderOperacional onPressNovoProduto={() => setIsNovoProdutoOpen(true)} />
+        <HeaderOperacional
+          onPressVoltar={() => router.push('/(tabs)')}
+          onPressNovoProduto={() => setIsNovoProdutoOpen(true)}
+        />
         <BarraPesquisaPdv
           valor={termoBusca}
           aoMudarTexto={setTermoBusca}

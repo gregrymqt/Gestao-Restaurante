@@ -24,19 +24,28 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         Guid restauranteId,
         string email,
         string role,
+        string? nome = null,
         TimeSpan? lifetime = null)
     {
         var jti = Guid.NewGuid().ToString("N");
         var expiration = DateTimeOffset.UtcNow.Add(lifetime ?? TimeSpan.FromMinutes(_options.ExpirationMinutes));
 
-        var claims = new[]
+        var claimsList = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(JwtRegisteredClaimNames.Jti, jti),
-            new Claim("restaurante_id", restauranteId.ToString()),
-            new Claim(ClaimTypes.Role, role)
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Email, email),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new("restaurante_id", restauranteId.ToString()),
+            new(ClaimTypes.Role, role)
         };
+
+        if (!string.IsNullOrWhiteSpace(nome))
+        {
+            claimsList.Add(new Claim(ClaimTypes.Name, nome));
+            claimsList.Add(new Claim("name", nome));
+        }
+
+        var claims = claimsList.ToArray();
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

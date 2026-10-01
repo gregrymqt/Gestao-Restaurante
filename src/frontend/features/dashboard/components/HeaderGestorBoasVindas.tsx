@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { TrialBadgeHeader, AssinaturaStatus } from '@/features/assinatura';
+import { useSseStatus } from '@/shared';
 
 interface HeaderGestorBoasVindasProps {
   nomeGestor: string;
@@ -22,6 +23,8 @@ export function HeaderGestorBoasVindas({
   onOpenPaywall,
 }: HeaderGestorBoasVindasProps) {
   const isAberta = statusLoja === 'ABERTA';
+  const sseStatus = useSseStatus((state) => state.status);
+  const isSseActive = sseStatus === 'CONNECTED';
 
   return (
     <View style={styles.container}>
@@ -31,9 +34,19 @@ export function HeaderGestorBoasVindas({
       <View style={styles.headerRow}>
         <View style={styles.textos}>
           <View style={styles.saudacaoRow}>
-            <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-              PAINEL DE GESTÃO DO DONO
-            </ThemedText>
+            <View style={styles.tituloRowLeft}>
+              <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+                PAINEL DE GESTÃO DO DONO
+              </ThemedText>
+              {isSseActive && (
+                <View style={styles.badgeSse}>
+                  <View style={styles.pontoVerde} />
+                  <ThemedText variant="caption" weight="semibold" color={tokens.colors.status.greenText}>
+                    Tempo Real
+                  </ThemedText>
+                </View>
+              )}
+            </View>
             <View style={[styles.badgeStatus, isAberta ? styles.badgeAberta : styles.badgeFechada]}>
               <View style={[styles.pontoStatus, isAberta ? styles.pontoVerde : styles.pontoVermelho]} />
               <ThemedText
@@ -80,6 +93,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 4,
+  },
+  tituloRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  badgeSse: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: tokens.colors.status.greenBg,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: tokens.radii.full,
   },
   badgeStatus: {
     flexDirection: 'row',

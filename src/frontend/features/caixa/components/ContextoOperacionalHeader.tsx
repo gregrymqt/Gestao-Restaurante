@@ -11,6 +11,7 @@ interface ContextoOperacionalHeaderProps {
   turno: string;
   operador: string;
   onPressAvatar?: () => void;
+  onPressVoltar?: () => void;
 }
 
 export function ContextoOperacionalHeader({
@@ -20,6 +21,7 @@ export function ContextoOperacionalHeader({
   turno,
   operador,
   onPressAvatar,
+  onPressVoltar,
 }: ContextoOperacionalHeaderProps) {
   const isAberta = status === 'Aberta';
 
@@ -28,6 +30,19 @@ export function ContextoOperacionalHeader({
       {/* Linha 1: Marca do Estabelecimento e Avatar */}
       <View style={styles.topRow}>
         <View style={styles.topRowLeft}>
+          {onPressVoltar && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Voltar para o Painel"
+              onPress={onPressVoltar}
+              style={({ pressed }) => [styles.btnVoltar, pressed && styles.pressed]}
+              hitSlop={8}
+            >
+              <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+                ← Painel
+              </ThemedText>
+            </Pressable>
+          )}
           <View style={styles.appIconWrapper}>
             <ThemedText variant="title">🏪</ThemedText>
           </View>
@@ -287,5 +302,19 @@ const styles = StyleSheet.create({
   operadorNome: {
     color: tokens.colors.textPrimary,
     fontSize: tokens.typography.fontSm,
+  },
+  btnVoltar: {
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radii.sm,
+    backgroundColor: tokens.colors.primaryLight,
+    borderWidth: 1,
+    borderColor: tokens.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 36,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

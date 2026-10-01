@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRealtimeEvents } from '@/shared/hooks/useRealtimeEvents';
-import { RealtimeStatusBar } from '@/shared/components/RealtimeStatusBar';
 import { RealtimeEventToast } from '@/shared/components/RealtimeEventToast';
 import { OfflineBanner } from '@/shared/components/OfflineBanner';
 import { AppDialogHost } from '@/shared/components/AppDialog';
@@ -22,7 +21,6 @@ function RealtimeAppContainer() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
-      <RealtimeStatusBar />
       <RealtimeEventToast />
       <AppDialogHost />
     </View>

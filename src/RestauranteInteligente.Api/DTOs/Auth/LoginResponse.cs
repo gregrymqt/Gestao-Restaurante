@@ -9,5 +9,7 @@ public sealed record LoginResponse(
     string Jti,
     DateTimeOffset ExpiresAt,
     Guid RestauranteId,
-    Guid UserId
+    Guid UserId,
+    string Nome,
+    string Role
 );

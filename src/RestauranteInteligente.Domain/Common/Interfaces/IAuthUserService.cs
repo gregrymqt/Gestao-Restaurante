@@ -6,6 +6,7 @@ namespace RestauranteInteligente.Domain.Common.Interfaces;
 public sealed record UserAccount(
     Guid UserId,
     Guid RestauranteId,
+    string Nome,
     string Email,
     string PasswordHash,
     string Role

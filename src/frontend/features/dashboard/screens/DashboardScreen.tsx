@@ -4,13 +4,12 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/components/primitives/tokens';
 import { useAssinatura, ModalPaywall } from '@/features/assinatura';
-import { PdvScreen } from '@/features/vendas';
+import { OrdemCompraModal } from '@/features/previsoes';
 import { useDashboardExecutivo } from '../hooks/useDashboardExecutivo';
 import { HeaderGestorBoasVindas } from '../components/HeaderGestorBoasVindas';
 import { KpisFaturamentoCard } from '../components/KpisFaturamentoCard';
@@ -21,15 +20,25 @@ import { AtalhosOperacionaisGrid } from '../components/AtalhosOperacionaisGrid';
 export function DashboardScreen() {
   const router = useRouter();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [isPdvModalOpen, setIsPdvModalOpen] = useState(false);
+  const [isOrdemCompraOpen, setIsOrdemCompraOpen] = useState(false);
 
   const { dashboard, isLoading, refetch, tenant, operador } = useDashboardExecutivo();
   const { assinatura, isAssinando, assinarPlano } = useAssinatura();
 
+  const sugestoesCompra = dashboard.insumosCriticos.map((i) => ({
+    insumoId: i.id,
+    nomeInsumo: i.nome,
+    unidadeMedida: i.unidadeMedida,
+    stockAtual: i.quantidadeAtual,
+    stockNecessario: i.quantidadeMinima * 2,
+    quantidadeComprar: Math.max(i.quantidadeMinima * 2 - i.quantidadeAtual, i.quantidadeMinima),
+    precoEstimadoUnitario: 25.0,
+  }));
+
   const handleNavegarEstoque = () => router.push('/(tabs)/estoque');
   const handleNavegarCaixa = () => router.push('/(tabs)/caixa');
   const handleNavegarPrevisoes = () => router.push('/(tabs)/previsoes');
-  const handleAbrirPdvTeste = () => setIsPdvModalOpen(true);
+  const handleAbrirPdvTeste = () => router.push('/(tabs)/pdv');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -63,6 +72,7 @@ export function DashboardScreen() {
           <AlertaEstoqueCriticoCard
             insumos={dashboard.insumosCriticos}
             onNavegarEstoque={handleNavegarEstoque}
+            onAbrirOrdemCompra={() => setIsOrdemCompraOpen(true)}
           />
 
           {/* Card 3: Previsão Preditiva de Demanda com IA */}
@@ -80,6 +90,17 @@ export function DashboardScreen() {
           />
         </ScrollView>
 
+        {/* Modal Rápido de Ordem de Compra / Reposição de Insumos Críticos */}
+        <OrdemCompraModal
+          visible={isOrdemCompraOpen}
+          sugestoes={sugestoesCompra}
+          onClose={() => setIsOrdemCompraOpen(false)}
+          onConfirmar={async (pedido) => {
+            setIsOrdemCompraOpen(false);
+            await refetch();
+          }}
+        />
+
         {/* Modal Paywall de Planos e Assinatura SaaS */}
         <ModalPaywall
           visible={isPaywallOpen}
@@ -92,17 +113,6 @@ export function DashboardScreen() {
           }}
           onClose={() => setIsPaywallOpen(false)}
         />
-
-        {/* Modal Secundário de Demonstração / Simulador do PDV */}
-        <Modal
-          visible={isPdvModalOpen}
-          animationType="slide"
-          onRequestClose={() => setIsPdvModalOpen(false)}
-        >
-          <View style={styles.pdvModalContainer}>
-            <PdvScreen />
-          </View>
-        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -119,9 +129,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: tokens.spacing.xl,
-  },
-  pdvModalContainer: {
-    flex: 1,
-    backgroundColor: tokens.colors.background,
   },
 });

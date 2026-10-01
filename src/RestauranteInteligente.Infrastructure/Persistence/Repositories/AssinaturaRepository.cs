@@ -22,7 +22,7 @@ public sealed class AssinaturaRepository : IAssinaturaRepository
         new(
             id: Guid.Parse("22222222-2222-2222-2222-222222222222"),
             nome: "Plano Pro Inteligente (IA)",
-            descricao: "Tudo do Starter + Previsão de Demanda com IA (HistGradientBoosting), meteorologia e alertas SSE em tempo real.",
+            descricao: "Tudo do Starter + Previsão de Demanda com IA Preditiva de Vendas, impacto climático e estoque crítico em tempo real.",
             precoMensal: 189.00m,
             possuiModuloIa: true,
             ativo: true

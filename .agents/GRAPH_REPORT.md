@@ -6,8 +6,8 @@
 
 ## 1. Métricas do Grafo de Conhecimento
 
-- **Total de Nós Mapeados**: `114`
-- **Total de Arestas Semânticas**: `183`
+- **Total de Nós Mapeados**: `115`
+- **Total de Arestas Semânticas**: `186`
 
 ### Distribuição por Tipo de Nó
 | Tipo de Nó | Quantidade | Descrição / Camada |
@@ -20,7 +20,7 @@
 | `CoreRepository` | 9 | Repositórios de persistência EF Core |
 | `ApiController` | 9 | Controllers ASP.NET Core (.NET 9) |
 | `FrontendFeature` | 9 | Bounded Contexts (Feature-First) |
-| `FrontendPage` | 7 | Telas e rotas nativas expo-router |
+| `FrontendPage` | 8 | Telas e rotas nativas expo-router |
 | `DockerContainer` | 5 | Serviços locais no docker-compose.yml |
 | `RedisService` | 4 | Cache, Distributed Lock, Streams e Rate Limit |
 | `MessageQueue` | 3 | Filas e Exchanges RabbitMQ (Raw JSON) |

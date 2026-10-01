@@ -116,13 +116,13 @@ export function ModalPaywall({
                       <View style={styles.vantagemItem}>
                         <ThemedText style={styles.checkIcon}>✓</ThemedText>
                         <ThemedText variant="caption" style={styles.vantagemTexto}>
-                          Gestão de Estoque Anti-Deadlock e Livro-Razão Imutável
+                          Estoque blindado contra erros e divergências
                         </ThemedText>
                       </View>
                       <View style={styles.vantagemItem}>
                         <ThemedText style={styles.checkIcon}>✓</ThemedText>
                         <ThemedText variant="caption" style={styles.vantagemTexto}>
-                          Fechamento de Caixa Cego e Auditoria por Turno
+                          Auditoria de caixa cego contra divergências por turno
                         </ThemedText>
                       </View>
                       {isPro && (
@@ -130,13 +130,13 @@ export function ModalPaywall({
                           <View style={styles.vantagemItem}>
                             <ThemedText style={styles.checkIcon}>⚡</ThemedText>
                             <ThemedText variant="caption" weight="bold" style={styles.vantagemDestaque}>
-                              Previsões Preditivas com HistGradientBoosting (IA)
+                              IA Preditiva de Vendas e Reposição Inteligente
                             </ThemedText>
                           </View>
                           <View style={styles.vantagemItem}>
                             <ThemedText style={styles.checkIcon}>⚡</ThemedText>
                             <ThemedText variant="caption" weight="bold" style={styles.vantagemDestaque}>
-                              Alertas Reativos SSE de Estoque Crítico em Tempo Real
+                              Estoque Crítico em Tempo Real com Ação Imediata
                             </ThemedText>
                           </View>
                         </>
@@ -254,6 +254,7 @@ const styles = StyleSheet.create({
   },
   cardPlanoDestaque: {
     borderColor: '#FFAB91',
+    marginTop: tokens.spacing.sm,
   },
   cardPlanoSelecionado: {
     borderColor: tokens.colors.primary,
@@ -278,6 +279,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing.xs,
+    flex: 1,
+    marginRight: tokens.spacing.sm,
   },
   radioOuter: {
     width: 20,
@@ -299,6 +302,7 @@ const styles = StyleSheet.create({
   },
   nomePlano: {
     fontSize: tokens.typography.fontMd,
+    flexShrink: 1,
   },
   precoContainer: {
     flexDirection: 'row',

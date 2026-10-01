@@ -18,12 +18,12 @@ export function PrevisaoDemandaIaCard({
       <View style={styles.header}>
         <View style={styles.tituloRow}>
           <ThemedText style={styles.iconeIa}>🤖</ThemedText>
-          <View>
+          <View style={styles.tituloTextos}>
             <ThemedText variant="subtitle" weight="bold">
               Inteligência Preditiva de Demanda
             </ThemedText>
             <ThemedText variant="caption" style={styles.subtituloIa}>
-              Modelo HistGradientBoosting • {previsao.dataAlvoFormatada}
+              IA Preditiva de Vendas • {previsao.dataAlvoFormatada}
             </ThemedText>
           </View>
         </View>
@@ -96,6 +96,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.spacing.sm,
     flex: 1,
+  },
+  tituloTextos: {
+    flex: 1,
+    paddingRight: tokens.spacing.xs,
   },
   iconeIa: {
     fontSize: 24,

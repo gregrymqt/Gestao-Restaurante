@@ -19,7 +19,7 @@ export const ASSINATURA_PADRAO: AssinaturaStatus = {
     {
       id: '22222222-2222-2222-2222-222222222222',
       nome: 'Plano Pro Inteligente (IA)',
-      descricao: 'Tudo do Starter + Previsão de Demanda com Machine Learning e Alertas SSE.',
+      descricao: 'Tudo do Starter + IA Preditiva de Vendas, impacto climático e estoque crítico em tempo real.',
       precoMensal: 189.00,
       possuiModuloIa: true,
     },

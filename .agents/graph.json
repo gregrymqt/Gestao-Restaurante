@@ -2,8 +2,8 @@
   "metadata": {
     "system": "Restaurante Inteligente",
     "generator": "generate_knowledge_graph.py",
-    "node_count": 114,
-    "edge_count": 183
+    "node_count": 115,
+    "edge_count": 186
   },
   "nodes": [
     {
@@ -1242,6 +1242,16 @@
       }
     },
     {
+      "id": "page:(tabs)/pdv.tsx",
+      "type": "FrontendPage",
+      "label": "(tabs)/pdv.tsx",
+      "file": "src/frontend/app/(tabs)/pdv.tsx",
+      "metadata": {
+        "router": "expo-router",
+        "native_stack": true
+      }
+    },
+    {
       "id": "page:(tabs)/perfil.tsx",
       "type": "FrontendPage",
       "label": "(tabs)/perfil.tsx",
@@ -1987,6 +1997,12 @@
       "metadata": {}
     },
     {
+      "source": "page:(tabs)/pdv.tsx",
+      "target": "feature:vendas",
+      "relationship": "references",
+      "metadata": {}
+    },
+    {
       "source": "page:(tabs)/perfil.tsx",
       "target": "feature:perfil",
       "relationship": "references",
@@ -2113,6 +2129,18 @@
     {
       "source": "repo:AssinaturaRepository",
       "target": "table:Planos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Vendas",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Vendas",
       "relationship": "writes_to",
       "metadata": {}
     },
