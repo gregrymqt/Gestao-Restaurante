@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { OperadorRecente } from '../types';
@@ -34,26 +35,24 @@ export function RecentOperatorsGrid({
               onPress={() => onSelectOperador(op)}
               style={[styles.operatorCard, isSelected && styles.operatorCardActive]}
             >
-              {op.iniciais === 'LV' ? (
-                <View style={styles.avatarPhotoBox}>
-                  <ThemedText style={styles.avatarEmoji}>👨‍🍳</ThemedText>
-                </View>
-              ) : (
-                <View style={styles.avatarInitialsBox}>
-                  <ThemedText variant="caption" style={styles.initialsText}>
-                    {op.iniciais || 'MA'}
-                  </ThemedText>
-                </View>
-              )}
+              <View style={styles.avatarInitialsBox}>
+                <ThemedText variant="caption" weight="bold" style={styles.initialsText}>
+                  {op.iniciais || 'OP'}
+                </ThemedText>
+              </View>
 
               <View style={styles.operatorInfo}>
-                <ThemedText variant="caption" style={styles.operatorNome} numberOfLines={1}>
+                <ThemedText variant="caption" weight="bold" style={styles.operatorNome} numberOfLines={1}>
                   {op.nome}
                 </ThemedText>
                 <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.matriculaText}>
                   Matrícula {op.matricula}
                 </ThemedText>
               </View>
+
+              {isSelected && (
+                <Ionicons name="checkmark-circle" size={16} color={tokens.colors.primary} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -64,7 +63,7 @@ export function RecentOperatorsGrid({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: tokens.spacing.md,
+    marginHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.md,
   },
   sectionTitle: {
@@ -86,46 +85,34 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.md,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    padding: tokens.spacing.xs + 2,
-    gap: tokens.spacing.xs,
+    padding: tokens.spacing.sm,
+    gap: tokens.spacing.sm,
   },
   operatorCardActive: {
     borderColor: tokens.colors.primary,
-    backgroundColor: '#FFF9F8',
-  },
-  avatarPhotoBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFECE8',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmoji: {
-    fontSize: 18,
+    backgroundColor: tokens.colors.primaryLight,
   },
   avatarInitialsBox: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E8EAED',
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initialsText: {
-    fontWeight: '800',
-    color: tokens.colors.textSecondary,
+    color: tokens.colors.primaryDark,
     fontSize: 11,
   },
   operatorInfo: {
     flex: 1,
   },
   operatorNome: {
-    fontWeight: '700',
     color: tokens.colors.textPrimary,
   },
   matriculaText: {
     fontSize: 10,
-    marginTop: 1,
   },
 });

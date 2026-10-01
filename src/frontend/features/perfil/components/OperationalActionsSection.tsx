@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows, createShadow } from '@/shared/utils/shadows';
 
 interface OperationalActionsSectionProps {
   onNavegarCaixa: () => void;
@@ -96,11 +97,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: tokens.spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    ...shadows.sm,
   },
   toolIcon: {
     fontSize: 16,
@@ -140,11 +137,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: tokens.spacing.sm,
-    shadowColor: tokens.colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
+    ...createShadow({
+      color: tokens.colors.primaryDark,
+      offsetY: 3,
+      radius: 5,
+      opacity: 0.25,
+      elevation: 3,
+    }),
   },
   logoutIcon: {
     fontSize: 20,

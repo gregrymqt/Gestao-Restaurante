@@ -136,7 +136,7 @@ class SseClient {
       });
 
       if (response.status === 401 || response.status === 403) {
-        console.warn('[SSE] Acesso negado (401/403). Abortando reconexão...');
+        console.debug('[SSE] Acesso não autorizado (401/403). Encerrando conexão.');
         this.setStatus('DISCONNECTED');
         this.unauthorizedListeners.forEach((l) => l());
         return;

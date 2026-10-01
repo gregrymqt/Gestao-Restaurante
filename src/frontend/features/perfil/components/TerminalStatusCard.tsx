@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { TerminalStatus } from '../types';
 
 interface TerminalStatusCardProps {
@@ -129,11 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.lg,
     borderColor: tokens.colors.border,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   row: {
     flexDirection: 'row',

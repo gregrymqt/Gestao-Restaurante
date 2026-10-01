@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { InsumoEstoque } from '../types';
 
 interface InsumoSaldoCardProps {
@@ -130,11 +131,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     padding: tokens.spacing.md,
     marginBottom: tokens.spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',

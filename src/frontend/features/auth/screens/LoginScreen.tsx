@@ -5,11 +5,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { shadows } from '@/shared/utils/shadows';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useLoginMutation } from '../hooks/useLoginMutation';
 import { authService, TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
@@ -18,6 +21,7 @@ import { TenantSelectorCard } from '../components/TenantSelectorCard';
 import { TenantSelectorModal } from '../components/TenantSelectorModal';
 import { CredentialsCard } from '../components/CredentialsCard';
 import { RecentOperatorsGrid } from '../components/RecentOperatorsGrid';
+import { OperadorModeToggle } from '../components/OperadorModeToggle';
 import { LoginCtaSection } from '../components/LoginCtaSection';
 import { ModalCadastroRestaurante } from '../components/ModalCadastroRestaurante';
 import { RestauranteTenant, OperadorRecente } from '../types';
@@ -28,8 +32,9 @@ export function LoginScreen() {
   const setTenant = useAuthStore((state) => state.setTenant);
   const loginMutation = useLoginMutation();
 
-  const [identificador, setIdentificador] = useState('operador@restaurante.com');
+  const [identificador, setIdentificador] = useState('gestor@restaurante.com');
   const [palavraPasse, setPalavraPasse] = useState('123456');
+  const [isOperadorMode, setIsOperadorMode] = useState(false);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
   const [tenants, setTenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
@@ -46,14 +51,26 @@ export function LoginScreen() {
     setPalavraPasse('123456');
   };
 
-  const handleIniciarTurno = () => {
+  const handleToggleOperadorMode = () => {
+    setIsOperadorMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setIdentificador('operador@restaurante.com');
+      } else {
+        setIdentificador('gestor@restaurante.com');
+      }
+      return next;
+    });
+  };
+
+  const handleAcessarPainel = () => {
     if (!identificador.trim()) {
-      AppDialog.warning('Campo Obrigatório', 'Informe seu e-mail ou matrícula de operador.');
+      AppDialog.warning('Campo Obrigatório', 'Informe seu e-mail de acesso.');
       return;
     }
 
     if (!palavraPasse.trim()) {
-      AppDialog.warning('Campo Obrigatório', 'Informe sua senha de acesso ou PIN de 6 dígitos.');
+      AppDialog.warning('Campo Obrigatório', 'Informe sua senha de acesso.');
       return;
     }
 
@@ -82,16 +99,16 @@ export function LoginScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
       >
-        {/* Header com Branding e Status do Terminal */}
+        {/* Header com Branding Oficial e Status do Sistema */}
         <AuthHeader />
 
-        {/* Card Seletor de Unidade Multi-Tenant */}
+        {/* Card Seletor de Unidade / Filial */}
         <TenantSelectorCard
           tenant={currentTenant}
           onPressAlterar={() => setIsTenantModalOpen(true)}
         />
 
-        {/* Inputs de Credenciais do Caixa */}
+        {/* Inputs de Credenciais do Gestor / Operador */}
         <CredentialsCard
           identificador={identificador}
           onIdentificadorChange={setIdentificador}
@@ -99,37 +116,51 @@ export function LoginScreen() {
           onPalavraPasseChange={setPalavraPasse}
         />
 
-        {/* Operadores Recentes no Terminal */}
-        <RecentOperatorsGrid
-          operadores={operadores}
-          operadorAtivoId={operadorAtivoId}
-          onSelectOperador={handleSelectOperador}
+        {/* Alternador Discreto de Modo Caixa / Operador */}
+        <OperadorModeToggle
+          isOperadorMode={isOperadorMode}
+          onToggle={handleToggleOperadorMode}
         />
 
-        {/* Botão de Ação CTA e Metadados */}
+        {/* Operadores Recentes (Visíveis apenas quando em Modo Operador) */}
+        {isOperadorMode && (
+          <RecentOperatorsGrid
+            operadores={operadores}
+            operadorAtivoId={operadorAtivoId}
+            onSelectOperador={handleSelectOperador}
+          />
+        )}
+
+        {/* Botão Primário CTA: Acessar Painel */}
         <LoginCtaSection
-          onIniciarTurno={handleIniciarTurno}
+          onIniciarTurno={handleAcessarPainel}
           isLoading={loginMutation.isPending}
           disabled={!identificador.trim() || !palavraPasse.trim()}
         />
 
-        {/* CTA Onboarding de Novo Inquilino (14 Dias Grátis) */}
+        {/* Card Onboarding SaaS de Novo Inquilino (14 Dias Grátis) */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Criar novo restaurante com 14 dias grátis"
           onPress={() => setIsCadastroModalOpen(true)}
           style={({ pressed }) => [styles.bannerCadastro, pressed && styles.bannerCadastroPressionado]}
         >
-          <ThemedText variant="subtitle" weight="bold" color={tokens.colors.primary}>
-            ✨ Novo por aqui? Cadastre seu Restaurante
-          </ThemedText>
-          <ThemedText variant="caption" style={styles.subtextoCadastro}>
-            Ganhe 14 dias de degustação gratuita sem cartão
-          </ThemedText>
+          <View style={styles.bannerIconBox}>
+            <Ionicons name="sparkles" size={20} color={tokens.colors.primary} />
+          </View>
+          <View style={styles.bannerTextBox}>
+            <ThemedText variant="subtitle" weight="bold" color={tokens.colors.primaryDark}>
+              Novo no Restaurante Inteligente?
+            </ThemedText>
+            <ThemedText variant="caption" style={styles.subtextoCadastro}>
+              Comece seu teste de 14 dias totalmente grátis
+            </ThemedText>
+          </View>
+          <Ionicons name="arrow-forward-circle" size={24} color={tokens.colors.primary} />
         </Pressable>
       </ScrollView>
 
-      {/* Modal de Troca de Tenant */}
+      {/* Modal de Troca de Unidade / Filial com FlashList e Busca */}
       <TenantSelectorModal
         visible={isTenantModalOpen}
         tenants={tenants}
@@ -138,7 +169,7 @@ export function LoginScreen() {
         onClose={() => setIsTenantModalOpen(false)}
       />
 
-      {/* Modal de Auto-Cadastro de Inquilino (SaaS Onboarding) */}
+      {/* Modal de Auto-Cadastro de Inquilino com Compensação de Teclado */}
       <ModalCadastroRestaurante
         visible={isCadastroModalOpen}
         onClose={() => setIsCadastroModalOpen(false)}
@@ -153,25 +184,39 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.background,
   },
   scrollContent: {
-    paddingBottom: tokens.spacing.xl,
+    paddingBottom: tokens.spacing.xxl,
   },
   bannerCadastro: {
-    marginTop: tokens.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: tokens.spacing.sm,
     marginHorizontal: tokens.spacing.lg,
     padding: tokens.spacing.md,
-    borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.primaryLight,
+    borderRadius: tokens.radii.lg,
+    backgroundColor: tokens.colors.card,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    gap: 4,
+    borderColor: tokens.colors.border,
+    ...shadows.sm,
+    gap: tokens.spacing.md,
   },
   bannerCadastroPressionado: {
-    opacity: 0.8,
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
+  },
+  bannerIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerTextBox: {
+    flex: 1,
   },
   subtextoCadastro: {
     color: tokens.colors.textSecondary,
     fontSize: tokens.typography.fontXs,
+    marginTop: 2,
   },
 });

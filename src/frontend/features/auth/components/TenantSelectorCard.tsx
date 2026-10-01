@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { RestauranteTenant } from '../types';
 
 interface TenantSelectorCardProps {
@@ -18,87 +20,73 @@ export function TenantSelectorCard({
       {/* Label Row */}
       <View style={styles.labelRow}>
         <View style={styles.tagTitleGroup}>
-          <ThemedText style={styles.buildingIcon}>🏢</ThemedText>
+          <Ionicons name="business-outline" size={14} color={tokens.colors.primaryDark} />
           <ThemedText variant="caption" style={styles.sectionLabel}>
-            UNIDADE OPERACIONAL
-          </ThemedText>
-        </View>
-
-        <View style={styles.multiTenantBadge}>
-          <ThemedText variant="caption" style={styles.multiTenantBadgeText}>
-            Multi-Tenant
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* Main Tenant Card */}
-      <View style={styles.card}>
-        <View style={styles.storeIconBox}>
-          <ThemedText style={styles.storeIcon}>🍔</ThemedText>
-        </View>
-
-        <View style={styles.storeInfo}>
-          <View style={styles.nameRow}>
-            <ThemedText variant="body" style={styles.storeName}>
-              {tenant?.nome || 'GastroBurger - Matriz'}
-            </ThemedText>
-            <View style={styles.activeDot} />
-          </View>
-
-          <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.cnpjText}>
-            CNPJ: {tenant?.cnpj || '12.345.678/0001-90'} • {tenant?.filialNumero || 'Filial #01'}
+            UNIDADE / FILIAL ATIVA
           </ThemedText>
         </View>
 
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onPressAlterar}
-          style={styles.alterarButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <ThemedText variant="caption" style={styles.alterarText}>
-            Alterar ⌄
+          <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+            Trocar Loja
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Main Tenant Card */}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPressAlterar}
+        style={styles.card}
+      >
+        <View style={styles.storeIconBox}>
+          <Ionicons name="storefront-outline" size={20} color={tokens.colors.primary} />
+        </View>
+
+        <View style={styles.storeInfo}>
+          <View style={styles.nameRow}>
+            <ThemedText variant="body" weight="bold" style={styles.storeName}>
+              {tenant?.nome || 'Restaurante Matriz'}
+            </ThemedText>
+            <View style={styles.activeDot} />
+          </View>
+
+          <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.cnpjLabel}>
+            CNPJ: {tenant?.cnpj || '12.345.678/0001-90'} • {tenant?.filialNumero || 'Filial Principal'}
+          </ThemedText>
+        </View>
+
+        <Ionicons name="chevron-forward" size={18} color={tokens.colors.textMuted} />
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: tokens.spacing.md,
+    marginHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.md,
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: tokens.spacing.xs,
   },
   tagTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  buildingIcon: {
-    fontSize: 12,
+    gap: 6,
   },
   sectionLabel: {
     fontSize: tokens.typography.fontXs,
     fontWeight: '800',
     color: tokens.colors.primaryDark,
-    letterSpacing: 0.6,
-  },
-  multiTenantBadge: {
-    backgroundColor: '#F1F3F4',
-    paddingHorizontal: tokens.spacing.xs + 2,
-    paddingVertical: 2,
-    borderRadius: tokens.radii.sm,
-  },
-  multiTenantBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: tokens.colors.textSecondary,
+    letterSpacing: 0.5,
   },
   card: {
     flexDirection: 'row',
@@ -108,11 +96,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
     padding: tokens.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    ...shadows.sm,
   },
   storeIconBox: {
     width: 40,
@@ -121,10 +105,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: tokens.spacing.sm,
-  },
-  storeIcon: {
-    fontSize: 20,
+    marginRight: tokens.spacing.md,
   },
   storeInfo: {
     flex: 1,
@@ -135,7 +116,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   storeName: {
-    fontWeight: '800',
     color: tokens.colors.textPrimary,
   },
   activeDot: {
@@ -144,21 +124,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: tokens.colors.status.greenText,
   },
-  cnpjText: {
+  cnpjLabel: {
     marginTop: 2,
-    fontSize: 11,
-  },
-  alterarButton: {
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  alterarText: {
-    fontWeight: '700',
-    color: tokens.colors.primaryDark,
     fontSize: 11,
   },
 });

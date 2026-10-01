@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { createShadow } from '@/shared/utils/shadows';
 
 interface LoginCtaSectionProps {
   onIniciarTurno: () => void;
@@ -22,38 +24,32 @@ export function LoginCtaSection({
         onPress={onIniciarTurno}
         disabled={disabled || isLoading}
         style={[styles.ctaButton, (disabled || isLoading) && styles.ctaButtonDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel="Acessar painel do restaurante"
       >
         {isLoading ? (
           <ActivityIndicator color={tokens.colors.white} />
         ) : (
           <View style={styles.ctaContent}>
-            <ThemedText style={styles.ctaIcon}>➔</ThemedText>
-            <ThemedText variant="body" style={styles.ctaText}>
-              Iniciar Turno &amp; Abrir Balcão
+            <ThemedText variant="body" weight="bold" style={styles.ctaText}>
+              Acessar Painel
             </ThemedText>
+            <Ionicons name="arrow-forward" size={18} color={tokens.colors.white} />
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Nota Operacional / Gaveta */}
-      <View style={styles.infoRow}>
-        <ThemedText style={styles.shieldIcon}>🛡️</ThemedText>
-        <ThemedText variant="caption" color={tokens.colors.status.greenText} style={styles.infoText}>
-          Registra início de jornada e vincula gaveta de dinheiro
+      {/* Indicador de Segurança Corporativa */}
+      <View style={styles.securityBadge}>
+        <Ionicons name="shield-checkmark" size={14} color={tokens.colors.status.greenText} />
+        <ThemedText variant="caption" style={styles.securityText}>
+          Ambiente Seguro • Criptografia de Ponta a Ponta
         </ThemedText>
       </View>
 
-      {/* Badge de Segurança RLS Multi-Tenant */}
-      <View style={styles.rlsBadge}>
-        <ThemedText style={styles.lockIcon}>🔒</ThemedText>
-        <ThemedText variant="caption" style={styles.rlsText}>
-          RLS Isolamento Multi-tenant Ativo • Criptografado
-        </ThemedText>
-      </View>
-
-      {/* Metadados de Versão */}
+      {/* Rodapé Institucional */}
       <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.metadataText}>
-        v2.4.0-prod (Build 942) • FATEC DSM • GastroPDV Cloud
+        Restaurante Inteligente Cloud • Plataforma de Gestão
       </ThemedText>
     </View>
   );
@@ -61,77 +57,53 @@ export function LoginCtaSection({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
     marginTop: tokens.spacing.xs,
-    marginBottom: tokens.spacing.xl,
+    marginBottom: tokens.spacing.md,
     alignItems: 'center',
   },
   ctaButton: {
     width: '100%',
-    height: 56,
-    borderRadius: 24,
+    height: 52,
     backgroundColor: tokens.colors.primary,
+    borderRadius: tokens.radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: tokens.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: tokens.spacing.sm,
+    ...createShadow({
+      color: tokens.colors.primary,
+      offsetY: 4,
+      radius: 6,
+      opacity: 0.25,
+      elevation: 3,
+    }),
   },
   ctaButtonDisabled: {
-    opacity: 0.6,
+    backgroundColor: tokens.colors.border,
+    elevation: 0,
   },
   ctaContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.spacing.xs + 2,
-  },
-  ctaIcon: {
-    color: tokens.colors.white,
-    fontSize: 18,
-    fontWeight: '800',
+    gap: tokens.spacing.sm,
   },
   ctaText: {
     color: tokens.colors.white,
-    fontWeight: '800',
     fontSize: tokens.typography.fontMd,
     letterSpacing: 0.3,
   },
-  infoRow: {
+  securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: tokens.spacing.sm,
+    marginTop: tokens.spacing.md,
+    marginBottom: tokens.spacing.xs,
   },
-  shieldIcon: {
-    fontSize: 13,
-  },
-  infoText: {
-    fontWeight: '700',
-    fontSize: 11,
-  },
-  rlsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F3F4',
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: tokens.radii.full,
-    gap: 6,
-    marginBottom: tokens.spacing.md,
-  },
-  lockIcon: {
-    fontSize: 11,
-  },
-  rlsText: {
-    color: tokens.colors.textSecondary,
+  securityText: {
+    color: tokens.colors.status.greenText,
+    fontSize: tokens.typography.fontXs,
     fontWeight: '600',
-    fontSize: 11,
   },
   metadataText: {
-    fontSize: 10,
-    letterSpacing: 0.2,
+    fontSize: 11,
   },
 });

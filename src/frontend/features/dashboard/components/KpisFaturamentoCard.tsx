@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { KpisFaturamento } from '../types';
 
 interface KpisFaturamentoCardProps {
@@ -83,11 +84,7 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.lg,
     marginHorizontal: tokens.spacing.lg,
     marginTop: tokens.spacing.md,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    ...shadows.sm,
   },
   topo: {
     flexDirection: 'row',

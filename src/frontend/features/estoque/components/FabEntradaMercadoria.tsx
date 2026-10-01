@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { createShadow } from '@/shared/utils/shadows';
 
 interface FabEntradaMercadoriaProps {
   onPress: () => void;
@@ -32,11 +33,13 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: tokens.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 6,
+    ...createShadow({
+      color: tokens.colors.primary,
+      offsetY: 4,
+      radius: 6,
+      opacity: 0.35,
+      elevation: 6,
+    }),
     zIndex: 100,
   },
   fabIcon: {

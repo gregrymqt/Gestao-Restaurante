@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { createShadow } from '@/shared/utils/shadows';
 import { AbaEstoqueAtiva } from '../types';
 
 interface SegmentedEstoqueControlProps {
@@ -71,11 +72,13 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: tokens.colors.primary,
-    shadowColor: tokens.colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    ...createShadow({
+      color: tokens.colors.primary,
+      offsetY: 2,
+      radius: 4,
+      opacity: 0.15,
+      elevation: 2,
+    }),
   },
   tabIcon: {
     fontSize: 16,

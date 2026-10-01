@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
+  Pressable,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { RestauranteTenant } from '../types';
@@ -25,67 +28,129 @@ export function TenantSelectorModal({
   onSelectTenant,
   onClose,
 }: TenantSelectorModalProps) {
+  const [busca, setBusca] = useState('');
+
+  const filiaisFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return tenants;
+    return tenants.filter(
+      (t) =>
+        t.nome.toLowerCase().includes(termo) ||
+        t.cnpj.replace(/\D/g, '').includes(termo.replace(/\D/g, '')) ||
+        t.cnpj.toLowerCase().includes(termo) ||
+        (t.filialNumero && t.filialNumero.toLowerCase().includes(termo))
+    );
+  }, [busca, tenants]);
+
+  const handleSelect = (t: RestauranteTenant) => {
+    onSelectTenant(t);
+    setBusca('');
+    onClose();
+  };
+
+  const handleClose = () => {
+    setBusca('');
+    onClose();
+  };
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View style={styles.overlay}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Fechar seleção de filial"
+          style={styles.backdrop}
+          onPress={handleClose}
+        />
+
         <View style={styles.sheetContainer}>
           <View style={styles.dragIndicator} />
 
           <View style={styles.header}>
-            <ThemedText variant="title" style={styles.title}>
-              Selecionar Unidade Operacional
+            <ThemedText variant="subtitle" weight="bold" style={styles.title}>
+              Selecionar Unidade / Filial
             </ThemedText>
             <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Filiais autorizadas para autenticação neste terminal
+              Escolha a loja que deseja gerenciar neste acesso
             </ThemedText>
           </View>
 
-          <ScrollView style={styles.listScroll} showsVerticalScrollIndicator={false}>
-            {tenants.map((t) => {
-              const isSelected = t.id === tenantAtivoId;
+          {/* Barra de Pesquisa */}
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={18} color={tokens.colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por nome, filial ou CNPJ..."
+              placeholderTextColor={tokens.colors.textMuted}
+              value={busca}
+              onChangeText={setBusca}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {busca.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setBusca('')}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="close-circle" size={18} color={tokens.colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
 
-              return (
-                <TouchableOpacity
-                  key={t.id}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    onSelectTenant(t);
-                    onClose();
-                  }}
-                  style={[styles.tenantItem, isSelected && styles.tenantItemActive]}
-                >
-                  <View style={styles.iconBox}>
-                    <ThemedText style={styles.icon}>🏢</ThemedText>
-                  </View>
+          {/* Lista Virtualizada FlashList */}
+          <View style={styles.listContainer}>
+            <FlashList
+              data={filiaisFiltradas}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                    Nenhuma unidade encontrada para "{busca}".
+                  </ThemedText>
+                </View>
+              }
+              renderItem={({ item: t }) => {
+                const isSelected = t.id === tenantAtivoId;
 
-                  <View style={styles.tenantDetails}>
-                    <ThemedText variant="body" style={styles.tenantNome}>
-                      {t.nome}
-                    </ThemedText>
-                    <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                      CNPJ: {t.cnpj} • {t.filialNumero}
-                    </ThemedText>
-                  </View>
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleSelect(t)}
+                    style={[styles.tenantItem, isSelected && styles.tenantItemActive]}
+                  >
+                    <View style={styles.iconBox}>
+                      <ThemedText style={styles.icon}>🏢</ThemedText>
+                    </View>
 
-                  {isSelected && (
-                    <View style={styles.checkBadge}>
-                      <ThemedText variant="caption" style={styles.checkBadgeText}>
-                        ✓ ATIVO
+                    <View style={styles.tenantDetails}>
+                      <ThemedText variant="body" weight="bold" style={styles.tenantNome}>
+                        {t.nome}
+                      </ThemedText>
+                      <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                        CNPJ: {t.cnpj} • {t.filialNumero}
                       </ThemedText>
                     </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+
+                    {isSelected && (
+                      <View style={styles.checkBadge}>
+                        <Ionicons name="checkmark-circle" size={18} color={tokens.colors.primary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
 
           <View style={styles.footer}>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={onClose}
+              onPress={handleClose}
               style={styles.fecharButton}
             >
-              <ThemedText variant="body" style={styles.fecharButtonText}>
+              <ThemedText variant="body" weight="bold" style={styles.fecharButtonText}>
                 Cancelar
               </ThemedText>
             </TouchableOpacity>
@@ -102,11 +167,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+  },
   sheetContainer: {
     backgroundColor: tokens.colors.white,
     borderTopLeftRadius: tokens.radii.lg,
     borderTopRightRadius: tokens.radii.lg,
-    maxHeight: '75%',
+    maxHeight: '80%',
     paddingBottom: tokens.spacing.lg,
   },
   dragIndicator: {
@@ -119,7 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xs,
   },
   header: {
-    paddingHorizontal: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.xs,
     paddingBottom: tokens.spacing.sm,
     borderBottomWidth: 1,
@@ -127,75 +195,88 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: tokens.typography.fontLg,
-    fontWeight: '800',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderRadius: tokens.radii.md,
+    marginHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.md,
+    marginBottom: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.md,
+    height: 44,
+    gap: tokens.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: tokens.typography.fontSm,
     color: tokens.colors.textPrimary,
   },
-  listScroll: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.md,
+  listContainer: {
+    height: 280,
+    paddingHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.sm,
+  },
+  emptyContainer: {
+    paddingVertical: tokens.spacing.xl,
+    alignItems: 'center',
   },
   tenantItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    padding: tokens.spacing.md,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.background,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    padding: tokens.spacing.md,
     marginBottom: tokens.spacing.sm,
   },
   tenantItemActive: {
     borderColor: tokens.colors.primary,
-    backgroundColor: '#FFF9F8',
+    backgroundColor: tokens.colors.primaryLight,
   },
   iconBox: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: tokens.radii.sm,
-    backgroundColor: tokens.colors.primaryLight,
+    backgroundColor: tokens.colors.card,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: tokens.spacing.sm,
+    marginRight: tokens.spacing.md,
   },
   icon: {
-    fontSize: 18,
+    fontSize: 20,
   },
   tenantDetails: {
     flex: 1,
   },
   tenantNome: {
-    fontWeight: '800',
     color: tokens.colors.textPrimary,
+    marginBottom: 2,
   },
   checkBadge: {
-    backgroundColor: tokens.colors.status.greenBg,
-    paddingHorizontal: tokens.spacing.xs + 2,
-    paddingVertical: 2,
-    borderRadius: tokens.radii.sm,
-  },
-  checkBadgeText: {
-    color: tokens.colors.status.greenText,
-    fontWeight: '800',
-    fontSize: 10,
+    marginLeft: tokens.spacing.sm,
   },
   footer: {
-    paddingHorizontal: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
   },
   fecharButton: {
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    paddingVertical: tokens.spacing.sm + 2,
+    width: '100%',
+    paddingVertical: tokens.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    backgroundColor: tokens.colors.background,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
   },
   fecharButtonText: {
-    fontWeight: '700',
     color: tokens.colors.textSecondary,
   },
 });

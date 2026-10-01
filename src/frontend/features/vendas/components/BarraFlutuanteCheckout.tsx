@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { shadows } from '@/shared/utils/shadows';
 
 interface BarraFlutuanteCheckoutProps {
   totalItens: number;
@@ -81,11 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.lg,
     paddingHorizontal: tokens.spacing.lg,
     paddingVertical: tokens.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 6,
+    ...shadows.lg,
   },
   infoSection: {
     flexDirection: 'row',

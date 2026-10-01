@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows, createShadow } from '@/shared/utils/shadows';
 import { OperadorRecente } from '@/features/auth';
 
 interface OperatorHeroCardProps {
@@ -92,11 +93,7 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
     borderColor: tokens.colors.border,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   topRow: {
     flexDirection: 'row',
@@ -113,11 +110,13 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: tokens.colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
+    ...createShadow({
+      color: tokens.colors.primaryDark,
+      offsetY: 2,
+      radius: 4,
+      opacity: 0.25,
+      elevation: 3,
+    }),
   },
   avatarText: {
     color: tokens.colors.white,

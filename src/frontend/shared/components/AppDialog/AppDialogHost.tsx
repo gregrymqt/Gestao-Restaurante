@@ -4,12 +4,14 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  Pressable,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { useDialogStore, DialogType, DialogButton } from './dialogStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -62,26 +64,28 @@ export function AppDialogHost() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
+  const useNativeDriver = Platform.OS !== 'web';
+
   useEffect(() => {
     if (isOpen) {
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 180,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.spring(scaleAnim, {
           toValue: 1,
           friction: 6,
           tension: 80,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]).start();
     } else {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.8);
     }
-  }, [isOpen, fadeAnim, scaleAnim]);
+  }, [isOpen, fadeAnim, scaleAnim, useNativeDriver]);
 
   if (!isOpen || !options) {
     return null;
@@ -101,12 +105,12 @@ export function AppDialogHost() {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 120,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
       Animated.timing(scaleAnim, {
         toValue: 0.85,
         duration: 120,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start(() => {
       close();
@@ -186,45 +190,47 @@ export function AppDialogHost() {
 
   return (
     <Modal transparent visible={isOpen} animationType="none" onRequestClose={handleDismiss}>
-      <TouchableWithoutFeedback onPress={handleDismiss}>
-        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                styles.dialogCard,
-                {
-                  transform: [{ scale: scaleAnim }],
-                  opacity: fadeAnim,
-                },
-              ]}
-              accessibilityRole="alert"
-              accessibilityViewIsModal
-            >
-              {/* Ícone SweetAlert com anel externo pulsante */}
-              <View style={[styles.iconCircle, { backgroundColor: config.iconBg, borderColor: config.badgeBorder }]}>
-                <ThemedText style={[styles.iconSymbol, { color: config.iconColor }]}>
-                  {config.icon}
-                </ThemedText>
-              </View>
+      <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={handleDismiss}
+          accessibilityRole="button"
+          accessibilityLabel="Fechar diálogo"
+        />
+        <Animated.View
+          style={[
+            styles.dialogCard,
+            {
+              transform: [{ scale: scaleAnim }],
+              opacity: fadeAnim,
+            },
+          ]}
+          accessibilityRole="alert"
+          accessibilityViewIsModal
+        >
+          {/* Ícone SweetAlert com anel externo pulsante */}
+          <View style={[styles.iconCircle, { backgroundColor: config.iconBg, borderColor: config.badgeBorder }]}>
+            <ThemedText style={[styles.iconSymbol, { color: config.iconColor }]}>
+              {config.icon}
+            </ThemedText>
+          </View>
 
-              {/* Título do Diálogo */}
-              <ThemedText variant="title" weight="bold" style={styles.title}>
-                {options.title}
-              </ThemedText>
+          {/* Título do Diálogo */}
+          <ThemedText variant="title" weight="bold" style={styles.title}>
+            {options.title}
+          </ThemedText>
 
-              {/* Mensagem Explicativa */}
-              {Boolean(options.message) && (
-                <ThemedText variant="body" style={styles.message}>
-                  {options.message}
-                </ThemedText>
-              )}
+          {/* Mensagem Explicativa */}
+          {Boolean(options.message) && (
+            <ThemedText variant="body" style={styles.message}>
+              {options.message}
+            </ThemedText>
+          )}
 
-              {/* Ações / Botões */}
-              {renderButtons()}
-            </Animated.View>
-          </TouchableWithoutFeedback>
+          {/* Ações / Botões */}
+          {renderButtons()}
         </Animated.View>
-      </TouchableWithoutFeedback>
+      </Animated.View>
     </Modal>
   );
 }
@@ -245,11 +251,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 22,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 12,
+    ...shadows.dialog,
   },
   iconCircle: {
     width: 64,

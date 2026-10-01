@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Animated, View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { useSseStatus } from '../hooks/useSseStatus';
 
 export function RealtimeEventToast() {
@@ -13,6 +14,8 @@ export function RealtimeEventToast() {
   const translateY = useRef(new Animated.Value(-120)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const useNativeDriver = Platform.OS !== 'web';
 
   useEffect(() => {
     if (timerRef.current) {
@@ -25,14 +28,14 @@ export function RealtimeEventToast() {
       Animated.parallel([
         Animated.spring(translateY, {
           toValue: 0,
-          useNativeDriver: true,
+          useNativeDriver,
           bounciness: 6,
           speed: 14,
         }),
         Animated.timing(opacity, {
           toValue: 1,
           duration: 250,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]).start();
 
@@ -57,12 +60,12 @@ export function RealtimeEventToast() {
       Animated.timing(translateY, {
         toValue: -120,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
       Animated.timing(opacity, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start(() => {
       clearToast();
@@ -142,11 +145,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.md,
     borderWidth: 1.5,
     padding: tokens.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    ...shadows.lg,
   },
   contentRow: {
     flexDirection: 'row',

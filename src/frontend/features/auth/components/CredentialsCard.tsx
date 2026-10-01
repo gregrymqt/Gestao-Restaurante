@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { shadows } from '@/shared/utils/shadows';
 import { AppDialog } from '@/shared/components/AppDialog';
 
 interface CredentialsCardProps {
@@ -20,84 +22,79 @@ export function CredentialsCard({
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const isIdentificadorPreenchido = identificador.trim().length > 0;
-  const isPinValido = palavraPasse.length >= 6;
+  const isSenhaValida = palavraPasse.length >= 6;
 
   return (
     <View style={styles.card}>
       {/* Header do Card */}
       <View style={styles.headerRow}>
         <View style={styles.titleGroup}>
-          <ThemedText style={styles.userIcon}>👤</ThemedText>
-          <ThemedText variant="body" style={styles.headerTitle}>
-            Credenciais do Caixa
+          <Ionicons name="lock-closed-outline" size={18} color={tokens.colors.primary} />
+          <ThemedText variant="body" weight="bold" style={styles.headerTitle}>
+            Credenciais do Gestor
           </ThemedText>
         </View>
 
-        <View style={styles.turnoBadge}>
-          <ThemedText variant="caption" style={styles.turnoBadgeText}>
-            Turno Almoço
-          </ThemedText>
-        </View>
+        <ThemedText variant="caption" color={tokens.colors.textMuted}>
+          Acesso Seguro
+        </ThemedText>
       </View>
 
-      {/* Campo 1: Identificador */}
+      {/* Campo 1: Identificador / E-mail */}
       <View style={styles.fieldGroup}>
         <ThemedText variant="caption" style={styles.inputLabel}>
-          E-mail ou Matrícula do Operador
+          E-mail Corporativo ou Usuário
         </ThemedText>
 
         <View style={styles.inputBox}>
-          <ThemedText style={styles.inputIcon}>🆔</ThemedText>
+          <Ionicons name="mail-outline" size={18} color={tokens.colors.textMuted} />
           <TextInput
             style={styles.textInput}
-            placeholder="operador@gastropdv.com.br ou matrícula"
+            placeholder="gestor@restaurante.com"
             placeholderTextColor={tokens.colors.textMuted}
             value={identificador}
             onChangeText={onIdentificadorChange}
             autoCapitalize="none"
             autoCorrect={false}
+            keyboardType="email-address"
           />
           {isIdentificadorPreenchido && (
-            <View style={styles.validCheckDot}>
-              <ThemedText style={styles.checkIcon}>✓</ThemedText>
-            </View>
+            <Ionicons name="checkmark-circle" size={18} color={tokens.colors.status.greenText} />
           )}
         </View>
       </View>
 
-      {/* Campo 2: Senha / PIN */}
+      {/* Campo 2: Senha */}
       <View style={styles.fieldGroup}>
-        <View style={styles.senhaLabelRow}>
-          <ThemedText variant="caption" style={styles.inputLabel}>
-            Senha de Acesso (PIN ou Alfanumérico)
-          </ThemedText>
-
-          <View style={styles.pinRapidoBadge}>
-            <ThemedText variant="caption" style={styles.pinRapidoText}>
-              PIN Rápido
-            </ThemedText>
-          </View>
-        </View>
+        <ThemedText variant="caption" style={styles.inputLabel}>
+          Senha de Acesso
+        </ThemedText>
 
         <View style={styles.inputBox}>
-          <ThemedText style={styles.inputIcon}>🔒</ThemedText>
+          <Ionicons name="key-outline" size={18} color={tokens.colors.textMuted} />
           <TextInput
             style={styles.textInput}
-            placeholder="••••••"
+            placeholder="Sua senha de acesso"
             placeholderTextColor={tokens.colors.textMuted}
             secureTextEntry={!mostrarSenha}
-            keyboardType="numeric"
             value={palavraPasse}
             onChangeText={onPalavraPasseChange}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setMostrarSenha((prev) => !prev)}
             style={styles.eyeButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Exibir senha'}
           >
-            <ThemedText style={styles.eyeIcon}>
-              {mostrarSenha ? '👁️' : '🙈'}
-            </ThemedText>
+            <Ionicons
+              name={mostrarSenha ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color={tokens.colors.textMuted}
+            />
           </TouchableOpacity>
         </View>
 
@@ -105,22 +102,23 @@ export function CredentialsCard({
         <View style={styles.supportRow}>
           <ThemedText
             variant="caption"
-            style={[styles.supportText, isPinValido && styles.supportTextValid]}
+            style={[styles.supportText, isSenhaValida && styles.supportTextValid]}
           >
-            ✓ Autenticação de 6 dígitos ativa
+            {isSenhaValida ? '✓ Mínimo de 6 caracteres atendido' : 'Mínimo de 6 caracteres'}
           </ThemedText>
 
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() =>
               AppDialog.info(
-                'Recuperação de Chave',
-                'Solicite o reset do seu PIN de operador junto ao Gerente do Restaurante.'
+                'Recuperação de Acesso',
+                'Para redefinir sua senha de gestor, entre em contato com o administrador da conta ou o suporte.'
               )
             }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <ThemedText variant="caption" style={styles.esqueceuLink}>
-              Esqueceu a chave?
+              Esqueceu a senha?
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -135,14 +133,10 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.lg,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    padding: tokens.spacing.md,
-    marginHorizontal: tokens.spacing.md,
+    padding: tokens.spacing.lg,
+    marginHorizontal: tokens.spacing.lg,
     marginBottom: tokens.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',
@@ -153,89 +147,42 @@ const styles = StyleSheet.create({
   titleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  userIcon: {
-    fontSize: 16,
+    gap: tokens.spacing.xs,
   },
   headerTitle: {
-    fontWeight: '800',
     color: tokens.colors.textPrimary,
   },
-  turnoBadge: {
-    backgroundColor: '#F1F3F4',
-    paddingHorizontal: tokens.spacing.xs + 2,
-    paddingVertical: 3,
-    borderRadius: tokens.radii.sm,
-  },
-  turnoBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: tokens.colors.textSecondary,
-  },
   fieldGroup: {
-    marginBottom: tokens.spacing.sm,
+    marginBottom: tokens.spacing.md,
   },
   inputLabel: {
     fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginBottom: 4,
-  },
-  senhaLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  pinRapidoBadge: {
-    backgroundColor: tokens.colors.primaryLight,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: tokens.radii.sm,
-  },
-  pinRapidoText: {
-    color: tokens.colors.primaryDark,
-    fontSize: 10,
-    fontWeight: '800',
+    color: tokens.colors.textSecondary,
+    marginBottom: 6,
+    fontSize: tokens.typography.fontXs,
   },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: tokens.colors.background,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.md,
     height: 48,
-  },
-  inputIcon: {
-    fontSize: 16,
-    marginRight: tokens.spacing.xs,
+    gap: tokens.spacing.sm,
   },
   textInput: {
     flex: 1,
-    fontSize: tokens.typography.fontSm,
+    fontSize: tokens.typography.fontMd,
     color: tokens.colors.textPrimary,
-    paddingVertical: 0,
-  },
-  validCheckDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: tokens.colors.status.greenBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkIcon: {
-    fontSize: 11,
-    color: tokens.colors.status.greenText,
-    fontWeight: '800',
   },
   eyeButton: {
-    padding: tokens.spacing.xs,
-  },
-  eyeIcon: {
-    fontSize: 16,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -tokens.spacing.sm,
   },
   supportRow: {
     flexDirection: 'row',
@@ -249,7 +196,7 @@ const styles = StyleSheet.create({
   },
   supportTextValid: {
     color: tokens.colors.status.greenText,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   esqueceuLink: {
     color: tokens.colors.primary,

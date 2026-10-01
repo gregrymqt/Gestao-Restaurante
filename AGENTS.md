@@ -47,6 +47,12 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
    - Segregação Estrita de Responsabilidades (SRP): Componentes são puramente visuais e declarativos (vedada lógica de transporte ou chamadas diretas de API); Hooks orquestram estado e reatividade (vedadas requisições HTTP inline `axios/fetch`, delegando estritamente para `services/`); Services executam exclusivamente o transporte de I/O via `apiClient` (vedado uso de JSX ou hooks do React).
    - Teto de Complexidade por Componente: Limite estrito de no máximo 350 linhas por arquivo de componente (`.tsx`). Componentes que atinjam ou superem esse limite devem ser obrigatoriamente decompostos em subcomponentes modulares na pasta `components/`.
    - Navegação Nativa de Alta Performance: Adoção exclusiva de `expo-router` com Native Stack (`react-native-screens`), rotas tipadas (`expo-router/typed-routes`), code-splitting automático por rota e congelamento de telas em background (`freezeOnBlur: true`). Banido o uso de navegadores JS (`@react-navigation/stack`).
+   - Higienização Vocabular e Blindagem de Infraestrutura: Vedada terminantemente a exibição de jargões técnicos de backend/infraestrutura (ex: "Multi-Tenant", "RLS", "Node DSM", "PostgreSQL", "Worker") na interface. Utilizar vocabulário funcional de negócio (ex: "Online", "Conexão Segura", "Filiais").
+   - Ergonomia Mobile em Formulários: Formulários e bottom-sheets com múltiplos campos devem ser encapsulados em `KeyboardAvoidingView` adaptativo (`iOS: padding`, `Android: height`) com `ScrollView` configurado com `keyboardShouldPersistTaps="handled"`.
+   - Formatação Guiada e Seletores Fechados: Campos de identificação fiscal (CNPJ/CPF) devem possuir máscara de digitação em tempo real. Campos de domínio fechado (ex: UF) devem utilizar seletores modais dedicados com busca, vedada digitação livre.
+   - Padronização de Controles e Alvos de Toque: Controles interativos (como alternadores de visibilidade de senha) devem utilizar ícones vetoriais padronizados (Eye / EyeOff), banindo emojis informais, com alvo de toque mínimo de 48×48dp (`hitSlop` ou padding).
+   - Seleção de Alta Volumetria: Seletores de entidades escaláveis (filiais, produtos, insumos) devem adotar `<FlashList>` com `estimatedItemSize` e filtragem em tempo real.
+
 
 9. **Densidade de Tokens e Leitura Cirúrgica (Token-Density):**
    - Proibida a leitura integral de arquivos com mais de 100 linhas sem fatiamento cirúrgico (`StartLine` e `EndLine` delimitados a no máximo 80 linhas).
