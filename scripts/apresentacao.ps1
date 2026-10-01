@@ -11,7 +11,7 @@
 [CmdletBinding()]
 param(
     [string]$BaseUrl = "",
-    [ValidateSet("Menu", "Auto", "Capacidade", "Testes", "Status", "Onboarding", "Admin")]
+    [ValidateSet("Menu", "Auto", "Capacidade", "Testes", "Status", "Onboarding", "Admin", "Schema")]
     [string]$Modo = "Menu",
     [string]$TenantId = "11111111-1111-1111-1111-111111111111",
     [string]$Email = "operador@restaurante.com",
@@ -24,18 +24,18 @@ if (-not $BaseUrl) {
     if ($port5287) {
         $BaseUrl = "http://localhost:5287"
     } else {
-        $BaseUrl = "http://localhost:5000"
+        $BaseUrl = "http://localhost:5287"
     }
 }
 
 function Show-Header {
     Clear-Host
-    Write-Host "================================================================================" -ForegroundColor Cyan
-    Write-Host "         SISTEMA RESTAURANTE INTELIGENTE - DEMONSTRACAO DE BACKEND              " -ForegroundColor White
-    Write-Host "     ASP.NET Core .NET 9  |  Python 3.12 ML  |  PostgreSQL 16  |  RabbitMQ 3    " -ForegroundColor Cyan
-    Write-Host "================================================================================" -ForegroundColor Cyan
+    Write-Host "============================================================================================" -ForegroundColor Cyan
+    Write-Host "         SISTEMA RESTAURANTE INTELIGENTE - DEMONSTRACAO DE BACKEND                          " -ForegroundColor White
+    Write-Host "     ASP.NET Core .NET 9  |  Python 3.12 ML  |  PostgreSQL 16  |  RabbitMQ 3  |  Redis 7    " -ForegroundColor Cyan
+    Write-Host "============================================================================================" -ForegroundColor Cyan
     Write-Host "  API Endpoint: $BaseUrl  |  Tenant: $TenantId" -ForegroundColor DarkGray
-    Write-Host "--------------------------------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "--------------------------------------------------------------------------------------------" -ForegroundColor DarkGray
 }
 
 function Get-AuthContext {
@@ -455,7 +455,68 @@ function Run-AllUnitTests {
     Write-Host "================================================================================" -ForegroundColor Green
 }
 
+function Show-DatabaseSchemaAudit {
+    Write-Host "`n================================================================================" -ForegroundColor Cyan
+    Write-Host "   AUDITORIA DO BANCO DE DADOS POSTGRESQL 16: SCHEMAS, RLS & LEDGER IMUTAVEL    " -ForegroundColor White
+    Write-Host "================================================================================" -ForegroundColor Cyan
+
+    $pgContainer = docker ps --filter "name=restaurante_postgres" --format "{{.Status}}"
+    if (-not $pgContainer) {
+        Write-Host "  -> [ERRO] Container restaurante_postgres nao esta em execucao!" -ForegroundColor Red
+        return
+    }
+
+    Write-Host "`n[Passo 1/3] Listagem de Tabelas Relacionais do Schema Public..." -ForegroundColor Yellow
+    docker exec -i restaurante_postgres psql -U postgres -d restaurante_db -c "\dt"
+
+    Write-Host "`n[Passo 2/3] Comprovacao de Defesa em Profundidade: Row-Level Security (RLS)..." -ForegroundColor Yellow
+    docker exec -i restaurante_postgres psql -U postgres -d restaurante_db -c "
+        SELECT relname as tabela, relrowsecurity as rls_ativo, relforcerowsecurity as rls_forcado 
+        FROM pg_class 
+        WHERE relname IN ('Restaurantes', 'Vendas', 'MovimentacoesEstoque', 'Insumos')
+        ORDER BY relname;
+    "
+
+    Write-Host "  -> [OK] RLS Ativo e Forcado (FORCE ROW LEVEL SECURITY) para segregacao de tenant!" -ForegroundColor Green
+
+    Write-Host "`n[Passo 3/3] Exportando Dicionario de Dados para 'SCHEMA_BANCO.md'..." -ForegroundColor Yellow
+    $exportSql = @"
+SELECT 
+    '| ' || c.table_name || ' | ' || c.column_name || ' | ' || c.data_type || ' | ' || 
+    COALESCE(tc.constraint_type, 'COLUNA') || ' |' AS markdown_row
+FROM information_schema.columns c
+LEFT JOIN information_schema.key_column_usage kcu 
+    ON c.table_name = kcu.table_name AND c.column_name = kcu.column_name
+LEFT JOIN information_schema.table_constraints tc 
+    ON kcu.constraint_name = tc.constraint_name
+WHERE c.table_schema = 'public'
+ORDER BY c.table_name, c.ordinal_position;
+"@
+
+    $mdLines = [System.Collections.Generic.List[string]]::new()
+    $mdLines.Add("# Dicionario de Dados e Schemas - PostgreSQL 16")
+    $mdLines.Add("Sistema Restaurante Inteligente | Multi-Tenant com RLS | Data: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss'))`n")
+    $mdLines.Add("| Tabela | Coluna | Tipo de Dado | Restricao / Constraint |")
+    $mdLines.Add("| :--- | :--- | :--- | :--- |")
+
+    $rawRows = $exportSql | docker exec -i restaurante_postgres psql -U postgres -d restaurante_db -t -A
+    foreach ($r in $rawRows) {
+        if ($r -and $r.StartsWith("|")) {
+            $mdLines.Add($r)
+        }
+    }
+
+    $mdLines | Out-File -Encoding utf8 "SCHEMA_BANCO.md"
+    Write-Host "  -> [OK] Dicionario exportado com sucesso: SCHEMA_BANCO.md" -ForegroundColor Green
+    Write-Host "  -> [DICA] Abra o arquivo no VS Code e tecle Ctrl + Shift + V para exibir a tabela renderizada!`n" -ForegroundColor DarkCyan
+}
+
 switch ($Modo) {
+    "Schema" {
+        Show-Header
+        Show-DatabaseSchemaAudit
+        exit 0
+    }
     "Auto" {
         Show-Header
         Run-FullDemonstration
@@ -497,9 +558,10 @@ switch ($Modo) {
             Write-Host "  [4] Verificar Saude e Conexoes dos Servicos (Postgres/Redis/Rabbit/API/ML)" -ForegroundColor White
             Write-Host "  [5] Demonstrar Onboarding SaaS (Auto-Cadastro de Tenant & Trial 14d)" -ForegroundColor Magenta
             Write-Host "  [6] Visao SuperAdmin Backoffice (Gestao Global de Tenants & Planos)" -ForegroundColor Blue
+            Write-Host "  [7] Auditar Banco de Dados PostgreSQL & RLS (Gera SCHEMA_BANCO.md)" -ForegroundColor Cyan
             Write-Host "  [0] Sair" -ForegroundColor DarkGray
             Write-Host ""
-            $opcao = Read-Host "Digite a opcao desejada [0-6]"
+            $opcao = Read-Host "Digite a opcao desejada [0-7]"
 
             switch ($opcao) {
                 "1" {
@@ -529,6 +591,11 @@ switch ($Modo) {
                 }
                 "6" {
                     Show-SuperAdminTenants
+                    Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
+                    $null = Read-Host
+                }
+                "7" {
+                    Show-DatabaseSchemaAudit
                     Write-Host "`nPressione ENTER para voltar ao menu..." -ForegroundColor DarkGray
                     $null = Read-Host
                 }

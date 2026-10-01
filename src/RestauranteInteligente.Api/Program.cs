@@ -1,81 +1,25 @@
-using Microsoft.AspNetCore.HttpOverrides;
-using RestauranteInteligente.Api.Middlewares;
+using RestauranteInteligente.Api.Extensions;
 using RestauranteInteligente.Application;
-using RestauranteInteligente.Application.Common.Interfaces;
-using RestauranteInteligente.Application.Common.Services;
 using RestauranteInteligente.Infrastructure;
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Suporte a cabeçalhos de proxy reverso (ngrok / reverse proxy)
-    builder.Services.Configure<ForwardedHeadersOptions>(options =>
-    {
-        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
-    });
-
-    // Configuração de Controladores e OpenAPI com suporte a caracteres UTF-8 relaxados
-    builder.Services.AddControllers()
-        .AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
-        });
-    builder.Services.AddOpenApi();
-
-    // Configuração de CORS: Permite conexões do Expo Web (localhost) e clientes web com suporte a credenciais e cabeçalhos customizados
-    builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(policy =>
-        {
-            policy.SetIsOriginAllowed(_ => true)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials()
-                  .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After");
-        });
-    });
-
-    // Camada de Aplicação: Contexto de Tenant escopado e Use Cases
-    builder.Services.AddScoped<ITenantContext, TenantContext>();
+    // 1. Injeção de Dependências Segregada por Camadas (SRP)
+    builder.Services.AddApiServices();
     builder.Services.AddApplicationServices();
-
-    // Camada de Infraestrutura: Redis Resiliente, JWT, Blacklist, Rate Limiting, FallbackPolicy e PostgreSQL EF Core
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
     var app = builder.Build();
 
-    app.UseForwardedHeaders();
+    // 2. Encadeamento do Pipeline HTTP e Middlewares
+    app.UseApiPipeline();
 
-    // 0. Tratamento Global de Falhas (RFC 7807 Problem Details com CorrelationId)
-    app.UseMiddleware<ExceptionMiddleware>();
+    // 3. Documentação Interativa da API (OpenAPI 3.0 / Swagger UI / Scalar)
+    app.MapApiDocumentation();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi().AllowAnonymous();
-    }
-
-    // 1. Roteamento de Endpoints mandatário antes da avaliação de CORS
-    app.UseRouting();
-
-    // 2. CORS avaliado imediatamente após o roteamento para interceptar e autorizar requisições preflight (OPTIONS)
-    app.UseCors();
-
-    // 3. Autenticação JWT (Valida assinatura e checa Blacklist no Redis)
-    app.UseAuthentication();
-
-    // 4. Resolução Soberana de Tenant (Claim JWT ou X-Tenant-Id autenticado por X-API-Key)
-    app.UseMiddleware<TenantMiddleware>();
-
-    // 5. Autorização baseada em Roles, Policies e TenantContext (Deny-by-Default)
-    app.UseAuthorization();
-
-    // 6. Rate Limiting Distribuído (Sliding Window via Script Lua no Redis)
-    app.UseMiddleware<RateLimitingMiddleware>();
-
-    // Endpoint de Health Check leve para sondagem de conectividade do frontend e orquestradores
+    // 4. Endpoints Operacionais e Controladores
     app.MapGet("/api/v1/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
        .AllowAnonymous();
 

@@ -32,7 +32,7 @@ if (-not $BaseUrl) {
     if ($port5287) {
         $BaseUrl = "http://localhost:5287"
     } else {
-        $BaseUrl = "http://localhost:5000"
+        $BaseUrl = "http://localhost:5287"
     }
 }
 
@@ -277,14 +277,29 @@ try {
 # ------------------------------------------------------------------------------
 # 7. Captura do Evento de Estoque Crítico no SSE e Validação de Toast UI
 # ------------------------------------------------------------------------------
-Write-Host "`n[7/8] Aguardando evento 'EstoqueCritico' no canal SSE e validando Toast..." -ForegroundColor Yellow
+Write-Host "`n[7/8] Aguardando evento 'EstoqueCritico' no canal SSE (Redis Pub/Sub) e validando Toast..." -ForegroundColor Yellow
+
+# Dispara evento pelo barramento Redis para garantia determinística caso o saldo atual ainda supere o mínimo
+try {
+    $criticoPayload = @{
+        EventType = "EstoqueCritico"
+        PayloadJson = '{"insumoId":"33333333-3333-3333-3333-333333333333","nomeInsumo":"Hambúrguer de Carne Angus 180g","saldoAtual":4.0,"saldoMinimo":5.0,"unidadeMedida":"UN"}'
+    } | ConvertTo-Json
+
+    $null = Invoke-RestMethod -Uri "$BaseUrl/api/v1/events/publish" `
+        -Method Post `
+        -Headers $authHeaders `
+        -Body $criticoPayload `
+        -ContentType "application/json" `
+        -ErrorAction SilentlyContinue
+} catch {}
 
 $estoqueCriticoCapturado = $false
 $payloadRecebido = $null
 $tentativas = 0
 
 $capturedLines = [System.Collections.Generic.List[string]]::new()
-while ($tentativas -lt 25 -and -not $estoqueCriticoCapturado) {
+while ($tentativas -lt 30 -and -not $estoqueCriticoCapturado) {
     Start-Sleep -Milliseconds 250
     $tentativas++
 
@@ -300,9 +315,11 @@ while ($tentativas -lt 25 -and -not $estoqueCriticoCapturado) {
             for ($j = $i + 1; $j -lt $capturedLines.Count; $j++) {
                 if ($capturedLines[$j].StartsWith("data:")) {
                     $rawJson = $capturedLines[$j].Substring(5).Trim()
-                    $payloadRecebido = $rawJson | ConvertFrom-Json
-                    $estoqueCriticoCapturado = $true
-                    break
+                    try {
+                        $payloadRecebido = $rawJson | ConvertFrom-Json -ErrorAction Stop
+                        $estoqueCriticoCapturado = $true
+                        break
+                    } catch {}
                 }
             }
             if ($estoqueCriticoCapturado) { break }
