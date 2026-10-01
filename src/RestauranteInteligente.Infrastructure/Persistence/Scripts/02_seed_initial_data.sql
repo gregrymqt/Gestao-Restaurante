@@ -211,3 +211,41 @@ INSERT INTO "MovimentacoesEstoque" (
     'COMPRA',
     'Carga inicial de estoque para homologação'
 ) ON CONFLICT ("Id") DO NOTHING;
+
+-- 8. Inserção dos Planos Comerciais SaaS
+INSERT INTO "Planos" (
+    "Id", "Nome", "Descricao", "PrecoMensal", "PossuiModuloIa", "Ativo", "CriadoEm"
+) VALUES 
+(
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Plano Starter',
+    'Gestão operacional completa de estoque, caixa diário e controle financeiro.',
+    99.00,
+    FALSE,
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'Plano Pro Inteligente (IA)',
+    'Tudo do Starter + Previsão de Demanda com IA (HistGradientBoosting), meteorologia e alertas SSE em tempo real.',
+    189.00,
+    TRUE,
+    TRUE,
+    CURRENT_TIMESTAMP
+) ON CONFLICT ("Nome") DO NOTHING;
+
+-- 9. Inserção da Assinatura SaaS Inicial para o Restaurante de Homologação (14 dias Free Trial)
+INSERT INTO "Assinaturas" (
+    "Id", "RestauranteId", "PlanoId", "Status", "DataInicio", "DataFimTrial", "DataExpiracao", "CriadoEm"
+) VALUES (
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'TRIAL',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP + INTERVAL '14 days',
+    NULL,
+    CURRENT_TIMESTAMP
+) ON CONFLICT ("RestauranteId") DO NOTHING;
+

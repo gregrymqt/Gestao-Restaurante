@@ -6,15 +6,15 @@
 
 ## 1. Métricas do Grafo de Conhecimento
 
-- **Total de Nós Mapeados**: `111`
-- **Total de Arestas Semânticas**: `175`
+- **Total de Nós Mapeados**: `114`
+- **Total de Arestas Semânticas**: `183`
 
 ### Distribuição por Tipo de Nó
 | Tipo de Nó | Quantidade | Descrição / Camada |
 | :--- | :---: | :--- |
 | `FrontendHook` | 18 | Hooks de orquestração de estado e UI |
-| `DatabaseTable` | 11 | Tabelas PostgreSQL 16 (Ledger, Vendas, RLS) |
-| `SecurityPolicy` | 11 | Políticas RLS nativas e Interceptor C# |
+| `DatabaseTable` | 13 | Tabelas PostgreSQL 16 (Ledger, Vendas, RLS) |
+| `SecurityPolicy` | 12 | Políticas RLS nativas e Interceptor C# |
 | `UseCase` | 11 | Regras de negócio e handlers (Application) |
 | `FrontendService` | 10 | Camada de rede e transporte (Axios/MMKV) |
 | `CoreRepository` | 9 | Repositórios de persistência EF Core |

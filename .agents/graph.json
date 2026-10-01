@@ -2,8 +2,8 @@
   "metadata": {
     "system": "Restaurante Inteligente",
     "generator": "generate_knowledge_graph.py",
-    "node_count": 111,
-    "edge_count": 175
+    "node_count": 114,
+    "edge_count": 183
   },
   "nodes": [
     {
@@ -128,6 +128,28 @@
       }
     },
     {
+      "id": "table:Planos",
+      "type": "DatabaseTable",
+      "label": "Planos",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": false,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
+      "id": "table:Assinaturas",
+      "type": "DatabaseTable",
+      "label": "Assinaturas",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "multi_tenant": true,
+        "append_only": false,
+        "pillar": "PostgreSQL 16"
+      }
+    },
+    {
       "id": "policy:restaurante_usuarios_isolation",
       "type": "SecurityPolicy",
       "label": "restaurante_usuarios_isolation",
@@ -243,6 +265,18 @@
       "metadata": {
         "scope": "Row-Level Security",
         "target_table": "ItensVenda",
+        "command": "ALL",
+        "enforcement": "FORCE ROW LEVEL SECURITY"
+      }
+    },
+    {
+      "id": "policy:restaurante_assinaturas_isolation",
+      "type": "SecurityPolicy",
+      "label": "restaurante_assinaturas_isolation",
+      "file": "src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql",
+      "metadata": {
+        "scope": "Row-Level Security",
+        "target_table": "Assinaturas",
         "command": "ALL",
         "enforcement": "FORCE ROW LEVEL SECURITY"
       }
@@ -1842,6 +1876,14 @@
     },
     {
       "source": "interceptor:PostgresRlsTransactionInterceptor",
+      "target": "table:Assinaturas",
+      "relationship": "protects",
+      "metadata": {
+        "mechanism": "Session Context Injection"
+      }
+    },
+    {
+      "source": "interceptor:PostgresRlsTransactionInterceptor",
       "target": "table:DadosClimaticos",
       "relationship": "protects",
       "metadata": {
@@ -1963,6 +2005,14 @@
       "metadata": {}
     },
     {
+      "source": "policy:restaurante_assinaturas_isolation",
+      "target": "table:Assinaturas",
+      "relationship": "protects",
+      "metadata": {
+        "command": "ALL"
+      }
+    },
+    {
       "source": "policy:restaurante_dados_climaticos_isolation",
       "target": "table:DadosClimaticos",
       "relationship": "protects",
@@ -2043,6 +2093,30 @@
       }
     },
     {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Assinaturas",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Assinaturas",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Planos",
+      "relationship": "queries",
+      "metadata": {}
+    },
+    {
+      "source": "repo:AssinaturaRepository",
+      "target": "table:Planos",
+      "relationship": "writes_to",
+      "metadata": {}
+    },
+    {
       "source": "repo:DadosClimaticosRepository",
       "target": "table:DadosClimaticos",
       "relationship": "queries",
@@ -2161,6 +2235,22 @@
       "target": "table:Vendas",
       "relationship": "writes_to",
       "metadata": {}
+    },
+    {
+      "source": "table:Assinaturas",
+      "target": "table:Planos",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
+    },
+    {
+      "source": "table:Assinaturas",
+      "target": "table:Restaurantes",
+      "relationship": "references",
+      "metadata": {
+        "foreign_key": "Id"
+      }
     },
     {
       "source": "table:DadosClimaticos",

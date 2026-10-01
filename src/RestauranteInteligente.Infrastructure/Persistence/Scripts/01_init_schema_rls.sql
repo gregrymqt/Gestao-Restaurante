@@ -250,7 +250,44 @@ CREATE INDEX "IX_Previsoes_Restaurante_Data"
 ON "Previsoes"("RestauranteId", "DataPrevisao");
 
 -- ------------------------------------------------------------------------------
--- 12. Políticas de Row-Level Security (RLS) - Defesa em Profundidade
+-- 12. Planos Comerciais SaaS (Global / Plataforma)
+-- ------------------------------------------------------------------------------
+CREATE TABLE "Planos" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "Nome" VARCHAR(100) NOT NULL,
+    "Descricao" VARCHAR(500) NOT NULL,
+    "PrecoMensal" NUMERIC(18, 2) NOT NULL,
+    "PossuiModuloIa" BOOLEAN NOT NULL DEFAULT FALSE,
+    "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UQ_Planos_Nome" UNIQUE ("Nome"),
+    CONSTRAINT "CK_Planos_Preco_Positivo" CHECK ("PrecoMensal" >= 0)
+);
+
+-- ------------------------------------------------------------------------------
+-- 13. Assinaturas SaaS dos Inquilinos (Ciclo de Vida / Free Trial)
+-- ------------------------------------------------------------------------------
+CREATE TABLE "Assinaturas" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
+    "PlanoId" UUID NULL,
+    "Status" VARCHAR(30) NOT NULL DEFAULT 'TRIAL',
+    "DataInicio" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "DataFimTrial" TIMESTAMPTZ NOT NULL,
+    "DataExpiracao" TIMESTAMPTZ NULL,
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "FK_Assinaturas_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_Assinaturas_Plano" FOREIGN KEY ("PlanoId") 
+        REFERENCES "Planos"("Id") ON DELETE SET NULL,
+    CONSTRAINT "UQ_Assinaturas_RestauranteId" UNIQUE ("RestauranteId"),
+    CONSTRAINT "CK_Assinaturas_Status" CHECK ("Status" IN ('TRIAL', 'ATIVA', 'ATRASADA', 'EXPIRADA', 'CANCELADA'))
+);
+
+CREATE INDEX "IX_Assinaturas_PlanoId" ON "Assinaturas"("PlanoId");
+
+-- ------------------------------------------------------------------------------
+-- 14. Políticas de Row-Level Security (RLS) - Defesa em Profundidade
 -- ------------------------------------------------------------------------------
 ALTER TABLE "Usuarios" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Usuarios" FORCE ROW LEVEL SECURITY;
@@ -321,4 +358,12 @@ CREATE POLICY restaurante_itens_venda_isolation ON "ItensVenda"
     FOR ALL
     USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
     WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "Assinaturas" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Assinaturas" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_assinaturas_isolation ON "Assinaturas"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
 

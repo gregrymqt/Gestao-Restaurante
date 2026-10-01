@@ -53,9 +53,13 @@ if (-not $SkipOnboarding) {
     $onboardingPayload = @{
         nomeRestaurante = "Bistrô E2E Simulation $timestamp"
         cnpj = "$((Get-Random -Minimum 10000000 -Maximum 99999999)).0001-99"
+        cidade = "São Paulo"
+        estado = "SP"
+        latitude = -23.5505
+        longitude = -46.6333
         nomeGestor = "Gestor E2E $timestamp"
-        email = "gestor.e2e.$timestamp@teste.com"
-        password = "SenhaForte@123"
+        emailGestor = "gestor.e2e.$timestamp@teste.com"
+        senhaGestor = "SenhaForte@123"
     } | ConvertTo-Json
 
     try {
@@ -67,7 +71,7 @@ if (-not $SkipOnboarding) {
         Write-Host "  -> [OK] Inquilino cadastrado com sucesso!" -ForegroundColor Green
         Write-Host "         RestauranteId: $($novoTenantRes.restauranteId)" -ForegroundColor White
         Write-Host "         Gestor: $($novoTenantRes.nomeGestor) ($($novoTenantRes.email))" -ForegroundColor White
-        Write-Host "         Status Assinatura: $($novoTenantRes.statusAssinatura) (Trial expira: $($novoTenantRes.trialExpiraEm))" -ForegroundColor Green
+        Write-Host "         Status Assinatura: $($novoTenantRes.statusAssinatura) (Trial: $($novoTenantRes.diasRestantesTrial) dias restantes)" -ForegroundColor Green
 
         # Validação do status da assinatura via endpoint dedicado
         $novoTenantHeaders = @{
@@ -79,22 +83,25 @@ if (-not $SkipOnboarding) {
             -Method Get `
             -Headers $novoTenantHeaders
 
-        Write-Host "  -> [OK] Consulta de Assinatura: Status=$($statusRes.status), Dias Restantes=$($statusRes.diasRestantesTrial), Acesso Liberado=$($statusRes.podeAcessar)" -ForegroundColor Green
+        Write-Host "  -> [OK] Consulta de Assinatura: Status=$($statusRes.status), Dias Restantes=$($statusRes.diasRestantesTrial), Vigência Ativa=$($statusRes.estaVigente)" -ForegroundColor Green
 
-        # Consulta de planos disponíveis na plataforma
-        $planos = Invoke-RestMethod -Uri "$BaseUrl/api/v1/assinatura/planos" `
-            -Method Get `
-            -Headers $novoTenantHeaders
+        # Consulta de planos disponíveis na plataforma (fornecidos pelo statusRes)
+        $planos = $statusRes.planosDisponiveis
 
         Write-Host "  -> [OK] Planos SaaS disponíveis consultados com sucesso: $($planos.Count) planos cadastrados." -ForegroundColor Green
         foreach ($p in $planos) {
-            Write-Host "         - Plano $($p.nome): R$ $($p.precoMensal)/mês ($($p.descricao))" -ForegroundColor DarkCyan
+            $iaTag = if ($p.possuiModuloIa) { "[Com IA]" } else { "[Básico]" }
+            Write-Host "         - Plano $($p.nome): R$ $($p.precoMensal)/mês $iaTag ($($p.descricao))" -ForegroundColor DarkCyan
         }
 
         # Simulação de Upgrade para o Plano PRO
-        $planoPro = $planos | Where-Object { $_.nome -match "PRO" } | Select-Object -First 1
+        $planoPro = $planos | Where-Object { $_.possuiModuloIa -or $_.nome -match "PRO" } | Select-Object -First 1
         if ($planoPro) {
-            $upgradePayload = @{ planoId = $planoPro.id } | ConvertTo-Json
+            $upgradePayload = @{
+                planoId = $planoPro.id
+                mesesVigencia = 1
+            } | ConvertTo-Json
+
             $upgradeRes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/assinatura/assinar" `
                 -Method Post `
                 -Headers $novoTenantHeaders `
@@ -159,7 +166,7 @@ try {
         -ErrorAction Stop
 
     Write-Host "  -> [OK] Status da Assinatura: $($assinaturaStatus.status)" -ForegroundColor Green
-    Write-Host "         Pode Acessar Recursos: $($assinaturaStatus.podeAcessar)" -ForegroundColor Green
+    Write-Host "         Vigência Ativa: $($assinaturaStatus.estaVigente)" -ForegroundColor Green
     if ($assinaturaStatus.diasRestantesTrial -gt 0) {
         Write-Host "         Dias Restantes de Trial: $($assinaturaStatus.diasRestantesTrial)" -ForegroundColor Yellow
     }
