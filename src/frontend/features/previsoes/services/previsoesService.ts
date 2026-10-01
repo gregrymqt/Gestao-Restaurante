@@ -14,6 +14,7 @@ export const DADOS_PREVISAO_PADRAO: RelatorioCapacidadeProducao = {
       capacidadeMaximaProducao: 90,
       demandaAtendivel: 90,
       riscoRutura: true,
+      insumoGargaloId: 'ins-carne-smash',
       insumoGargaloNome: 'Carne Bovina Smash',
       deficitUnidades: 38,
       precoVendaUnitario: 34.90,
@@ -26,6 +27,7 @@ export const DADOS_PREVISAO_PADRAO: RelatorioCapacidadeProducao = {
       capacidadeMaximaProducao: 85,
       demandaAtendivel: 85,
       riscoRutura: true,
+      insumoGargaloId: 'ins-azeite-trufado',
       insumoGargaloNome: 'Azeite Trufado',
       deficitUnidades: 10,
       precoVendaUnitario: 26.00,
@@ -176,7 +178,7 @@ export const previsoesService = {
   },
 
   async enviarOrdemCompra(pedido: {
-    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number }>;
+    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
     valorTotal: number;
   }): Promise<{ sucesso: boolean; protocolo: string }> {
     return {

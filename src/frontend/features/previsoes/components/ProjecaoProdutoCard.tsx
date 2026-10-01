@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarMoeda } from '@/shared/utils/formatters';
 import { ItemCapacidadeProducao } from '../types';
 
 interface ProjecaoProdutoCardProps {
@@ -58,7 +59,7 @@ export function ProjecaoProdutoCard({
 
                 {item.riscoRutura ? (
                   <ThemedText variant="caption" style={styles.perdaTexto}>
-                    Perda -R$ {(item.perdaEstimadaReceita || 0).toFixed(2).replace('.', ',')}
+                    Perda -{formatarMoeda(item.perdaEstimadaReceita || 0)}
                   </ThemedText>
                 ) : (
                   <View style={styles.plenaBadge}>

@@ -5,6 +5,7 @@ export interface ItemCapacidadeProducao {
   capacidadeMaximaProducao: number;
   demandaAtendivel: number;
   riscoRutura: boolean;
+  insumoGargaloId?: string;
   insumoGargaloNome: string;
   deficitUnidades: number;
   precoVendaUnitario?: number;

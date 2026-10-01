@@ -5,11 +5,13 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { gerarMensagemOrdemCompraWhatsApp } from '@/shared/utils/formatters';
 import { useCapacidadeProducao } from '../hooks/useCapacidadeProducao';
 import { PrevisoesHeader } from '../components/PrevisoesHeader';
 import { GargaloCriticoCard } from '../components/GargaloCriticoCard';
@@ -35,6 +37,7 @@ export function PrevisoesScreen() {
     abrirFichaTecnica,
     fecharFichaTecnica,
     isOrdemCompraOpen,
+    insumoFocoId,
     abrirOrdemCompra,
     fecharOrdemCompra,
     ordemCompraMutation,
@@ -43,14 +46,31 @@ export function PrevisoesScreen() {
   } = useCapacidadeProducao();
 
   const handleConfirmarOrdemCompra = async (pedido: {
-    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number }>;
+    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
     valorTotal: number;
   }) => {
     try {
       const res = await ordemCompraMutation.mutateAsync(pedido);
-      AppDialog.success(
+      const mensagemWhats = gerarMensagemOrdemCompraWhatsApp({
+        protocolo: res.protocolo,
+        insumos: pedido.insumos,
+        valorTotal: pedido.valorTotal,
+      });
+
+      AppDialog.confirm(
         'Ordem de Compra Emitida',
-        `Pedido registrado com sucesso sob protocolo ${res.protocolo}. Solicitação enviada aos fornecedores homologados.`
+        `Pedido registrado sob protocolo ${res.protocolo}.\n\nDeseja compartilhar a lista de compras via WhatsApp com o fornecedor homologado?`,
+        async () => {
+          const url = `https://wa.me/?text=${encodeURIComponent(mensagemWhats)}`;
+          try {
+            await Linking.openURL(url);
+          } catch {
+            await Linking.openURL(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensagemWhats)}`);
+          }
+        },
+        undefined,
+        'Enviar WhatsApp',
+        'Concluir'
       );
     } catch {
       AppDialog.error('Erro', 'Não foi possível registrar a ordem de compra.');
@@ -115,6 +135,7 @@ export function PrevisoesScreen() {
       <OrdemCompraModal
         visible={isOrdemCompraOpen}
         sugestoes={relatorio?.sugestoesReposicao || []}
+        insumoFocoId={insumoFocoId}
         onClose={fecharOrdemCompra}
         onConfirmar={handleConfirmarOrdemCompra}
         isEnviando={ordemCompraMutation.isPending}
@@ -125,6 +146,7 @@ export function PrevisoesScreen() {
         produto={produtoFicha}
         ingredientes={fichaIngredientes}
         onClose={fecharFichaTecnica}
+        onReporInsumo={abrirOrdemCompra}
       />
     </View>
   );

@@ -2,12 +2,13 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarMoeda } from '@/shared/utils/formatters';
 import { ItemCapacidadeProducao } from '../types';
 
 interface GargaloCriticoCardProps {
   gargalo: ItemCapacidadeProducao | null;
   perdaTotal: number;
-  onSugerirPedido: () => void;
+  onSugerirPedido: (insumoId?: string) => void;
 }
 
 export function GargaloCriticoCard({
@@ -43,7 +44,7 @@ export function GargaloCriticoCard({
         <View style={styles.alertTitleBadge}>
           <ThemedText style={styles.warningIcon}>⚠️</ThemedText>
           <ThemedText variant="body" style={styles.headerTitle}>
-            Gargalo Crítico Detectado
+            Gargalo Crítico
           </ThemedText>
         </View>
 
@@ -90,13 +91,13 @@ export function GargaloCriticoCard({
 
       <View style={styles.perdaWarningBox}>
         <ThemedText variant="caption" style={styles.perdaWarningText}>
-          ⚠️ Estimativa de R$ {perdaTotal.toFixed(2).replace('.', ',')} em vendas perdidas
+          ⚠️ Estimativa de {formatarMoeda(perdaTotal)} em vendas perdidas
         </ThemedText>
       </View>
 
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={onSugerirPedido}
+        onPress={() => onSugerirPedido(gargalo.insumoGargaloId)}
         style={styles.actionButton}
       >
         <ThemedText variant="body" style={styles.actionButtonText}>

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarQuantidade } from '@/shared/utils/formatters';
 import { ItemCapacidadeProducao, FichaTecnicaIngrediente } from '../types';
 import { FichaTecnicaItemCard } from './FichaTecnicaItemCard';
 
@@ -16,6 +17,7 @@ interface FichaTecnicaModalProps {
   produto: ItemCapacidadeProducao | null;
   ingredientes: FichaTecnicaIngrediente[];
   onClose: () => void;
+  onReporInsumo?: (insumoId?: string) => void;
 }
 
 export function FichaTecnicaModal({
@@ -23,8 +25,14 @@ export function FichaTecnicaModal({
   produto,
   ingredientes,
   onClose,
+  onReporInsumo,
 }: FichaTecnicaModalProps) {
   if (!produto) return null;
+
+  const ingredienteGargalo = ingredientes.find((i) => i.isGargalo);
+  const deficitQtd = ingredienteGargalo
+    ? Math.max(0, ingredienteGargalo.estoqueNecessario - ingredienteGargalo.estoqueAtual)
+    : 0;
 
   return (
     <Modal
@@ -39,7 +47,7 @@ export function FichaTecnicaModal({
 
           <View style={styles.header}>
             <ThemedText variant="caption" style={styles.title}>
-              Ficha Técnica (BOM)
+              Ficha Técnica do Prato
             </ThemedText>
             <ThemedText variant="body" style={styles.produtoNome}>
               {produto.nomeProduto}
@@ -71,6 +79,21 @@ export function FichaTecnicaModal({
           </ScrollView>
 
           <View style={styles.footer}>
+            {ingredienteGargalo && onReporInsumo && deficitQtd > 0 ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  onClose();
+                  onReporInsumo(ingredienteGargalo.insumoId);
+                }}
+                style={styles.reporButton}
+              >
+                <ThemedText variant="body" style={styles.reporButtonText}>
+                  🛒 Repor {ingredienteGargalo.nomeInsumo} (+{formatarQuantidade(deficitQtd, ingredienteGargalo.unidadeMedida)})
+                </ThemedText>
+              </TouchableOpacity>
+            ) : null}
+
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={onClose}
@@ -150,6 +173,20 @@ const styles = StyleSheet.create({
     paddingTop: tokens.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
+  },
+  reporButton: {
+    backgroundColor: tokens.colors.primary,
+    paddingVertical: tokens.spacing.sm + 2,
+    borderRadius: tokens.radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    marginBottom: tokens.spacing.xs,
+  },
+  reporButtonText: {
+    fontWeight: '700',
+    color: tokens.colors.white,
+    fontSize: tokens.typography.fontSm,
   },
   fecharButton: {
     backgroundColor: tokens.colors.card,

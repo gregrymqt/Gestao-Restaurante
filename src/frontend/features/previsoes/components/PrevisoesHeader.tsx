@@ -33,7 +33,7 @@ export function PrevisoesHeader({
 
         <View style={styles.modelBadge}>
           <ThemedText variant="caption" style={styles.modelBadgeText}>
-            HISTGRADIENTBOOSTING v1.0
+            IA CALIBRADA
           </ThemedText>
         </View>
       </View>
@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
   pillsScroll: {
     flexDirection: 'row',
     gap: tokens.spacing.xs,
+    paddingRight: tokens.spacing.xl,
   },
   pillButton: {
     paddingHorizontal: tokens.spacing.md,

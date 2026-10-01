@@ -21,6 +21,7 @@ export function useCapacidadeProducao() {
   const [fichaIngredientes, setFichaIngredientes] = useState<FichaTecnicaIngrediente[]>([]);
   const [isFichaModalOpen, setIsFichaModalOpen] = useState<boolean>(false);
   const [isOrdemCompraOpen, setIsOrdemCompraOpen] = useState<boolean>(false);
+  const [insumoFocoId, setInsumoFocoId] = useState<string | null>(null);
 
   const {
     data: relatorio,
@@ -35,12 +36,13 @@ export function useCapacidadeProducao() {
 
   const ordemCompraMutation = useMutation({
     mutationFn: (pedido: {
-      insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number }>;
+      insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
       valorTotal: number;
     }) => previsoesService.enviarOrdemCompra(pedido),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['capacidade-producao'] });
       setIsOrdemCompraOpen(false);
+      setInsumoFocoId(null);
     },
   });
 
@@ -57,12 +59,14 @@ export function useCapacidadeProducao() {
     setFichaIngredientes([]);
   };
 
-  const abrirOrdemCompra = () => {
+  const abrirOrdemCompra = (insumoId?: string) => {
+    setInsumoFocoId(insumoId || null);
     setIsOrdemCompraOpen(true);
   };
 
   const fecharOrdemCompra = () => {
     setIsOrdemCompraOpen(false);
+    setInsumoFocoId(null);
   };
 
   // Cálculo do insumo gargalo mais crítico e perda total de receita
@@ -107,6 +111,7 @@ export function useCapacidadeProducao() {
     abrirFichaTecnica,
     fecharFichaTecnica,
     isOrdemCompraOpen,
+    insumoFocoId,
     abrirOrdemCompra,
     fecharOrdemCompra,
     ordemCompraMutation,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,15 +9,17 @@ import {
 } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarMoeda } from '@/shared/utils/formatters';
 import { SugestaoReposicaoInsumo } from '../types';
 import { OrdemCompraItemRow } from './OrdemCompraItemRow';
 
 interface OrdemCompraModalProps {
   visible: boolean;
   sugestoes: SugestaoReposicaoInsumo[];
+  insumoFocoId?: string | null;
   onClose: () => void;
   onConfirmar: (pedido: {
-    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number }>;
+    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
     valorTotal: number;
   }) => Promise<void>;
   isEnviando?: boolean;
@@ -26,18 +28,30 @@ interface OrdemCompraModalProps {
 export function OrdemCompraModal({
   visible,
   sugestoes,
+  insumoFocoId,
   onClose,
   onConfirmar,
   isEnviando = false,
 }: OrdemCompraModalProps) {
   const itensParaComprar = sugestoes.filter((s) => s.quantidadeComprar > 0);
-  const [itensSelecionados, setItensSelecionados] = useState<Record<string, boolean>>(() => {
+  const [itensSelecionados, setItensSelecionados] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!visible) return;
+
     const initial: Record<string, boolean> = {};
-    itensParaComprar.forEach((i) => {
-      initial[i.insumoId] = true;
-    });
-    return initial;
-  });
+    if (insumoFocoId) {
+      const focoExiste = itensParaComprar.some((i) => i.insumoId === insumoFocoId);
+      itensParaComprar.forEach((i) => {
+        initial[i.insumoId] = focoExiste ? i.insumoId === insumoFocoId : true;
+      });
+    } else {
+      itensParaComprar.forEach((i) => {
+        initial[i.insumoId] = true;
+      });
+    }
+    setItensSelecionados(initial);
+  }, [visible, sugestoes, insumoFocoId]);
 
   const toggleItem = (insumoId: string) => {
     setItensSelecionados((prev) => ({
@@ -57,6 +71,7 @@ export function OrdemCompraModal({
         insumoId: i.insumoId,
         nomeInsumo: i.nomeInsumo,
         quantidade: i.quantidadeComprar,
+        unidadeMedida: i.unidadeMedida,
       }));
 
     await onConfirmar({
@@ -117,7 +132,7 @@ export function OrdemCompraModal({
                 Custo Total Estimado:
               </ThemedText>
               <ThemedText variant="title" style={styles.totalValor}>
-                R$ {valorTotal.toFixed(2).replace('.', ',')}
+                {formatarMoeda(valorTotal)}
               </ThemedText>
             </View>
 

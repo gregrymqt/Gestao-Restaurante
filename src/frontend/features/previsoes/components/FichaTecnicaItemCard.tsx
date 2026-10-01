@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { formatarQuantidade, formatarPorcaoGastronomica } from '@/shared/utils/formatters';
 import { FichaTecnicaIngrediente } from '../types';
 
 interface FichaTecnicaItemCardProps {
@@ -45,7 +46,7 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
             Por Porção
           </ThemedText>
           <ThemedText variant="body" style={styles.specValor}>
-            {ing.quantidadePorPorcao} {ing.unidadeMedida}
+            {formatarPorcaoGastronomica(ing.quantidadePorPorcao, ing.unidadeMedida)}
           </ThemedText>
         </View>
 
@@ -57,7 +58,7 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
             variant="body"
             style={[styles.specValor, ing.isGargalo && styles.specValorAlerta]}
           >
-            {ing.estoqueAtual} {ing.unidadeMedida}
+            {formatarQuantidade(ing.estoqueAtual, ing.unidadeMedida)}
           </ThemedText>
         </View>
 
@@ -69,7 +70,7 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
             variant="body"
             style={[styles.specValor, ing.isGargalo && styles.specValorAlerta]}
           >
-            {ing.capacidadeMaxItem} un
+            {formatarQuantidade(ing.capacidadeMaxItem, 'un')}
           </ThemedText>
         </View>
       </View>
@@ -77,7 +78,7 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
       {ing.isGargalo && (
         <View style={styles.calloutGargalo}>
           <ThemedText variant="caption" style={styles.calloutGargaloText}>
-            ⚠️ Este insumo esgota primeiro e limita a produção a {ing.capacidadeMaxItem} unidades.
+            ⚠️ Este insumo limita a produção a {ing.capacidadeMaxItem} un. Faltam ~{formatarQuantidade(Math.max(0, ing.estoqueNecessario - ing.estoqueAtual), ing.unidadeMedida)} para cobrir a demanda prevista.
           </ThemedText>
         </View>
       )}
