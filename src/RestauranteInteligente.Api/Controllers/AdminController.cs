@@ -7,7 +7,7 @@ using RestauranteInteligente.Application.Admin.UseCases;
 namespace RestauranteInteligente.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "SuperAdmin,Admin")]
 [Route("api/v1/admin")]
 public sealed class AdminController : ControllerBase
 {
@@ -25,12 +25,18 @@ public sealed class AdminController : ControllerBase
         _alterarStatusUseCase = alterarStatusUseCase;
     }
 
+    private bool IsAuthorizedAdmin() =>
+        User?.Identity?.IsAuthenticated == true && (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"));
+
     /// <summary>
     /// Lista todos os inquilinos (Tenants) da plataforma, dados de contato e vigência de assinatura para o SuperAdmin.
     /// </summary>
     [HttpGet("tenants")]
     public async Task<IActionResult> ListarTenants(CancellationToken ct)
     {
+        if (!IsAuthorizedAdmin())
+            return Forbid();
+
         try
         {
             var resultado = await _listarTenantsUseCase.ExecutarAsync(ct);
@@ -51,6 +57,9 @@ public sealed class AdminController : ControllerBase
         [FromBody] EstenderTrialInputDto request,
         CancellationToken ct)
     {
+        if (!IsAuthorizedAdmin())
+            return Forbid();
+
         try
         {
             var resultado = await _estenderTrialUseCase.ExecutarAsync(restauranteId, request, ct);
@@ -75,6 +84,9 @@ public sealed class AdminController : ControllerBase
         [FromBody] AlterarStatusAssinaturaInputDto request,
         CancellationToken ct)
     {
+        if (!IsAuthorizedAdmin())
+            return Forbid();
+
         try
         {
             var resultado = await _alterarStatusUseCase.ExecutarAsync(restauranteId, request, ct);

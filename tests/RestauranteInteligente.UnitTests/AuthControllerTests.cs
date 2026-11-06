@@ -52,6 +52,7 @@ public sealed class AuthControllerTests
         var user = new UserAccount(
             UserId: _defaultUserId,
             RestauranteId: _defaultTenantId,
+            Nome: "Admin Teste",
             Email: "admin@teste.com",
             PasswordHash: "hashed_password",
             Role: "Manager"
@@ -68,6 +69,7 @@ public sealed class AuthControllerTests
             _defaultTenantId,
             "admin@teste.com",
             "Manager",
+            "Admin Teste",
             It.IsAny<TimeSpan?>()
         )).Returns(new JwtTokenResult("jwt.token.mock", expectedJti, expectedExpires));
 
@@ -110,6 +112,7 @@ public sealed class AuthControllerTests
         var user = new UserAccount(
             UserId: _defaultUserId,
             RestauranteId: _defaultTenantId,
+            Nome: "Admin Teste",
             Email: "admin@teste.com",
             PasswordHash: "hashed_password",
             Role: "Manager"
@@ -144,6 +147,7 @@ public sealed class AuthControllerTests
             restauranteId,
             It.IsAny<string>(),
             It.IsAny<string>(),
+            It.IsAny<string?>(),
             It.IsAny<TimeSpan?>()
         )).Returns(new JwtTokenResult("novo.jwt.token", "novo-jti", DateTimeOffset.UtcNow.AddMinutes(15)));
 
