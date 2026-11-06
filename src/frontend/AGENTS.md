@@ -1,41 +1,49 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Diretrizes do Agente - Frontend Mobile (Expo / React Native)
 
-## Expo has changed — do not trust your training data
+Este módulo hospeda o aplicativo mobile do **Restaurante Inteligente**, arquitetado com **Expo SDK 54+ / 57**, **React Native 0.86**, **React 19** e **100% TypeScript**, focado no **Dono / Gestor do Restaurante**.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+---
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+## 1. Comandos Padronizados do Módulo
 
-## Commands
-
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+Utilize estritamente `npm` e `npx` (este repositório não utiliza Bun, Yarn ou pnpm):
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npx expo start                    # Inicia o servidor de desenvolvimento Expo
+npx tsc -p tsconfig.json --noEmit # Validação obrigatória de tipagem estrita (Portão de Qualidade)
+npx expo install <package>        # OBRIGATÓRIO para instalar pacotes compatíveis com o SDK Expo
 ```
 
-Run lint and typecheck before declaring any task done.
+> [!IMPORTANT]
+> **Validação de Malha Fechada**: Execute obrigatoriamente `npx tsc -p tsconfig.json --noEmit` antes de concluir qualquer tarefa ou declarar sucesso em alterações de frontend.
 
-## Navigation & Routing
+---
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+## 2. Arquitetura de Diretórios e Roteamento
 
-## Building with EAS
+- **Rotas (`app/`):** Utilizam `expo-router` com Native Stack (`react-native-screens` com `freezeOnBlur: true`). As telas em `app/` atuam **estritamente como cascas finas de composição (*thin wrappers*)**. É proibida lógica de negócio pesada, chamadas diretas de API ou JSX complexo dentro de `app/`.
+- **Funcionalidades de Negócio (`features/<nome>/`):** Seguem arquitetura Feature-First rigorosa (Bounded Contexts: `admin`, `assinatura`, `auth`, `caixa`, `dashboard`, `estoque`, `perfil`, `previsoes`, `vendas`).
+  - Estrutura interna mandatória: `components/`, `hooks/`, `services/`, `types/` e `index.ts`.
+  - **Barreira Pública:** Importações entre features distintas devem ocorrer estritamente através da barreira pública `features/<nome>/index.ts`. É proibido importar subarquivos internos de outras features.
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+---
 
-## Rules
+## 3. Segregação de Responsabilidades (SRP) & Teto de Linhas
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+1. **Componentes (`components/`):**
+   - Puramente visuais e declarativos. Proibida lógica de transporte HTTP ou chamadas diretas de rede.
+   - **Teto de Complexidade:** Limite estrito de **no máximo 350 linhas por arquivo `.tsx`**. Componentes que atinjam esse limite devem ser decompostos em subcomponentes modulares na pasta `components/`.
+2. **Hooks (`hooks/`):**
+   - Orquestram estado local/global (Zustand) e reatividade. Proibidas requisições HTTP inline (`axios`/`fetch`); delegar estritamente para `services/`.
+3. **Services (`services/`):**
+   - Executam exclusivamente transporte de I/O via `apiClient`. Proibido o uso de JSX ou React Hooks.
+
+---
+
+## 4. Ergonomia Mobile, UX & Sanitização
+
+- **Alvos de Toque:** Controles interativos devem ter alvo de toque mínimo de **48×48dp** (`hitSlop` ou padding). Alternadores de visibilidade usam ícones vetoriais padronizados (`Eye`/`EyeOff`), banindo emojis.
+- **Formulários:** Formulários com múltiplos campos devem ser encapsulados em `KeyboardAvoidingView` adaptativo (`iOS: padding`, `Android: height`) com `ScrollView` configurado com `keyboardShouldPersistTaps="handled"`.
+- **Máscaras e Seletores:** Entidades fiscais (CNPJ/CPF) devem possuir máscara em tempo real. Campos de domínio fechado (ex: UF) devem usar seletores modais com busca, vedada digitação livre.
+- **Listas de Alta Volumetria:** Usar universalmente `<FlashList>` com `estimatedItemSize` e filtragem em tempo real para insumos, produtos e entidades dinâmicas.
+- **Blindagem Vocabular:** Proibida terminantemente a exibição de termos técnicos de backend/infraestrutura (ex: "Multi-Tenant", "RLS", "PostgreSQL", "Worker", "Broker") na interface. Utilizar vocabulário funcional de negócio (ex: "Online", "Conexão Segura", "Filiais", "Recomendações da IA").
