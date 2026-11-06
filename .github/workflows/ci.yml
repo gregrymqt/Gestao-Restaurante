@@ -92,6 +92,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Environment File (.env)
+        run: cp .env.example .env
+
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
