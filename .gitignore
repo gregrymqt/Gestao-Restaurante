@@ -113,3 +113,6 @@ appendonlydir/
 Thumbs.db
 ehthumbs.db
 [Dd]esktop.ini
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
