@@ -18,90 +18,79 @@ export function HeaderOperacional({
   statusCaixa = 'Aberto',
   onPressVoltar,
   onPressPerfil,
-  onPressNovoProduto,
 }: HeaderOperacionalProps) {
   const isAberto = statusCaixa === 'Aberto';
 
   return (
     <View style={styles.container}>
-      <View style={styles.infoCol}>
-        <View style={styles.row}>
-          {onPressVoltar && (
-            <>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Voltar para o Painel"
-                onPress={onPressVoltar}
-                style={({ pressed }) => [styles.btnVoltar, pressed && styles.pressed]}
-              >
-                <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-                  ← Painel
-                </ThemedText>
-              </Pressable>
-              <View style={styles.divider} />
-            </>
-          )}
-          <ThemedText variant="title" style={styles.terminalText}>
+      {/* Lado Esquerdo: Ação de Voltar + Terminal + Comanda Ativa */}
+      <View style={styles.leftRow}>
+        {onPressVoltar && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar para o Painel"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={onPressVoltar}
+            style={({ pressed }) => [styles.btnVoltar, pressed && styles.pressed]}
+          >
+            <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+              ←
+            </ThemedText>
+          </Pressable>
+        )}
+
+        <View style={styles.terminalWrapper}>
+          <ThemedText variant="subtitle" weight="bold" style={styles.terminalText}>
             {terminal}
           </ThemedText>
-          <View style={styles.divider} />
-          <View style={styles.comandaBadge}>
-            <ThemedText variant="caption" style={styles.comandaLabel}>
-              Comanda
-            </ThemedText>
-            <ThemedText variant="subtitle" style={styles.comandaNumero}>
-              {comanda}
-            </ThemedText>
-          </View>
         </View>
 
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.statusBadge,
-              isAberto ? styles.statusBadgeAberto : styles.statusBadgeFechado,
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                isAberto ? styles.statusDotAberto : styles.statusDotFechado,
-              ]}
-            />
-            <ThemedText
-              variant="caption"
-              weight="semibold"
-              color={
-                isAberto
-                  ? tokens.colors.status.greenText
-                  : tokens.colors.status.redText
-              }
-            >
-              {isAberto ? 'Caixa Aberto' : 'Caixa Fechado'}
-            </ThemedText>
-          </View>
+        <View style={styles.comandaBadge}>
+          <ThemedText variant="caption" style={styles.comandaLabel}>
+            Comanda
+          </ThemedText>
+          <ThemedText variant="caption" weight="bold" style={styles.comandaNumero}>
+            {comanda}
+          </ThemedText>
         </View>
       </View>
 
-      <View style={styles.rightActionsRow}>
-        {onPressNovoProduto && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Novo Produto"
-            style={styles.btnNovoProduto}
-            onPress={onPressNovoProduto}
+      {/* Lado Direito: Status Caixa + Avatar Operador */}
+      <View style={styles.rightRow}>
+        <View
+          style={[
+            styles.statusBadge,
+            isAberto ? styles.statusBadgeAberto : styles.statusBadgeFechado,
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              isAberto ? styles.statusDotAberto : styles.statusDotFechado,
+            ]}
+          />
+          <ThemedText
+            variant="caption"
+            weight="semibold"
+            color={
+              isAberto
+                ? tokens.colors.status.greenText
+                : tokens.colors.status.redText
+            }
+            style={styles.statusTexto}
           >
-            <ThemedText style={styles.btnNovoProdutoText}>+ Produto</ThemedText>
-          </Pressable>
-        )}
+            {isAberto ? 'Aberto' : 'Fechado'}
+          </ThemedText>
+        </View>
 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Perfil do Operador"
-          style={styles.avatarButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
           onPress={onPressPerfil}
         >
-          <ThemedText variant="subtitle" style={styles.avatarText}>
+          <ThemedText variant="caption" weight="bold" style={styles.avatarText}>
             OP
           </ThemedText>
         </Pressable>
@@ -112,68 +101,69 @@ export function HeaderOperacional({
 
 const styles = StyleSheet.create({
   container: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: tokens.spacing.lg,
-    paddingTop: tokens.spacing.md,
-    paddingBottom: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.md,
     backgroundColor: tokens.colors.card,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  infoCol: {
-    flexDirection: 'column',
-    gap: tokens.spacing.xs,
-  },
-  row: {
+  leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  btnVoltar: {
+    width: 30,
+    height: 30,
+    borderRadius: tokens.radii.sm,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  terminalWrapper: {
+    paddingRight: 4,
   },
   terminalText: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '700',
+    fontSize: 15,
     color: tokens.colors.textPrimary,
-  },
-  divider: {
-    width: 1,
-    height: 16,
-    backgroundColor: tokens.colors.border,
-    marginHorizontal: tokens.spacing.sm,
   },
   comandaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.spacing.xs,
+    gap: 4,
     backgroundColor: tokens.colors.primaryLight,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 2,
-    borderRadius: tokens.radii.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: tokens.radii.full,
   },
   comandaLabel: {
-    fontSize: tokens.typography.fontXs,
-    color: tokens.colors.primaryDark,
-    fontWeight: '500',
+    fontSize: 10,
+    color: tokens.colors.textSecondary,
   },
   comandaNumero: {
-    fontSize: tokens.typography.fontSm,
-    color: tokens.colors.primaryDark,
-    fontWeight: '700',
+    fontSize: 12,
+    color: tokens.colors.primary,
   },
-  statusRow: {
+  rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.spacing.xs,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: tokens.radii.full,
+    gap: 5,
   },
   statusBadgeAberto: {
-    backgroundColor: tokens.colors.status.greenBg,
+    backgroundColor: '#EBF9EE',
   },
   statusBadgeFechado: {
     backgroundColor: tokens.colors.status.redBg,
@@ -181,54 +171,32 @@ const styles = StyleSheet.create({
   statusDot: {
     width: 6,
     height: 6,
-    borderRadius: tokens.radii.full,
+    borderRadius: 3,
   },
   statusDotAberto: {
-    backgroundColor: tokens.colors.status.greenText,
+    backgroundColor: '#146C2E',
   },
   statusDotFechado: {
     backgroundColor: tokens.colors.status.redText,
   },
-  rightActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  btnNovoProduto: {
-    backgroundColor: tokens.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  btnNovoProdutoText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: tokens.colors.white,
+  statusTexto: {
+    fontSize: 11,
   },
   avatarButton: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radii.full,
-    backgroundColor: tokens.colors.primaryLight,
-    borderWidth: 1,
-    borderColor: tokens.colors.primary,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FDEEE9',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarText: {
-    color: tokens.colors.primary,
-    fontWeight: '700',
-    fontSize: tokens.typography.fontMd,
-  },
-  btnVoltar: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: '#FFF5F5',
-    borderRadius: tokens.radii.sm,
     borderWidth: 1,
     borderColor: '#FFCDD2',
   },
+  avatarText: {
+    fontSize: 11,
+    color: tokens.colors.primary,
+  },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
 });

@@ -39,7 +39,7 @@ export function AuthHeader() {
 
       {/* Subtítulo Corporativo */}
       <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.subtitle}>
-        Painel Executivo de Gestão &amp; Decisão
+        Painel Executivo de Gestão & Decisão
       </ThemedText>
     </View>
   );

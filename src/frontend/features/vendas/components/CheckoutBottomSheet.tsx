@@ -6,7 +6,9 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { FormaPagamento } from '../types';
@@ -23,6 +25,8 @@ interface CheckoutBottomSheetProps {
 }
 
 export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetProps) {
+  const insets = useSafeAreaInsets();
+  const paddingInferior = Math.max(insets.bottom, 24) + (Platform.OS === 'web' ? 16 : 0);
   const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   const itens = useCarrinho((state) => state.itens);
   const totalItens = useCarrinho((state) => state.obterTotalItens());
@@ -115,7 +119,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
           onPress={onClose}
         />
 
-        <View style={styles.bottomSheet}>
+        <View style={[styles.bottomSheet, { paddingBottom: paddingInferior }]}>
           {/* Drag Handle Indicator */}
           <View style={styles.dragIndicator} />
 
@@ -185,6 +189,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
               accessibilityLabel={!isApiOnline ? 'Servidor offline - emissão bloqueada' : 'Confirmar pagamento e emitir venda'}
               accessibilityState={{ disabled: isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline }}
               disabled={isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline}
+              hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
               style={({ pressed }) => [
                 styles.botaoConfirmar,
                 (isValorInsuficiente || totalItens === 0 || !isApiOnline) && styles.botaoConfirmarDesabilitado,

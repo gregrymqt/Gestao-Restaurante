@@ -28,7 +28,7 @@ export function EstoqueHeader({
           </View>
           <View>
             <ThemedText variant="body" style={styles.brandTitle}>
-              GastroPDV{' '}
+              Restaurante Inteligente{' '}
               <ThemedText variant="caption" color={tokens.colors.textMuted}>
                 • Estoque
               </ThemedText>

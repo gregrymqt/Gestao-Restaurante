@@ -7,14 +7,22 @@ import { AssinaturaStatus } from '../types';
 interface TrialBadgeHeaderProps {
   assinatura: AssinaturaStatus;
   onOpenPaywall: () => void;
+  variant?: 'chip' | 'banner';
 }
 
-export function TrialBadgeHeader({ assinatura, onOpenPaywall }: TrialBadgeHeaderProps) {
+export function TrialBadgeHeader({
+  assinatura,
+  onOpenPaywall,
+  variant = 'chip',
+}: TrialBadgeHeaderProps) {
   const isTrial = assinatura.status === 'TRIAL';
   const dias = assinatura.diasRestantesTrial;
   const isExpirando = isTrial && dias <= 3;
 
+  // Se a assinatura já for ativa e estivermos em modo chip, adota o silêncio operacional (sem poluição)
   if (!isTrial && assinatura.status === 'ATIVA') {
+    if (variant === 'chip') return null;
+
     return (
       <View style={styles.containerAtivo}>
         <ThemedText style={styles.icone}>⭐</ThemedText>
@@ -25,6 +33,35 @@ export function TrialBadgeHeader({ assinatura, onOpenPaywall }: TrialBadgeHeader
     );
   }
 
+  // Modo Micro-Chip de Alta Velocidade (Header Slim de Hospitalidade)
+  if (variant === 'chip') {
+    if (!isTrial) return null;
+
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Degustação: ${dias} dias restantes. Toque para ver planos.`}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPress={onOpenPaywall}
+        style={({ pressed }) => [
+          styles.chip,
+          isExpirando && styles.chipAlerta,
+          pressed && styles.pressed,
+        ]}
+      >
+        <ThemedText style={styles.chipTextoIcone}>{isExpirando ? '⏳' : '⚡'}</ThemedText>
+        <ThemedText
+          variant="caption"
+          weight="bold"
+          style={[styles.chipTexto, isExpirando && styles.chipTextoAlerta]}
+        >
+          {dias > 0 ? `${dias}d` : 'Expirado'}
+        </ThemedText>
+      </Pressable>
+    );
+  }
+
+  // Modo Banner Explicativo (Usado em Telas de Perfil / Configurações)
   return (
     <Pressable
       accessibilityRole="button"
@@ -60,6 +97,31 @@ export function TrialBadgeHeader({ assinatura, onOpenPaywall }: TrialBadgeHeader
 }
 
 const styles = StyleSheet.create({
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderColor: '#FFE082',
+    borderWidth: 1,
+    borderRadius: tokens.radii.full,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 4,
+  },
+  chipAlerta: {
+    backgroundColor: tokens.colors.status.redBg,
+    borderColor: '#FFCDD2',
+  },
+  chipTextoIcone: {
+    fontSize: 12,
+  },
+  chipTexto: {
+    fontSize: 11,
+    color: '#B25E00',
+  },
+  chipTextoAlerta: {
+    color: tokens.colors.status.redText,
+  },
   container: {
     backgroundColor: '#FFF8E1',
     borderColor: '#FFE082',
@@ -111,6 +173,6 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.sm,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.8,
   },
 });

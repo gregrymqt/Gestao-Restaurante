@@ -48,7 +48,7 @@ export function ContextoOperacionalHeader({
           </View>
           <View style={styles.marcaCol}>
             <ThemedText variant="subtitle" style={styles.marcaNome}>
-              GastroPDV
+              Restaurante Inteligente
             </ThemedText>
             <View style={styles.statusIndicatorRow}>
               <View
