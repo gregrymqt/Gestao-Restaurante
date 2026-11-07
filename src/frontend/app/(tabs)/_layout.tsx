@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '@/components/primitives/tokens';
-import { ThemedText } from '@/components/primitives/ThemedText';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -23,21 +23,23 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: tokens.colors.card,
           borderTopColor: tokens.colors.border,
-          height: 60 + bottomPadding,
+          height: 56 + bottomPadding,
           paddingBottom: bottomPadding,
-          paddingTop: 8,
+          paddingTop: 6,
         },
       }}
     >
-      {/* 4 Abas Principais Visíveis (Ergonomia HIG / Material 3) */}
+      {/* 4 Abas Principais com Ícones Vetoriais Profissionais (Padrão Hospitalidade) */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Painel',
-          tabBarIcon: ({ color }) => (
-            <ThemedText variant="subtitle" color={color as string}>
-              📈
-            </ThemedText>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'stats-chart' : 'stats-chart-outline'}
+              size={20}
+              color={color}
+            />
           ),
         }}
       />
@@ -45,10 +47,12 @@ export default function TabLayout() {
         name="estoque"
         options={{
           title: 'Estoque',
-          tabBarIcon: ({ color }) => (
-            <ThemedText variant="subtitle" color={color as string}>
-              📦
-            </ThemedText>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'cube' : 'cube-outline'}
+              size={20}
+              color={color}
+            />
           ),
         }}
       />
@@ -56,10 +60,12 @@ export default function TabLayout() {
         name="previsoes"
         options={{
           title: 'Previsões',
-          tabBarIcon: ({ color }) => (
-            <ThemedText variant="subtitle" color={color as string}>
-              🤖
-            </ThemedText>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'sparkles' : 'sparkles-outline'}
+              size={20}
+              color={color}
+            />
           ),
         }}
       />
@@ -67,15 +73,17 @@ export default function TabLayout() {
         name="perfil"
         options={{
           title: 'Mais',
-          tabBarIcon: ({ color }) => (
-            <ThemedText variant="subtitle" color={color as string}>
-              ⚙️
-            </ThemedText>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={20}
+              color={color}
+            />
           ),
         }}
       />
 
-      {/* Rotas auxiliares ocultas da barra inferior mantendo deep linking */}
+      {/* Rotas operacionais ocultas da barra mantendo deep linking */}
       <Tabs.Screen
         name="pdv"
         options={{

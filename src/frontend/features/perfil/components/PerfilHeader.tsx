@@ -11,7 +11,7 @@ export function PerfilHeader({ iniciais }: PerfilHeaderProps) {
   return (
     <View style={styles.topBar}>
       <View style={styles.brandContainer}>
-        <ThemedText style={styles.brandSubtitle}>GASTROBURGER POS</ThemedText>
+        <ThemedText style={styles.brandSubtitle}>RESTAURANTE INTELIGENTE</ThemedText>
         <ThemedText variant="title" style={styles.brandTitle}>
           Perfil do Operador
         </ThemedText>

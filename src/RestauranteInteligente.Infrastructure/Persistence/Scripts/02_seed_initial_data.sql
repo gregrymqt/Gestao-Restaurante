@@ -22,16 +22,27 @@ INSERT INTO "Restaurantes" (
     CURRENT_TIMESTAMP
 ) ON CONFLICT ("Id") DO NOTHING;
 
--- 3. Inserção do Operador de Caixa / Administrador (Senha: 123456 via PBKDF2)
+-- 3. Inserção do Operador de Caixa e Gestor do Restaurante (Senha: 123456 via PBKDF2)
 INSERT INTO "Usuarios" (
     "Id", "RestauranteId", "Nome", "Email", "SenhaHash", "Perfil", "Ativo", "CriadoEm"
-) VALUES (
+) VALUES 
+(
     '99999999-9999-9999-9999-999999999999'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     'Operador Homologação',
     'operador@restaurante.com',
     '100000.mEZvy32kdsQSwv74NSu++g==.SrVf0vv/434/flq7xTUOzl62Aep2uce/m7HUvRkc3AY=',
     'Operador',
+    TRUE,
+    CURRENT_TIMESTAMP
+),
+(
+    '88888888-8888-8888-8888-888888888888'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Gestor do Restaurante',
+    'gestor@restaurante.com',
+    '100000.mEZvy32kdsQSwv74NSu++g==.SrVf0vv/434/flq7xTUOzl62Aep2uce/m7HUvRkc3AY=',
+    'Manager',
     TRUE,
     CURRENT_TIMESTAMP
 ) ON CONFLICT ("Id") DO NOTHING;
@@ -235,17 +246,18 @@ INSERT INTO "Planos" (
     CURRENT_TIMESTAMP
 ) ON CONFLICT ("Nome") DO NOTHING;
 
--- 9. Inserção da Assinatura SaaS Inicial para o Restaurante de Homologação (14 dias Free Trial)
+-- 9. Inserção da Assinatura SaaS Inicial para o Restaurante de Homologação (Plano Pro com vigência anual ativa)
 INSERT INTO "Assinaturas" (
     "Id", "RestauranteId", "PlanoId", "Status", "DataInicio", "DataFimTrial", "DataExpiracao", "CriadoEm"
 ) VALUES (
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     '22222222-2222-2222-2222-222222222222'::uuid,
-    'TRIAL',
+    'ATIVA',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP + INTERVAL '14 days',
-    NULL,
+    CURRENT_TIMESTAMP + INTERVAL '1 year',
     CURRENT_TIMESTAMP
-) ON CONFLICT ("RestauranteId") DO NOTHING;
+) ON CONFLICT ("RestauranteId") DO UPDATE 
+SET "Status" = EXCLUDED."Status", "DataExpiracao" = EXCLUDED."DataExpiracao";
 
