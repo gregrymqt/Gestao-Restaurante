@@ -4,12 +4,15 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/components/primitives/tokens';
+import { ThemedText } from '@/components/primitives/ThemedText';
 import { useAssinatura, ModalPaywall } from '@/features/assinatura';
 import { OrdemCompraModal } from '@/features/previsoes';
+import { ModalHistoricoVendas } from '@/features/vendas';
 import { useDashboardExecutivo } from '../hooks/useDashboardExecutivo';
 import { HeaderGestorBoasVindas } from '../components/HeaderGestorBoasVindas';
 import { KpisFaturamentoCard } from '../components/KpisFaturamentoCard';
@@ -21,6 +24,7 @@ export function DashboardScreen() {
   const router = useRouter();
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [isOrdemCompraOpen, setIsOrdemCompraOpen] = useState(false);
+  const [isHistoricoVendasOpen, setIsHistoricoVendasOpen] = useState(false);
 
   const { dashboard, isLoading, refetch, tenant, operador } = useDashboardExecutivo();
   const { assinatura, isAssinando, assinarPlano } = useAssinatura();
@@ -68,6 +72,29 @@ export function DashboardScreen() {
           {/* Card 1: KPIs Financeiros e Faturamento do Dia */}
           <KpisFaturamentoCard kpis={dashboard.kpis} />
 
+          {/* Botão Operacional: Ver Histórico de Vendas */}
+          <Pressable
+            style={({ pressed }) => [styles.btnHistorico, pressed && styles.btnHistoricoPressed]}
+            onPress={() => setIsHistoricoVendasOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver Histórico de Vendas do Dia"
+          >
+            <View style={styles.btnHistoricoLeft}>
+              <ThemedText style={styles.btnHistoricoIcone}>🧾</ThemedText>
+              <View>
+                <ThemedText variant="body" weight="bold" style={styles.btnHistoricoTexto}>
+                  Histórico de Vendas do Dia
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.btnHistoricoSub}>
+                  {dashboard.kpis.quantidadePedidos} {dashboard.kpis.quantidadePedidos === 1 ? 'pedido registrado' : 'pedidos registrados'} • Toque para auditar cupons
+                </ThemedText>
+              </View>
+            </View>
+            <ThemedText variant="subtitle" weight="bold" style={styles.btnHistoricoSeta}>
+              →
+            </ThemedText>
+          </Pressable>
+
           {/* Card 2: Alertas Reativos de Estoque Crítico (SSE) */}
           <AlertaEstoqueCriticoCard
             insumos={dashboard.insumosCriticos}
@@ -89,6 +116,12 @@ export function DashboardScreen() {
             onAbrirPdvTeste={handleAbrirPdvTeste}
           />
         </ScrollView>
+
+        {/* Modal de Histórico de Vendas Concluídas */}
+        <ModalHistoricoVendas
+          visible={isHistoricoVendasOpen}
+          onClose={() => setIsHistoricoVendasOpen(false)}
+        />
 
         {/* Modal Rápido de Ordem de Compra / Reposição de Insumos Críticos */}
         <OrdemCompraModal
@@ -129,5 +162,43 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: tokens.spacing.xl,
+  },
+  btnHistorico: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: tokens.colors.card,
+    marginHorizontal: tokens.spacing.md,
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  btnHistoricoPressed: {
+    opacity: 0.8,
+    backgroundColor: tokens.colors.primaryLight,
+  },
+  btnHistoricoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  btnHistoricoIcone: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  btnHistoricoTexto: {
+    color: tokens.colors.textPrimary,
+  },
+  btnHistoricoSub: {
+    color: tokens.colors.textSecondary,
+    marginTop: 2,
+  },
+  btnHistoricoSeta: {
+    color: tokens.colors.primary,
+    marginLeft: 8,
   },
 });

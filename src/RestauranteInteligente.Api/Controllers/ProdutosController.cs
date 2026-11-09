@@ -64,6 +64,30 @@ public sealed class ProdutosController : ControllerBase
     }
 
     /// <summary>
+    /// Consulta os grupos e opções de modificadores ativos vinculados ao produto para a gaveta do PDV.
+    /// </summary>
+    [HttpGet("{id:guid}/modificadores")]
+    public async Task<IActionResult> ObterModificadores(
+        [FromRoute] Guid id,
+        [FromServices] Application.Produtos.UseCases.ObterModificadoresProdutoUseCase useCase,
+        CancellationToken ct)
+    {
+        try
+        {
+            var modificadores = await useCase.ExecutarAsync(id, ct);
+            return Ok(modificadores);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Tenant"))
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Cadastro de produto vinculado atomicamente ao restaurante do contexto, com suporte opcional à Ficha Técnica (BOM).
     /// </summary>
     [HttpPost]

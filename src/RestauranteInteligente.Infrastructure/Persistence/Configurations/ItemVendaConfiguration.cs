@@ -33,6 +33,10 @@ public sealed class ItemVendaConfiguration : IEntityTypeConfiguration<ItemVenda>
             .HasColumnType("numeric(18,2)")
             .IsRequired();
 
+        builder.Property(iv => iv.ModificadoresJson)
+            .HasColumnType("jsonb")
+            .IsRequired(false);
+
         builder.HasOne(iv => iv.Venda)
             .WithMany(v => v.Itens)
             .HasForeignKey(iv => iv.VendaId)

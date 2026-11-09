@@ -21,6 +21,9 @@ public interface IAppDbContext
     DbSet<FechamentoCaixa> FechamentosCaixa { get; }
     DbSet<DadosClimaticos> DadosClimaticos { get; }
     DbSet<Previsao> Previsoes { get; }
+    DbSet<GrupoModificador> GruposModificadores { get; }
+    DbSet<OpcaoModificador> OpcoesModificadores { get; }
+    DbSet<ProdutoGrupoModificador> ProdutosGruposModificadores { get; }
 
     DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

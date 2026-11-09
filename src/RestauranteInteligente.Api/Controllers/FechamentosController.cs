@@ -12,13 +12,29 @@ public sealed class FechamentosController : ControllerBase
 {
     private readonly AbrirCaixaUseCase _abrirCaixaUseCase;
     private readonly FecharCaixaUseCase _fecharCaixaUseCase;
+    private readonly ObterStatusCaixaUseCase? _obterStatusCaixaUseCase;
 
     public FechamentosController(
         AbrirCaixaUseCase abrirCaixaUseCase,
-        FecharCaixaUseCase fecharCaixaUseCase)
+        FecharCaixaUseCase fecharCaixaUseCase,
+        ObterStatusCaixaUseCase? obterStatusCaixaUseCase = null)
     {
         _abrirCaixaUseCase = abrirCaixaUseCase;
         _fecharCaixaUseCase = fecharCaixaUseCase;
+        _obterStatusCaixaUseCase = obterStatusCaixaUseCase;
+    }
+
+    /// <summary>
+    /// Consulta o status e métricas da sessão de caixa operacional ativa no restaurante.
+    /// </summary>
+    [HttpGet("status")]
+    public async Task<IActionResult> ObterStatus(CancellationToken ct)
+    {
+        if (_obterStatusCaixaUseCase == null)
+            return StatusCode(501, new { error = "Caso de uso de status não configurado." });
+
+        var resultado = await _obterStatusCaixaUseCase.ExecutarAsync(ct);
+        return Ok(resultado);
     }
 
     /// <summary>

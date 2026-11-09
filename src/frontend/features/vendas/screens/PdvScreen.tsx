@@ -6,7 +6,9 @@ import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { useRouter } from 'expo-router';
-import { CategoriaProduto, CriarProdutoInput, Produto } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
+import { CategoriaProduto, CriarProdutoInput, Produto, ModificadorSelecionado } from '../types';
+import { vendasService } from '../services/vendasService';
 import { useCarrinho } from '../hooks/useCarrinho';
 import { useCatalogoProdutos } from '../hooks/useCatalogoProdutos';
 import { useCriarProduto } from '../hooks/useCriarProduto';
@@ -17,13 +19,18 @@ import { ProdutoCard } from '../components/ProdutoCard';
 import { BarraFlutuanteCheckout } from '../components/BarraFlutuanteCheckout';
 import { CheckoutBottomSheet } from '../components/CheckoutBottomSheet';
 import { ModalNovoProduto } from '../components/ModalNovoProduto';
+import { ModalHistoricoVendas } from '../components/ModalHistoricoVendas';
+import { ModalModificadoresProduto } from '../components/ModalModificadoresProduto';
 
 export function PdvScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [categoria, setCategoria] = useState<CategoriaProduto>('Todos');
   const [termoBusca, setTermoBusca] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isNovoProdutoOpen, setIsNovoProdutoOpen] = useState(false);
+  const [isHistoricoOpen, setIsHistoricoOpen] = useState(false);
+  const [produtoModificadores, setProdutoModificadores] = useState<Produto | null>(null);
 
   const { produtos, totalProdutos } = useCatalogoProdutos(categoria, termoBusca);
   const criarProdutoMutation = useCriarProduto();
@@ -44,11 +51,42 @@ export function PdvScreen() {
     AppDialog.success('Produto Cadastrado! 🍔', `O produto "${dados.nome}" já está disponível para vendas.`);
   };
 
+  const handleTocarProduto = useCallback(
+    async (produto: Produto) => {
+      try {
+        const modificadores = await queryClient.fetchQuery({
+          queryKey: ['produtos', produto.id, 'modificadores'],
+          queryFn: () => vendasService.obterModificadoresProduto(produto.id),
+          staleTime: 5 * 60 * 1000,
+        });
+
+        if (modificadores && modificadores.length > 0) {
+          setProdutoModificadores(produto);
+        } else {
+          adicionarItem(produto);
+        }
+      } catch {
+        adicionarItem(produto);
+      }
+    },
+    [queryClient, adicionarItem]
+  );
+
+  const handleConfirmarModificadores = useCallback(
+    (modificadores: ModificadorSelecionado[]) => {
+      if (produtoModificadores) {
+        adicionarItem(produtoModificadores, modificadores);
+        setProdutoModificadores(null);
+      }
+    },
+    [produtoModificadores, adicionarItem]
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Produto }) => (
-      <ProdutoCard produto={item} aoAdicionar={adicionarItem} />
+      <ProdutoCard produto={item} aoAdicionar={handleTocarProduto} />
     ),
-    [adicionarItem]
+    [handleTocarProduto]
   );
 
   return (
@@ -57,6 +95,7 @@ export function PdvScreen() {
         <HeaderOperacional
           onPressVoltar={() => router.push('/(tabs)')}
           onPressNovoProduto={() => setIsNovoProdutoOpen(true)}
+          onPressHistorico={() => setIsHistoricoOpen(true)}
         />
         <BarraPesquisaPdv
           valor={termoBusca}
@@ -105,6 +144,20 @@ export function PdvScreen() {
           onClose={() => setIsNovoProdutoOpen(false)}
           onConfirmar={handleConfirmarNovoProduto}
           isEnviando={criarProdutoMutation.isPending}
+        />
+
+        {/* Modal de Histórico de Vendas Concluídas */}
+        <ModalHistoricoVendas
+          visible={isHistoricoOpen}
+          onClose={() => setIsHistoricoOpen(false)}
+        />
+
+        {/* Modal de Modificadores e Tags (Zero-Typing) */}
+        <ModalModificadoresProduto
+          produto={produtoModificadores}
+          visible={Boolean(produtoModificadores)}
+          onClose={() => setProdutoModificadores(null)}
+          onConfirmar={handleConfirmarModificadores}
         />
       </View>
     </SafeAreaView>

@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import logging
 from typing import Optional
@@ -150,25 +151,33 @@ class RabbitConsumer:
 
     async def start(self) -> None:
         """
-        Inicia o loop assíncrono de consumo de mensagens.
+        Inicia o loop assíncrono de consumo de mensagens com reconexão resiliente.
         """
         self._is_running = True
-        try:
-            await self.connect_and_setup()
-            assert self.queue is not None
+        while self._is_running:
+            try:
+                await self.connect_and_setup()
+                assert self.queue is not None
 
-            logger.info("Aguardando mensagens na fila 'previsao.demanda.solicitada'...")
-            async with self.queue.iterator() as queue_iter:
-                async for message in queue_iter:
-                    if not self._is_running:
-                        break
-                    await self._process_single_message(message)
-        except asyncio.CancelledError:
-            logger.info("Loop do RabbitConsumer cancelado.")
-        except Exception as ex:
-            logger.error("Erro inesperado no loop do consumidor RabbitMQ: %s", ex, exc_info=True)
-        finally:
-            await self.stop()
+                logger.info("Aguardando mensagens na fila 'previsao.demanda.solicitada'...")
+                async with self.queue.iterator() as queue_iter:
+                    async for message in queue_iter:
+                        if not self._is_running:
+                            break
+                        await self._process_single_message(message)
+            except asyncio.CancelledError:
+                logger.info("Loop do RabbitConsumer cancelado.")
+                break
+            except Exception as ex:
+                logger.error("Erro no consumidor RabbitMQ: %s. Reconectando em 5 segundos...", ex, exc_info=True)
+                if self.channel and not self.channel.is_closed:
+                    with contextlib.suppress(Exception):
+                        await self.channel.close()
+                if self.connection and not self.connection.is_closed:
+                    with contextlib.suppress(Exception):
+                        await self.connection.close()
+                await asyncio.sleep(5)
+        await self.stop()
 
     async def stop(self) -> None:
         """

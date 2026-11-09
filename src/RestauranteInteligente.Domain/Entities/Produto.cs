@@ -8,6 +8,7 @@ namespace RestauranteInteligente.Domain.Entities;
 public sealed class Produto : IRestauranteEntity
 {
     private readonly List<ProdutoInsumo> _fichaTecnica = new();
+    private readonly List<ProdutoGrupoModificador> _gruposModificadores = new();
 
     public Guid Id { get; private set; }
     public Guid RestauranteId { get; private set; }
@@ -19,6 +20,7 @@ public sealed class Produto : IRestauranteEntity
     public uint Version { get; private set; } // Token de concorrência PostgreSQL (xmin)
 
     public IReadOnlyCollection<ProdutoInsumo> FichaTecnica => _fichaTecnica.AsReadOnly();
+    public IReadOnlyCollection<ProdutoGrupoModificador> GruposModificadores => _gruposModificadores.AsReadOnly();
 
     private Produto() { }
 
@@ -75,5 +77,22 @@ public sealed class Produto : IRestauranteEntity
 
         _fichaTecnica.Add(itemBOM);
         return itemBOM;
+    }
+
+    public ProdutoGrupoModificador VincularGrupoModificador(Guid grupoModificadorId, int ordemExibicao = 0)
+    {
+        if (grupoModificadorId == Guid.Empty)
+            throw new ArgumentException("O identificador do grupo de modificadores é obrigatório.", nameof(grupoModificadorId));
+
+        var vinculo = new ProdutoGrupoModificador(
+            id: Guid.NewGuid(),
+            restauranteId: RestauranteId,
+            produtoId: Id,
+            grupoModificadorId: grupoModificadorId,
+            ordemExibicao: ordemExibicao
+        );
+
+        _gruposModificadores.Add(vinculo);
+        return vinculo;
     }
 }

@@ -42,6 +42,9 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     public DbSet<Previsao> Previsoes => Set<Previsao>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();
     public DbSet<Plano> Planos => Set<Plano>();
+    public DbSet<GrupoModificador> GruposModificadores => Set<GrupoModificador>();
+    public DbSet<OpcaoModificador> OpcoesModificadores => Set<OpcaoModificador>();
+    public DbSet<ProdutoGrupoModificador> ProdutosGruposModificadores => Set<ProdutoGrupoModificador>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {

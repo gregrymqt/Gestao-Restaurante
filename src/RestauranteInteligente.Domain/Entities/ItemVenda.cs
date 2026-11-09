@@ -14,6 +14,7 @@ public sealed class ItemVenda : IRestauranteEntity
     public decimal Quantidade { get; private set; }
     public decimal PrecoUnitario { get; private set; }
     public decimal Subtotal { get; private set; }
+    public string? ModificadoresJson { get; private set; }
 
     // Navegações de Domínio / EF Core
     public Venda? Venda { get; private set; }
@@ -27,7 +28,8 @@ public sealed class ItemVenda : IRestauranteEntity
         Guid vendaId,
         Guid produtoId,
         decimal quantidade,
-        decimal precoUnitario)
+        decimal precoUnitario,
+        string? modificadoresJson = null)
     {
         if (vendaId == Guid.Empty)
             throw new ArgumentException("O identificador da venda é obrigatório.", nameof(vendaId));
@@ -48,5 +50,11 @@ public sealed class ItemVenda : IRestauranteEntity
         Quantidade = quantidade;
         PrecoUnitario = precoUnitario;
         Subtotal = Math.Round(quantidade * precoUnitario, 2, MidpointRounding.AwayFromZero);
+        ModificadoresJson = modificadoresJson;
+    }
+
+    public void AtualizarModificadores(string? modificadoresJson)
+    {
+        ModificadoresJson = modificadoresJson;
     }
 }

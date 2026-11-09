@@ -10,6 +10,7 @@ interface HeaderOperacionalProps {
   onPressVoltar?: () => void;
   onPressPerfil?: () => void;
   onPressNovoProduto?: () => void;
+  onPressHistorico?: () => void;
 }
 
 export function HeaderOperacional({
@@ -18,6 +19,7 @@ export function HeaderOperacional({
   statusCaixa = 'Aberto',
   onPressVoltar,
   onPressPerfil,
+  onPressHistorico,
 }: HeaderOperacionalProps) {
   const isAberto = statusCaixa === 'Aberto';
 
@@ -55,8 +57,22 @@ export function HeaderOperacional({
         </View>
       </View>
 
-      {/* Lado Direito: Status Caixa + Avatar Operador */}
+      {/* Lado Direito: Histórico + Status Caixa + Avatar Operador */}
       <View style={styles.rightRow}>
+        {onPressHistorico && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Histórico de Vendas"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={({ pressed }) => [styles.btnHistoricoHeader, pressed && styles.pressed]}
+            onPress={onPressHistorico}
+          >
+            <ThemedText variant="caption" style={styles.iconeHistorico}>
+              🧾
+            </ThemedText>
+          </Pressable>
+        )}
+
         <View
           style={[
             styles.statusBadge,
@@ -153,6 +169,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  btnHistoricoHeader: {
+    width: 30,
+    height: 30,
+    borderRadius: tokens.radii.sm,
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconeHistorico: {
+    fontSize: 14,
   },
   statusBadge: {
     flexDirection: 'row',

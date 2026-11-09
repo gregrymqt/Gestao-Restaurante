@@ -91,6 +91,22 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
       itens: itens.map((i) => ({
         produtoId: i.produto.id,
         quantidade: i.quantidade,
+        modificadores: i.modificadores?.map((m) => ({
+          opcaoId: m.opcaoId,
+          grupoId: m.grupoId,
+          nome: m.nome,
+          precoAdicional: Number(m.precoAdicional) || 0,
+          insumoId: m.insumoId || null,
+          quantidadeInsumo: Number(m.quantidadeInsumo) || 0,
+          tipoAcao:
+            typeof m.tipoAcao === 'number'
+              ? m.tipoAcao
+              : m.tipoAcao === 'Culinario'
+              ? 1
+              : m.tipoAcao === 'Adicional'
+              ? 2
+              : 3,
+        })),
       })),
     });
   };
@@ -157,6 +173,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
               totalItens={totalItens}
               subtotal={subtotal}
               nomesResumo={nomesResumo}
+              itens={itens}
             />
 
             {/* Subcomponente 2: Seletor de Formas de Pagamento */}

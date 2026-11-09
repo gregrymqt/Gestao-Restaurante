@@ -16,7 +16,12 @@ export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
   const precoFormatado = `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Adicionar ${produto.nome} à comanda`}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressionado]}
+      onPress={() => aoAdicionar(produto)}
+    >
       {/* Imagem Placeholder Decorativa */}
       <View style={styles.imagePlaceholder}>
         <ThemedText variant="title" style={styles.imageIcon}>
@@ -76,7 +81,7 @@ export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
           </Pressable>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -90,6 +95,9 @@ const styles = StyleSheet.create({
     margin: tokens.spacing.xs,
     overflow: 'hidden',
     justifyContent: 'space-between',
+  },
+  cardPressionado: {
+    opacity: 0.88,
   },
   imagePlaceholder: {
     height: 110,

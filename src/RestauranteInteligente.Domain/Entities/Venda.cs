@@ -44,7 +44,7 @@ public sealed class Venda : IRestauranteEntity
         CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
     }
 
-    public ItemVenda AdicionarItem(Guid produtoId, decimal quantidade, decimal precoUnitario)
+    public ItemVenda AdicionarItem(Guid produtoId, decimal quantidade, decimal precoUnitario, string? modificadoresJson = null)
     {
         if (Status == "CANCELADA")
             throw new InvalidOperationException("Não é permitido adicionar itens a uma venda cancelada.");
@@ -55,7 +55,8 @@ public sealed class Venda : IRestauranteEntity
             vendaId: Id,
             produtoId: produtoId,
             quantidade: quantidade,
-            precoUnitario: precoUnitario
+            precoUnitario: precoUnitario,
+            modificadoresJson: modificadoresJson
         );
 
         _itens.Add(item);

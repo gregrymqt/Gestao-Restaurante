@@ -166,6 +166,7 @@ CREATE TABLE "ItensVenda" (
     "Quantidade" NUMERIC(18, 4) NOT NULL,
     "PrecoUnitario" NUMERIC(18, 2) NOT NULL,
     "Subtotal" NUMERIC(18, 2) NOT NULL,
+    "ModificadoresJson" TEXT NULL,
     CONSTRAINT "FK_ItensVenda_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ItensVenda_Venda" FOREIGN KEY ("VendaId") 
@@ -287,6 +288,72 @@ CREATE TABLE "Assinaturas" (
 CREATE INDEX "IX_Assinaturas_PlanoId" ON "Assinaturas"("PlanoId");
 
 -- ------------------------------------------------------------------------------
+-- 14. Grupos de Modificadores de Pedido
+-- ------------------------------------------------------------------------------
+CREATE TABLE "GruposModificadores" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
+    "Nome" VARCHAR(100) NOT NULL,
+    "Descricao" VARCHAR(255) NULL,
+    "Obrigatorio" BOOLEAN NOT NULL DEFAULT FALSE,
+    "MinimoSelecoes" INT NOT NULL DEFAULT 0,
+    "MaximoSelecoes" INT NOT NULL DEFAULT 1,
+    "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
+    "OrdemExibicao" INT NOT NULL DEFAULT 0,
+    CONSTRAINT "FK_GruposModificadores_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE
+);
+
+CREATE INDEX "IX_GruposModificadores_RestauranteId" ON "GruposModificadores"("RestauranteId");
+
+-- ------------------------------------------------------------------------------
+-- 15. Opções de Modificadores (Itens Customizáveis / Adicionais)
+-- ------------------------------------------------------------------------------
+CREATE TABLE "OpcoesModificadores" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
+    "GrupoModificadorId" UUID NOT NULL,
+    "Nome" VARCHAR(100) NOT NULL,
+    "Descricao" VARCHAR(255) NULL,
+    "PrecoAdicional" NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    "InsumoId" UUID NULL,
+    "QuantidadeInsumo" NUMERIC(18, 4) NOT NULL DEFAULT 0,
+    "TipoAcao" VARCHAR(30) NOT NULL DEFAULT 'Culinario',
+    "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
+    "OrdemExibicao" INT NOT NULL DEFAULT 0,
+    CONSTRAINT "FK_OpcoesModificadores_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_OpcoesModificadores_Grupo" FOREIGN KEY ("GrupoModificadorId") 
+        REFERENCES "GruposModificadores"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_OpcoesModificadores_Insumo" FOREIGN KEY ("InsumoId") 
+        REFERENCES "Insumos"("Id") ON DELETE SET NULL
+);
+
+CREATE INDEX "IX_OpcoesModificadores_RestauranteId" ON "OpcoesModificadores"("RestauranteId");
+CREATE INDEX "IX_OpcoesModificadores_GrupoModificadorId" ON "OpcoesModificadores"("GrupoModificadorId");
+
+-- ------------------------------------------------------------------------------
+-- 16. Vínculo Produto x Grupo de Modificadores (N:N)
+-- ------------------------------------------------------------------------------
+CREATE TABLE "ProdutosGruposModificadores" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "RestauranteId" UUID NOT NULL,
+    "ProdutoId" UUID NOT NULL,
+    "GrupoModificadorId" UUID NOT NULL,
+    "Ordem" INT NOT NULL DEFAULT 0,
+    CONSTRAINT "FK_ProdutosGrupos_Restaurante" FOREIGN KEY ("RestauranteId") 
+        REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_ProdutosGrupos_Produto" FOREIGN KEY ("ProdutoId") 
+        REFERENCES "Produtos"("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_ProdutosGrupos_Grupo" FOREIGN KEY ("GrupoModificadorId") 
+        REFERENCES "GruposModificadores"("Id") ON DELETE CASCADE,
+    CONSTRAINT "UQ_ProdutosGruposModificadores_Produto_Grupo" 
+        UNIQUE ("ProdutoId", "GrupoModificadorId")
+);
+
+CREATE INDEX "IX_ProdutosGruposModificadores_RestauranteId" ON "ProdutosGruposModificadores"("RestauranteId");
+
+-- ------------------------------------------------------------------------------
 -- 14. Políticas de Row-Level Security (RLS) - Defesa em Profundidade
 -- ------------------------------------------------------------------------------
 ALTER TABLE "Usuarios" ENABLE ROW LEVEL SECURITY;
@@ -365,5 +432,27 @@ CREATE POLICY restaurante_assinaturas_isolation ON "Assinaturas"
     FOR ALL
     USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
     WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "GruposModificadores" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "GruposModificadores" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_grupos_modificadores_isolation ON "GruposModificadores"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "OpcoesModificadores" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "OpcoesModificadores" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_opcoes_modificadores_isolation ON "OpcoesModificadores"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
+ALTER TABLE "ProdutosGruposModificadores" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProdutosGruposModificadores" FORCE ROW LEVEL SECURITY;
+CREATE POLICY restaurante_produtos_grupos_isolation ON "ProdutosGruposModificadores"
+    FOR ALL
+    USING ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid)
+    WITH CHECK ("RestauranteId" = NULLIF(current_setting('app.current_restaurante_id', true), '')::uuid);
+
 
 

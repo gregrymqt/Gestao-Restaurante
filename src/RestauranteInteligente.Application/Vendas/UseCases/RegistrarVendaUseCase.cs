@@ -108,6 +108,28 @@ public sealed class RegistrarVendaUseCase
                     consumoPorInsumo[ficha.InsumoId] = consumoTotalItem;
                 }
             }
+
+            // Insumos Adicionais dos Modificadores
+            if (itemInput.Modificadores != null)
+            {
+                foreach (var mod in itemInput.Modificadores)
+                {
+                    if (mod.TipoAcao == Domain.Enums.TipoAcaoModificador.Adicional &&
+                        mod.InsumoId.HasValue &&
+                        mod.QuantidadeInsumo > 0m)
+                    {
+                        var consumoTotalMod = itemInput.Quantidade * mod.QuantidadeInsumo;
+                        if (consumoPorInsumo.TryGetValue(mod.InsumoId.Value, out var acumulado))
+                        {
+                            consumoPorInsumo[mod.InsumoId.Value] = acumulado + consumoTotalMod;
+                        }
+                        else
+                        {
+                            consumoPorInsumo[mod.InsumoId.Value] = consumoTotalMod;
+                        }
+                    }
+                }
+            }
         }
 
         // 4. REGRA CRÍTICA ANTI-DEADLOCK: Ordenação determinística ascendente obrigatória por InsumoId
@@ -172,7 +194,16 @@ public sealed class RegistrarVendaUseCase
             foreach (var itemInput in input.Itens)
             {
                 var produto = produtoMap[itemInput.ProdutoId];
-                venda.AdicionarItem(produto.Id, itemInput.Quantidade, produto.Preco);
+                var adicionalTotal = itemInput.Modificadores?.Sum(m => m.PrecoAdicional) ?? 0m;
+                var precoUnitarioEfetivo = produto.Preco + adicionalTotal;
+
+                string? modificadoresJson = null;
+                if (itemInput.Modificadores != null && itemInput.Modificadores.Count > 0)
+                {
+                    modificadoresJson = JsonSerializer.Serialize(itemInput.Modificadores, StreamJsonOptions);
+                }
+
+                venda.AdicionarItem(produto.Id, itemInput.Quantidade, precoUnitarioEfetivo, modificadoresJson);
             }
 
             // 7. Débito no estoque e inclusão de lançamentos append-only no Livro-Razão

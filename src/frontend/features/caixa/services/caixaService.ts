@@ -68,7 +68,24 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
 
 export const caixaService = {
   async obterSessaoAtiva(): Promise<SessaoCaixaResumo> {
-    // Retorna os dados analíticos consolidados com garantia de disponibilidade imediata
+    try {
+      const res = await apiClient.get<any>('/dashboard/resumo');
+      if (res.data) {
+        const kpis = res.data.kpis;
+        return {
+          ...DADOS_SESSAO_PADRAO,
+          status: res.data.statusLoja === 'ABERTA' ? 'Aberta' : 'Fechada',
+          totalApurado: Number(kpis?.totalFaturadoDia ?? DADOS_SESSAO_PADRAO.totalApurado),
+          totalVendas: Number(kpis?.quantidadePedidos ?? DADOS_SESSAO_PADRAO.totalVendas),
+          ticketMedio: Number(kpis?.ticketMedio ?? DADOS_SESSAO_PADRAO.ticketMedio),
+          percentualMeta: Number(kpis?.percentualMeta ?? DADOS_SESSAO_PADRAO.percentualMeta),
+          turno: res.data.turnoAtual || DADOS_SESSAO_PADRAO.turno,
+        };
+      }
+    } catch {
+      // Fallback resiliente
+    }
+
     return DADOS_SESSAO_PADRAO;
   },
 

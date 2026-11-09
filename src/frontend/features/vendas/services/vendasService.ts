@@ -5,6 +5,8 @@ import {
   RegistrarVendaRequestDto,
   VendaResponseDto,
   CriarProdutoInput,
+  VendaHistorico,
+  GrupoModificador,
 } from '../types';
 
 interface ProdutoApiResponse {
@@ -47,6 +49,18 @@ export const vendasService = {
 
   async registrarVenda(dto: RegistrarVendaRequestDto): Promise<VendaResponseDto> {
     const response = await apiClient.post<VendaResponseDto>('/vendas', dto);
+    return response.data;
+  },
+
+  async obterHistorico(dataInicio?: string): Promise<VendaHistorico[]> {
+    const response = await apiClient.get<VendaHistorico[]>('/vendas', {
+      params: dataInicio ? { dataInicio } : undefined,
+    });
+    return response.data;
+  },
+
+  async obterModificadoresProduto(produtoId: string): Promise<GrupoModificador[]> {
+    const response = await apiClient.get<GrupoModificador[]>(`/produtos/${produtoId}/modificadores`);
     return response.data;
   },
 

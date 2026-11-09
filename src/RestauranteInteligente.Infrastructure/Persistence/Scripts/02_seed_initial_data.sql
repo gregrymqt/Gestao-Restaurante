@@ -261,3 +261,155 @@ INSERT INTO "Assinaturas" (
 ) ON CONFLICT ("RestauranteId") DO UPDATE 
 SET "Status" = EXCLUDED."Status", "DataExpiracao" = EXCLUDED."DataExpiracao";
 
+-- 10. Modificadores de Pedido (Ponto da Carne, Observações e Adicionais)
+INSERT INTO "GruposModificadores" (
+    "Id", "RestauranteId", "Nome", "Descricao", "Obrigatorio", "MinimoSelecoes", "MaximoSelecoes", "Ativo"
+) VALUES 
+(
+    'aa111111-1111-1111-1111-111111111111'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Ponto da Carne',
+    'Escolha exatamente o ponto desejado',
+    TRUE,
+    1,
+    1,
+    TRUE
+),
+(
+    'aa222222-2222-2222-2222-222222222222'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Observações de Cozinha',
+    'Retire ingredientes que não deseja',
+    FALSE,
+    0,
+    3,
+    TRUE
+),
+(
+    'aa333333-3333-3333-3333-333333333333'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'Adicionais Especiais',
+    'Turbine seu pedido',
+    FALSE,
+    0,
+    3,
+    TRUE
+) ON CONFLICT ("Id") DO NOTHING;
+
+INSERT INTO "OpcoesModificadores" (
+    "Id", "RestauranteId", "GrupoModificadorId", "Nome", "PrecoAdicional", "InsumoId", "QuantidadeInsumo", "TipoAcao", "Ativo"
+) VALUES 
+(
+    'bb111111-1111-1111-1111-111111111111'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa111111-1111-1111-1111-111111111111'::uuid,
+    'Ao Ponto (Rosado e Suculento)',
+    0.00,
+    NULL,
+    0.0000,
+    'Culinario',
+    TRUE
+),
+(
+    'bb111111-1111-1111-1111-111111111112'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa111111-1111-1111-1111-111111111111'::uuid,
+    'Bem Passado (Sem Sangue)',
+    0.00,
+    NULL,
+    0.0000,
+    'Culinario',
+    TRUE
+),
+(
+    'bb111111-1111-1111-1111-111111111113'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa111111-1111-1111-1111-111111111111'::uuid,
+    'Mal Passado (Selado por Fora)',
+    0.00,
+    NULL,
+    0.0000,
+    'Culinario',
+    TRUE
+),
+(
+    'bb222222-2222-2222-2222-222222222221'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa222222-2222-2222-2222-222222222222'::uuid,
+    'Sem Cebola',
+    0.00,
+    NULL,
+    0.0000,
+    'Remocao',
+    TRUE
+),
+(
+    'bb222222-2222-2222-2222-222222222222'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa222222-2222-2222-2222-222222222222'::uuid,
+    'Sem Picles',
+    0.00,
+    NULL,
+    0.0000,
+    'Remocao',
+    TRUE
+),
+(
+    'bb222222-2222-2222-2222-222222222223'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa222222-2222-2222-2222-222222222222'::uuid,
+    'Sem Maionese',
+    0.00,
+    NULL,
+    0.0000,
+    'Remocao',
+    TRUE
+),
+(
+    'bb333333-3333-3333-3333-333333333331'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa333333-3333-3333-3333-333333333333'::uuid,
+    '+ Bacon Fatiado Defumado',
+    4.50,
+    '33333333-3333-3333-3333-333333333333'::uuid,
+    0.0400,
+    'Adicional',
+    TRUE
+),
+(
+    'bb333333-3333-3333-3333-333333333332'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'aa333333-3333-3333-3333-333333333333'::uuid,
+    '+ Queijo Cheddar Extra',
+    3.50,
+    '44444444-4444-4444-4444-444444444444'::uuid,
+    1.0000,
+    'Adicional',
+    TRUE
+) ON CONFLICT ("Id") DO NOTHING;
+
+INSERT INTO "ProdutosGruposModificadores" (
+    "Id", "RestauranteId", "ProdutoId", "GrupoModificadorId", "Ordem"
+) VALUES 
+(
+    'cc111111-1111-1111-1111-111111111111'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '55555555-5555-5555-5555-555555555555'::uuid,
+    'aa111111-1111-1111-1111-111111111111'::uuid,
+    1
+),
+(
+    'cc222222-2222-2222-2222-222222222222'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '55555555-5555-5555-5555-555555555555'::uuid,
+    'aa222222-2222-2222-2222-222222222222'::uuid,
+    2
+),
+(
+    'cc333333-3333-3333-3333-333333333333'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '55555555-5555-5555-5555-555555555555'::uuid,
+    'aa333333-3333-3333-3333-333333333333'::uuid,
+    3
+) ON CONFLICT ("Id") DO NOTHING;
+

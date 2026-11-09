@@ -1,27 +1,44 @@
 import { create } from 'zustand';
-import { Produto, ItemComanda } from '../types';
+import { Produto, ItemComanda, ModificadorSelecionado } from '../types';
 
 interface CarrinhoState {
   itens: ItemComanda[];
   comandaAtiva: string;
-  adicionarItem: (produto: Produto) => void;
-  removerItem: (produtoId: string) => void;
-  alterarQuantidade: (produtoId: string, quantidade: number) => void;
+  adicionarItem: (produto: Produto, modificadores?: ModificadorSelecionado[]) => void;
+  removerItem: (itemId: string) => void;
+  alterarQuantidade: (itemId: string, quantidade: number) => void;
   limparCarrinho: () => void;
   obterTotalItens: () => number;
   obterSubtotal: () => number;
   obterSubtotalFormatado: () => string;
 }
 
+function gerarHashItem(produtoId: string, modificadores?: readonly ModificadorSelecionado[]): string {
+  if (!modificadores || modificadores.length === 0) {
+    return produtoId;
+  }
+  const idsOrdenados = modificadores
+    .map((m) => m.opcaoId)
+    .slice()
+    .sort()
+    .join('_');
+  return `${produtoId}_${idsOrdenados}`;
+}
+
 export const useCarrinho = create<CarrinhoState>((set, get) => ({
   itens: [],
   comandaAtiva: '#042',
 
-  adicionarItem: (produto: Produto) => {
+  adicionarItem: (produto: Produto, modificadores?: ModificadorSelecionado[]) => {
     set((state) => {
-      const itemExistenteIndex = state.itens.findIndex(
-        (i) => i.produto.id === produto.id
+      const hash = gerarHashItem(produto.id, modificadores);
+      const itemExistenteIndex = state.itens.findIndex((i) => i.id === hash);
+
+      const adicionalTotal = (modificadores || []).reduce(
+        (acc, m) => acc + (Number(m.precoAdicional) || 0),
+        0
       );
+      const precoUnitarioEfetivo = Number((produto.preco + adicionalTotal).toFixed(2));
 
       if (itemExistenteIndex >= 0) {
         const novosItens = [...state.itens];
@@ -30,39 +47,42 @@ export const useCarrinho = create<CarrinhoState>((set, get) => ({
         novosItens[itemExistenteIndex] = {
           ...itemAtual,
           quantidade: novaQtd,
-          subtotal: Number((novaQtd * produto.preco).toFixed(2)),
+          subtotal: Number((novaQtd * itemAtual.precoUnitarioEfetivo).toFixed(2)),
         };
         return { itens: novosItens };
       }
 
       const novoItem: ItemComanda = {
+        id: hash,
         produto,
         quantidade: 1,
-        subtotal: Number(produto.preco.toFixed(2)),
+        precoUnitarioEfetivo,
+        modificadores: modificadores || [],
+        subtotal: precoUnitarioEfetivo,
       };
       return { itens: [...state.itens, novoItem] };
     });
   },
 
-  removerItem: (produtoId: string) => {
+  removerItem: (itemId: string) => {
     set((state) => ({
-      itens: state.itens.filter((i) => i.produto.id !== produtoId),
+      itens: state.itens.filter((i) => i.id !== itemId),
     }));
   },
 
-  alterarQuantidade: (produtoId: string, quantidade: number) => {
+  alterarQuantidade: (itemId: string, quantidade: number) => {
     if (quantidade <= 0) {
-      get().removerItem(produtoId);
+      get().removerItem(itemId);
       return;
     }
 
     set((state) => ({
       itens: state.itens.map((item) => {
-        if (item.produto.id === produtoId) {
+        if (item.id === itemId) {
           return {
             ...item,
             quantidade,
-            subtotal: Number((quantidade * item.produto.preco).toFixed(2)),
+            subtotal: Number((quantidade * item.precoUnitarioEfetivo).toFixed(2)),
           };
         }
         return item;

@@ -42,9 +42,9 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
 8. **Frontend Desacoplado (React Native):**
    - Tipagem estrita (100% TypeScript) espelhando os DTOs do backend e camada de rede centralizada via `apiClient` com interceptors de JWT e ciclo de vida SaaS (Paywall).
    - Arquitetura Feature-First (Bounded Contexts): Funcionalidades de negócio residem estritamente sob `src/frontend/features/<nome>/` (`components/`, `hooks/`, `services/`, `types/`, barreira pública `index.ts`). Rotas em `app/` atuam estritamente como cascas finas de composição (*thin wrappers*).
-   - Segregação de Responsabilidades (SRP): Componentes são visuais e declarativos; Hooks orquestram estado e reatividade (sem chamadas HTTP inline); Services executam exclusivamente transporte de I/O via `apiClient` (sem JSX ou hooks).
+   - Segregação Estrita de Responsabilidades (SRP): Componentes são visuais e declarativos (nunca acople chamadas de rede diretas ou serviços em componentes); Hooks orquestram estado e reatividade (sem chamadas HTTP inline); Services executam exclusivamente transporte de I/O via `apiClient` (sem JSX ou hooks).
    - Alta Performance & Resiliência: Navegação exclusiva via `expo-router` Native Stack (`react-native-screens` com `freezeOnBlur: true`), listas de alta volumetria com `<FlashList>` e persistência local via `MMKV`.
-   - Normatização Local: Regras de micro-ergonomia (hitSlop 48×48dp, máscaras de input, formulários e teto de 350 linhas por componente) estão normatizadas localmente em `src/frontend/AGENTS.md` e na skill `react-native-canonical`.
+   - Normatização Local: Regras de micro-ergonomia (hitSlop 48×48dp, máscaras de input, formulários e teto estrito de 300 linhas por arquivo de componente/hook/service) estão normatizadas localmente em `src/frontend/AGENTS.md` e na skill `react-native-canonical`.
 
 
 9. **Densidade de Tokens e Leitura Cirúrgica (Token-Density):**
@@ -52,15 +52,15 @@ Qualquer código gerado que viole qualquer uma destas cláusulas é **completame
    - Aplicação obrigatória do padrão RTK para comandos de terminal (saídas > 30 linhas proibidas na memória ativa, resumidas no formato `[Status]`, `[Alvo]`, `[Erros]`).
    - Teto estrito de 300 linhas de texto para qualquer arquivo de documentação interna ou memória ativa.
 
-10. **Navegação Determinística via Grafo do Repositório (Graft MCP):**
-    - O repositório é indexado nativamente pelo **Graft** (MCP Server `graft`). É **mandatório** utilizar as ferramentas do Graft para localização de código, dependências e análise de impacto antes de buscas cegas ou leituras integrais de arquivos.
+10. **Navegação Determinística via Grafo do Repositório (Graft MCP/CLI):**
+    - O repositório é indexado nativamente pelo **Graft** (MCP Server `graft` e CLI `graft`). É **mandatório** utilizar as ferramentas do Graft para localização de código, dependências e análise de impacto, sendo **estritamente proibido** o uso de comandos de busca cega (`findstr`, `grep` bruto, etc.).
     - Ferramentas canônicas do Graft via MCP:
       - `graft_find_code`: Localização semântica ranqueada com código inlined ("como X funciona", "onde está Y").
       - `graft_find_all`: Busca exaustiva de todas as ocorrências de um símbolo no monorepo.
       - `graft_trace_calls`: Rastreamento de chamadores (*callers*), chamados (*callees*) e raio de impacto (*blast radius*) antes de alterar contratos ou refatorar métodos.
       - `graft_file_api`: Esqueleto e assinaturas completas da API de um arquivo (~200 tokens) sem poluir o contexto.
       - `graft_repo_map`: Orientação arquitetural e sitemap estrutural do projeto.
-    - O grafo do Graft atualiza automaticamente antes de cada consulta, refletindo edições recentes sem necessidade de scripts manuais.
+    - **Sincronização Obrigatória da Árvore:** Sempre que um novo arquivo for criado, renomeado ou excluído no repositório, o agente deve executar imediatamente `graft build` para manter o grafo e a árvore de símbolos permanentemente sincronizados.
 
 11. **Diretriz de Produto - Aplicativo Mobile Focado no Gestor:**
     - O aplicativo mobile é arquitetado para o **Dono / Gestor do Restaurante**.
