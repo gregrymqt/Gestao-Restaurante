@@ -197,6 +197,7 @@ public static class DependencyInjection
         services.AddScoped<IRestauranteRepository, RestauranteRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
+        services.AddScoped<IGrupoModificadorRepository, GrupoModificadorRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         var connectionString = env.Database.ConnectionString;

@@ -12,10 +12,34 @@ namespace RestauranteInteligente.Api.Controllers;
 public sealed class VendasController : ControllerBase
 {
     private readonly RegistrarVendaUseCase _registrarVendaUseCase;
+    private readonly ListarHistoricoVendasUseCase? _listarHistoricoVendasUseCase;
 
-    public VendasController(RegistrarVendaUseCase registrarVendaUseCase)
+    public VendasController(
+        RegistrarVendaUseCase registrarVendaUseCase,
+        ListarHistoricoVendasUseCase? listarHistoricoVendasUseCase = null)
     {
-        _registrarVendaUseCase = registrarVendaUseCase;
+        _registrarVendaUseCase = registrarVendaUseCase ?? throw new ArgumentNullException(nameof(registrarVendaUseCase));
+        _listarHistoricoVendasUseCase = listarHistoricoVendasUseCase;
+    }
+
+    /// <summary>
+    /// Lista o histórico de vendas concluídas do restaurante com itens e valores discriminados.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> ListarHistoricoVendas([FromQuery] DateTimeOffset? dataInicio, [FromQuery] int limite = 50, CancellationToken ct = default)
+    {
+        if (_listarHistoricoVendasUseCase == null)
+            return StatusCode(501, new { error = "Caso de uso de histórico não configurado." });
+
+        try
+        {
+            var resultado = await _listarHistoricoVendasUseCase.ExecutarAsync(dataInicio, limite, ct);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -38,7 +62,18 @@ public sealed class VendasController : ControllerBase
         {
             var input = new RegistrarVendaInputDto(
                 request.FormaPagamento,
-                request.Itens.Select(i => new ItemVendaInputDto(i.ProdutoId, i.Quantidade)).ToList()
+                request.Itens.Select(i => new ItemVendaInputDto(
+                    i.ProdutoId,
+                    i.Quantidade,
+                    i.Modificadores?.Select(m => new ItemVendaModificadorInputDto(
+                        m.OpcaoId,
+                        m.Nome,
+                        m.PrecoAdicional,
+                        m.InsumoId,
+                        m.QuantidadeInsumo,
+                        m.TipoAcao
+                    )).ToList()
+                )).ToList()
             );
 
             var resultado = await _registrarVendaUseCase.ExecutarAsync(input, ct);

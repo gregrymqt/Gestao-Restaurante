@@ -15,7 +15,7 @@ export function useDashboardExecutivo() {
   } = useQuery<DashboardExecutivoData>({
     queryKey: ['dashboard', 'executivo', tenant?.id],
     queryFn: () => dashboardService.obterResumoExecutivo(),
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 5000, // 5 segundos para refletir alterações em tempo real
   });
 
   return {

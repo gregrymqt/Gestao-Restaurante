@@ -7,16 +7,34 @@ import {
   DataOpcaoFiltro,
 } from '../types';
 
-export const DATAS_FILTRO_PADRAO: DataOpcaoFiltro[] = [
-  { label: 'Amanhã, 28/09', sublabel: '(D+1)', dataAlvo: '2026-09-28' },
-  { label: 'Terça, 29/09', sublabel: '(D+2)', dataAlvo: '2026-09-29' },
-  { label: 'Quarta, 30/09', sublabel: '(D+3)', dataAlvo: '2026-09-30' },
-  { label: 'Quinta, 01/10', sublabel: '(D+4)', dataAlvo: '2026-10-01' },
-];
+export function gerarDatasFiltroDinamicas(): DataOpcaoFiltro[] {
+  const opcoes: DataOpcaoFiltro[] = [];
+  const hoje = new Date();
+  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+  for (let i = 1; i <= 4; i++) {
+    const d = new Date(hoje);
+    d.setDate(d.getDate() + i);
+    const diaMes = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const diaNome = i === 1 ? 'Amanhã' : diasSemana[d.getDay()];
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    const dataAlvoStr = `${ano}-${mes}-${dia}`;
+
+    opcoes.push({
+      label: `${diaNome}, ${diaMes}`,
+      sublabel: `(D+${i})`,
+      dataAlvo: dataAlvoStr,
+    });
+  }
+  return opcoes;
+}
 
 export function useCapacidadeProducao() {
   const queryClient = useQueryClient();
-  const [dataAlvo, setDataAlvo] = useState<string>('2026-09-28');
+  const datasFiltro = useMemo(() => gerarDatasFiltroDinamicas(), []);
+  const [dataAlvo, setDataAlvo] = useState<string>(() => datasFiltro[0]?.dataAlvo || '');
   const [produtoFicha, setProdutoFicha] = useState<ItemCapacidadeProducao | null>(null);
   const [fichaIngredientes, setFichaIngredientes] = useState<FichaTecnicaIngrediente[]>([]);
   const [isFichaModalOpen, setIsFichaModalOpen] = useState<boolean>(false);
@@ -31,7 +49,7 @@ export function useCapacidadeProducao() {
   } = useQuery({
     queryKey: ['capacidade-producao', dataAlvo],
     queryFn: () => previsoesService.obterCapacidadeProducao(dataAlvo),
-    staleTime: 1000 * 60 * 5, // 5 minutos de cache
+    staleTime: 5000, // 5 segundos para refletir novas previsões
   });
 
   const ordemCompraMutation = useMutation({
@@ -103,7 +121,7 @@ export function useCapacidadeProducao() {
     refetch,
     dataAlvo,
     setDataAlvo,
-    datasFiltro: DATAS_FILTRO_PADRAO,
+    datasFiltro,
     // Modais & Ações
     produtoFicha,
     fichaIngredientes,

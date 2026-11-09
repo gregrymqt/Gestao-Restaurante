@@ -22,6 +22,7 @@ public sealed class VendaRepository : IVendaRepository
         return await _context.Vendas
             .AsNoTracking()
             .Include(v => v.Itens)
+                .ThenInclude(i => i.Produto)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
     }
 
@@ -31,7 +32,20 @@ public sealed class VendaRepository : IVendaRepository
             .AsNoTracking()
             .Where(v => v.Status == "CONCLUIDA" && v.DataHora >= dataInicio)
             .Include(v => v.Itens)
-            .OrderBy(v => v.DataHora)
+                .ThenInclude(i => i.Produto)
+            .OrderByDescending(v => v.DataHora)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Venda>> ObterUltimasVendasAsync(int limite = 50, CancellationToken ct = default)
+    {
+        return await _context.Vendas
+            .AsNoTracking()
+            .Where(v => v.Status == "CONCLUIDA")
+            .Include(v => v.Itens)
+                .ThenInclude(i => i.Produto)
+            .OrderByDescending(v => v.DataHora)
+            .Take(limite)
             .ToListAsync(ct);
     }
 

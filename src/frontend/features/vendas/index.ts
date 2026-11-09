@@ -1,9 +1,15 @@
 export { PdvScreen } from './screens/PdvScreen';
 export { CheckoutBottomSheet } from './components/CheckoutBottomSheet';
 export { ModalNovoProduto } from './components/ModalNovoProduto';
+export { ModalHistoricoVendas } from './components/ModalHistoricoVendas';
+export { CardVendaHistorico } from './components/CardVendaHistorico';
+export { ModalDetalheVenda } from './components/ModalDetalheVenda';
+export { ModalModificadoresProduto } from './components/ModalModificadoresProduto';
 export { useCarrinho } from './hooks/useCarrinho';
 export { useCatalogoProdutos } from './hooks/useCatalogoProdutos';
 export { useRegistrarVenda } from './hooks/useRegistrarVenda';
 export { useCriarProduto } from './hooks/useCriarProduto';
+export { useHistoricoVendas } from './hooks/useHistoricoVendas';
+export { useModificadoresProduto } from './hooks/useModificadoresProduto';
 export { vendasService } from './services/vendasService';
 export * from './types';

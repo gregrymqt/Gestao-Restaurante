@@ -39,16 +39,34 @@ export const DADOS_DASHBOARD_PADRAO: DashboardExecutivoData = {
 export const dashboardService = {
   async obterResumoExecutivo(): Promise<DashboardExecutivoData> {
     try {
-      // Tenta obter faturamento da sessão ativa de caixa
-      const resCaixa = await apiClient.get<any>('/caixa/status');
-      if (resCaixa.data) {
+      // Consulta os dados reais e consolidados do backend .NET 9
+      const res = await apiClient.get<any>('/dashboard/resumo');
+      if (res.data) {
         return {
-          ...DADOS_DASHBOARD_PADRAO,
-          statusLoja: resCaixa.data.status === 'ABERTO' ? 'ABERTA' : 'FECHADA',
+          statusLoja: res.data.statusLoja === 'ABERTA' ? 'ABERTA' : 'FECHADA',
+          turnoAtual: res.data.turnoAtual || DADOS_DASHBOARD_PADRAO.turnoAtual,
           kpis: {
-            ...DADOS_DASHBOARD_PADRAO.kpis,
-            totalFaturadoDia: resCaixa.data.totalVendas || DADOS_DASHBOARD_PADRAO.kpis.totalFaturadoDia,
-            quantidadePedidos: resCaixa.data.quantidadeVendas || DADOS_DASHBOARD_PADRAO.kpis.quantidadePedidos,
+            totalFaturadoDia: Number(res.data.kpis?.totalFaturadoDia ?? 0),
+            quantidadePedidos: Number(res.data.kpis?.quantidadePedidos ?? 0),
+            ticketMedio: Number(res.data.kpis?.ticketMedio ?? 0),
+            percentualMeta: Number(res.data.kpis?.percentualMeta ?? 0),
+            faturamentoOntem: Number(res.data.kpis?.faturamentoOntem ?? 0),
+          },
+          insumosCriticos: (res.data.insumosCriticos && res.data.insumosCriticos.length > 0)
+            ? res.data.insumosCriticos.map((i: any) => ({
+                id: i.id,
+                nome: i.nome,
+                quantidadeAtual: Number(i.quantidadeAtual),
+                quantidadeMinima: Number(i.quantidadeMinima),
+                unidadeMedida: i.unidadeMedida,
+              }))
+            : DADOS_DASHBOARD_PADRAO.insumosCriticos,
+          previsaoIa: {
+            dataAlvoFormatada: res.data.previsaoIa?.dataAlvoFormatada || DADOS_DASHBOARD_PADRAO.previsaoIa.dataAlvoFormatada,
+            totalItensPrevistos: Number(res.data.previsaoIa?.totalItensPrevistos ?? 52),
+            variacaoPercentual: Number(res.data.previsaoIa?.variacaoPercentual ?? 14.5),
+            condicaoClimaPrevista: res.data.previsaoIa?.condicaoClimaPrevista || DADOS_DASHBOARD_PADRAO.previsaoIa.condicaoClimaPrevista,
+            produtoDestaque: res.data.previsaoIa?.produtoDestaque || DADOS_DASHBOARD_PADRAO.previsaoIa.produtoDestaque,
           },
         };
       }
