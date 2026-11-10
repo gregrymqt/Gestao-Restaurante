@@ -3,6 +3,15 @@ import { storage, STORAGE_KEYS } from './storage';
 import { env } from '../config/env';
 import { useConnectionStore } from '../hooks/useConnectionStore';
 
+let unauthorizedHandler: (() => void) | null = null;
+
+/**
+ * Registra callback desacoplado invocado quando a API retorna 401 (sessão expirada).
+ */
+export function registerUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiUrl,
   timeout: 15000,
@@ -75,10 +84,11 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Sessão expirada: limpa credenciais para redirecionamento pelo Auth Guard
+      // Sessão expirada: limpa credenciais e notifica store para redirecionamento pelo Auth Guard
       storage.delete(STORAGE_KEYS.AUTH_TOKEN);
       storage.delete(STORAGE_KEYS.REFRESH_TOKEN);
       storage.delete(STORAGE_KEYS.ACTIVE_OPERATOR);
+      unauthorizedHandler?.();
     }
     return Promise.reject(error);
   }

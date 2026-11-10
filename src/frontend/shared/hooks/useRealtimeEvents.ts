@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
+import { registerUnauthorizedHandler } from '../services/api';
 import { sseClient } from '../services/sseClient';
+import { useConnectionStore } from './useConnectionStore';
 import { useSseStatus } from './useSseStatus';
 import {
   TenantStreamEvent,
@@ -17,11 +19,27 @@ export function useRealtimeEvents() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
 
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+  const wasOfflineRef = useRef(false);
+
   const setStatus = useSseStatus((state) => state.setStatus);
   const setLastEventTimestamp = useSseStatus((state) => state.setLastEventTimestamp);
   const showToast = useSseStatus((state) => state.showToast);
 
   useEffect(() => {
+    if (!isApiOnline) {
+      wasOfflineRef.current = true;
+      return;
+    }
+    if (wasOfflineRef.current) {
+      wasOfflineRef.current = false;
+      queryClient.invalidateQueries();
+    }
+  }, [isApiOnline, queryClient]);
+
+  useEffect(() => {
+    registerUnauthorizedHandler(() => logout());
+
     // Registro dos ouvintes de ciclo de vida do SSE
     const unsubscribeStatus = sseClient.onStatusChange((newStatus) => {
       setStatus(newStatus);
@@ -142,6 +160,7 @@ export function useRealtimeEvents() {
     }
 
     return () => {
+      registerUnauthorizedHandler(null);
       unsubscribeStatus();
       unsubscribeUnauthorized();
       unsubscribeEvent();
