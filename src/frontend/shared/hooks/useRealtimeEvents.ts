@@ -7,6 +7,7 @@ import {
   TenantStreamEvent,
   SseEventTypes,
   EstoqueCriticoPayload,
+  NovoPedidoCozinhaPayload,
 } from '../types/sse.types';
 
 export function useRealtimeEvents() {
@@ -92,6 +93,32 @@ export function useRealtimeEvents() {
             mensagem: 'Conferência física gravada com sucesso no Ledger imutável.',
             icone: '🔒',
           });
+          break;
+        }
+
+        case SseEventTypes.NOVO_PEDIDO_COZINHA: {
+          queryClient.invalidateQueries({ queryKey: ['kds-pedidos'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+          queryClient.invalidateQueries({ queryKey: ['vendas-historico'] });
+
+          try {
+            const payload: NovoPedidoCozinhaPayload = JSON.parse(event.payloadJson);
+            showToast({
+              tipo: 'info',
+              titulo: `Novo Pedido ${payload.codigoCurto} na Cozinha`,
+              mensagem: `${payload.quantidadeItens} ${payload.quantidadeItens === 1 ? 'item enviado' : 'itens enviados'} para a chapa em tempo real.`,
+              icone: '👨‍🍳',
+            });
+          } catch {
+            // Ignora parse caso venha payload mínimo
+          }
+          break;
+        }
+
+        case SseEventTypes.PEDIDO_STATUS_ATUALIZADO: {
+          queryClient.invalidateQueries({ queryKey: ['kds-pedidos'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+          queryClient.invalidateQueries({ queryKey: ['vendas-historico'] });
           break;
         }
 

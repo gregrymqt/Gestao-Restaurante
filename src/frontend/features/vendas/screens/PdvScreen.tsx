@@ -96,6 +96,7 @@ export function PdvScreen() {
           onPressVoltar={() => router.push('/(tabs)')}
           onPressNovoProduto={() => setIsNovoProdutoOpen(true)}
           onPressHistorico={() => setIsHistoricoOpen(true)}
+          onPressKds={() => router.push('/kds')}
         />
         <BarraPesquisaPdv
           valor={termoBusca}

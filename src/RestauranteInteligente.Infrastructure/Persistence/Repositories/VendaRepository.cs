@@ -49,6 +49,27 @@ public sealed class VendaRepository : IVendaRepository
             .ToListAsync(ct);
     }
 
+    public async Task<Venda?> ObterPorIdParaAtualizacaoAsync(Guid id, CancellationToken ct = default)
+    {
+        return await _context.Vendas
+            .AsTracking()
+            .Include(v => v.Itens)
+                .ThenInclude(i => i.Produto)
+            .FirstOrDefaultAsync(v => v.Id == id, ct);
+    }
+
+    public async Task<IReadOnlyList<Venda>> ObterPedidosAtivosKdsAsync(CancellationToken ct = default)
+    {
+        return await _context.Vendas
+            .AsNoTracking()
+            .Where(v => v.Status == "CONCLUIDA" &&
+                        (v.StatusPreparo == "RECEBIDO" || v.StatusPreparo == "EM_PREPARO" || v.StatusPreparo == "PRONTO"))
+            .Include(v => v.Itens)
+                .ThenInclude(i => i.Produto)
+            .OrderBy(v => v.DataHora)
+            .ToListAsync(ct);
+    }
+
     public async Task AdicionarAsync(Venda venda, CancellationToken ct = default)
     {
         await _context.Vendas.AddAsync(venda, ct);

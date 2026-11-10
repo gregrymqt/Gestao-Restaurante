@@ -102,6 +102,7 @@ export interface VendaResponseDto {
   readonly fechamentoCaixaId: string;
   readonly dataHora: string;
   readonly status: string;
+  readonly statusPreparo?: string;
   readonly formaPagamento: string;
   readonly valorTotal: number;
   readonly itens: readonly ItemVendaResponseDto[];
@@ -136,6 +137,7 @@ export interface VendaHistorico {
   readonly fechamentoCaixaId?: string | null;
   readonly dataHora: string;
   readonly status: string;
+  readonly statusPreparo?: string;
   readonly formaPagamento: string;
   readonly valorTotal: number;
   readonly quantidadeItens: number;

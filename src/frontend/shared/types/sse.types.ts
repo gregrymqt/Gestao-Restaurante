@@ -13,6 +13,8 @@ export enum SseEventTypes {
   PREVISAO_CONCLUIDA = 'PrevisaoDemandaConcluida',
   VENDA_REGISTRADA = 'VendaRegistrada',
   CAIXA_TURNO_FECHADO = 'CaixaTurnoFechado',
+  NOVO_PEDIDO_COZINHA = 'NovoPedidoCozinha',
+  PEDIDO_STATUS_ATUALIZADO = 'PedidoStatusAtualizado',
 }
 
 export interface EstoqueCriticoPayload {
@@ -46,6 +48,21 @@ export interface VendaRegistradaPayload {
 export interface CaixaFechadoPayload {
   fechamentoId: string;
   horarioFechamento: string;
+}
+
+export interface NovoPedidoCozinhaPayload {
+  vendaId: string;
+  codigoCurto: string;
+  statusPreparo: string;
+  quantidadeItens: number;
+  dataHora: string;
+}
+
+export interface PedidoStatusAtualizadoPayload {
+  vendaId: string;
+  codigoCurto: string;
+  statusPreparo: string;
+  atualizadoEm: string;
 }
 
 export interface RealtimeToastNotice {

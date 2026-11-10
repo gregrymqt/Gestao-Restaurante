@@ -11,6 +11,7 @@ interface HeaderOperacionalProps {
   onPressPerfil?: () => void;
   onPressNovoProduto?: () => void;
   onPressHistorico?: () => void;
+  onPressKds?: () => void;
 }
 
 export function HeaderOperacional({
@@ -20,6 +21,7 @@ export function HeaderOperacional({
   onPressVoltar,
   onPressPerfil,
   onPressHistorico,
+  onPressKds,
 }: HeaderOperacionalProps) {
   const isAberto = statusCaixa === 'Aberto';
 
@@ -59,6 +61,20 @@ export function HeaderOperacional({
 
       {/* Lado Direito: Histórico + Status Caixa + Avatar Operador */}
       <View style={styles.rightRow}>
+        {onPressKds && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Abrir Painel da Cozinha KDS"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={({ pressed }) => [styles.btnHistoricoHeader, pressed && styles.pressed]}
+            onPress={onPressKds}
+          >
+            <ThemedText variant="caption" style={styles.iconeHistorico}>
+              👨‍🍳
+            </ThemedText>
+          </Pressable>
+        )}
+
         {onPressHistorico && (
           <Pressable
             accessibilityRole="button"

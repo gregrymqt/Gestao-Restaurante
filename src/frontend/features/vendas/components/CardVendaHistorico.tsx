@@ -3,6 +3,7 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { VendaHistorico } from '../types';
+import { obterBadgeStatusPreparo } from '@/features/kds';
 
 interface CardVendaHistoricoProps {
   venda: VendaHistorico;
@@ -34,6 +35,7 @@ export function CardVendaHistorico({ venda, onPress }: CardVendaHistoricoProps) 
   };
 
   const badge = obterBadgePagamento(venda.formaPagamento);
+  const badgeKds = obterBadgeStatusPreparo(venda.statusPreparo);
 
   return (
     <Pressable
@@ -51,6 +53,11 @@ export function CardVendaHistorico({ venda, onPress }: CardVendaHistoricoProps) 
             </ThemedText>
             <ThemedText variant="caption" style={styles.horario}>
               • {dataFormatada}
+            </ThemedText>
+          </View>
+          <View style={[styles.badge, { backgroundColor: badgeKds.bg, alignSelf: 'flex-start', marginBottom: 4 }]}>
+            <ThemedText variant="caption" weight="bold" style={{ color: badgeKds.text, fontSize: 10 }}>
+              {badgeKds.label}
             </ThemedText>
           </View>
           <ThemedText variant="body" numberOfLines={1} style={styles.resumoItens}>

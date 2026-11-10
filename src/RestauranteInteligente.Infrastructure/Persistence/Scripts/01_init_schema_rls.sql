@@ -141,6 +141,10 @@ CREATE TABLE "Vendas" (
     "ValorTotal" NUMERIC(18, 2) NOT NULL,
     "FormaPagamento" VARCHAR(50) NOT NULL,
     "Status" VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDA',
+    "StatusPreparo" VARCHAR(20) NOT NULL DEFAULT 'RECEBIDO',
+    "PreparoIniciadoEm" TIMESTAMPTZ NULL,
+    "ProntoEm" TIMESTAMPTZ NULL,
+    "EntregueEm" TIMESTAMPTZ NULL,
     "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_Vendas_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
@@ -154,6 +158,9 @@ ON "Vendas"("RestauranteId", "DataHora" DESC);
 
 CREATE INDEX "IX_Vendas_FechamentoCaixaId" 
 ON "Vendas"("FechamentoCaixaId");
+
+CREATE INDEX "IX_Vendas_Restaurante_StatusPreparo_DataHora" 
+ON "Vendas"("RestauranteId", "StatusPreparo", "DataHora" ASC);
 
 -- ------------------------------------------------------------------------------
 -- 8. Detalhamento de Itens da Venda
