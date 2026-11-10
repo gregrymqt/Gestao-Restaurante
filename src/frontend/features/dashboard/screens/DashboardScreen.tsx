@@ -43,6 +43,7 @@ export function DashboardScreen() {
   const handleNavegarCaixa = () => router.push('/(tabs)/caixa');
   const handleNavegarPrevisoes = () => router.push('/(tabs)/previsoes');
   const handleAbrirPdvTeste = () => router.push('/(tabs)/pdv');
+  const handleAbrirKds = () => router.push('/kds');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -87,6 +88,30 @@ export function DashboardScreen() {
                 </ThemedText>
                 <ThemedText variant="caption" style={styles.btnHistoricoSub}>
                   {dashboard.kpis.quantidadePedidos} {dashboard.kpis.quantidadePedidos === 1 ? 'pedido registrado' : 'pedidos registrados'} • Toque para auditar cupons
+                </ThemedText>
+              </View>
+            </View>
+            <ThemedText variant="subtitle" weight="bold" style={styles.btnHistoricoSeta}>
+              →
+            </ThemedText>
+          </Pressable>
+
+          {/* Botão Operacional: Painel da Cozinha (KDS) */}
+          <Pressable
+            style={({ pressed }) => [styles.btnHistorico, pressed && styles.btnHistoricoPressed]}
+            onPress={handleAbrirKds}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir Painel da Cozinha KDS"
+          >
+            <View style={styles.btnHistoricoLeft}>
+              <ThemedText style={styles.btnHistoricoIcone}>👨‍🍳</ThemedText>
+              <View>
+                <ThemedText variant="body" weight="bold" style={styles.btnHistoricoTexto}>
+                  Painel da Cozinha (KDS)
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.btnHistoricoSub}>
+                  {dashboard.kpis.pedidosNaCozinha ?? 0}{' '}
+                  {(dashboard.kpis.pedidosNaCozinha ?? 0) === 1 ? 'pedido em preparo na chapa' : 'pedidos ativos na cozinha'} • Tela cheia
                 </ThemedText>
               </View>
             </View>

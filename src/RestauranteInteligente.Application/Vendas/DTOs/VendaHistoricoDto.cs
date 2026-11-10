@@ -19,5 +19,6 @@ public sealed record VendaHistoricoDto(
     string FormaPagamento,
     decimal ValorTotal,
     int QuantidadeItens,
-    IReadOnlyList<VendaHistoricoItemDto> Itens
+    IReadOnlyList<VendaHistoricoItemDto> Itens,
+    string StatusPreparo = "RECEBIDO"
 );

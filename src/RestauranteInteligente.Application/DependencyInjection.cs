@@ -5,6 +5,7 @@ using RestauranteInteligente.Application.Auth.UseCases;
 using RestauranteInteligente.Application.Caixa.UseCases;
 using RestauranteInteligente.Application.Dashboard.UseCases;
 using RestauranteInteligente.Application.Estoque.Services;
+using RestauranteInteligente.Application.Kds.UseCases;
 using RestauranteInteligente.Application.Previsoes.UseCases;
 using RestauranteInteligente.Application.Produtos.UseCases;
 using RestauranteInteligente.Application.Vendas.UseCases;
@@ -19,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<RegistrarVendaUseCase>();
         services.AddScoped<ObterModificadoresProdutoUseCase>();
         services.AddScoped<ListarHistoricoVendasUseCase>();
+        services.AddScoped<ListarPedidosKdsUseCase>();
+        services.AddScoped<AtualizarStatusPedidoKdsUseCase>();
         services.AddScoped<ObterResumoDashboardUseCase>();
         services.AddScoped<ObterStatusCaixaUseCase>();
         services.AddScoped<AbrirCaixaUseCase>();

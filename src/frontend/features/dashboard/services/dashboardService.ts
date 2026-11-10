@@ -10,6 +10,7 @@ export const DADOS_DASHBOARD_PADRAO: DashboardExecutivoData = {
     ticketMedio: 65.27,
     percentualMeta: 18.4,
     faturamentoOntem: 2095.00,
+    pedidosNaCozinha: 3,
   },
   insumosCriticos: [
     {
@@ -51,6 +52,7 @@ export const dashboardService = {
             ticketMedio: Number(res.data.kpis?.ticketMedio ?? 0),
             percentualMeta: Number(res.data.kpis?.percentualMeta ?? 0),
             faturamentoOntem: Number(res.data.kpis?.faturamentoOntem ?? 0),
+            pedidosNaCozinha: Number(res.data.kpis?.pedidosNaCozinha ?? 0),
           },
           insumosCriticos: (res.data.insumosCriticos && res.data.insumosCriticos.length > 0)
             ? res.data.insumosCriticos.map((i: any) => ({

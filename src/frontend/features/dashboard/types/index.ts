@@ -4,6 +4,7 @@ export interface KpisFaturamento {
   readonly ticketMedio: number;
   readonly percentualMeta: number;
   readonly faturamentoOntem: number;
+  readonly pedidosNaCozinha?: number;
 }
 
 export interface InsumoCriticoResumo {

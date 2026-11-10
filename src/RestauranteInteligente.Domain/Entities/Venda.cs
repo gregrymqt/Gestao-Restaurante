@@ -1,4 +1,5 @@
 using RestauranteInteligente.Domain.Common.Interfaces;
+using RestauranteInteligente.Domain.Enums;
 
 namespace RestauranteInteligente.Domain.Entities;
 
@@ -14,6 +15,10 @@ public sealed class Venda : IRestauranteEntity
     public Guid? FechamentoCaixaId { get; private set; }
     public DateTimeOffset DataHora { get; private set; } = DateTimeOffset.UtcNow;
     public string Status { get; private set; } = "CONCLUIDA";
+    public string StatusPreparo { get; private set; } = StatusPreparoKds.Recebido;
+    public DateTimeOffset? PreparoIniciadoEm { get; private set; }
+    public DateTimeOffset? ProntoEm { get; private set; }
+    public DateTimeOffset? EntregueEm { get; private set; }
     public string FormaPagamento { get; private set; } = string.Empty;
     public decimal ValorTotal { get; private set; }
     public DateTimeOffset CriadoEm { get; private set; } = DateTimeOffset.UtcNow;
@@ -29,7 +34,8 @@ public sealed class Venda : IRestauranteEntity
         Guid? fechamentoCaixaId = null,
         DateTimeOffset? dataHora = null,
         string status = "CONCLUIDA",
-        DateTimeOffset? criadoEm = null)
+        DateTimeOffset? criadoEm = null,
+        string? statusPreparo = null)
     {
         if (string.IsNullOrWhiteSpace(formaPagamento))
             throw new ArgumentException("A forma de pagamento é obrigatória.", nameof(formaPagamento));
@@ -40,6 +46,9 @@ public sealed class Venda : IRestauranteEntity
         FormaPagamento = formaPagamento.Trim();
         DataHora = dataHora ?? DateTimeOffset.UtcNow;
         Status = string.IsNullOrWhiteSpace(status) ? "CONCLUIDA" : status.Trim().ToUpperInvariant();
+        StatusPreparo = string.IsNullOrWhiteSpace(statusPreparo)
+            ? (Status == "CANCELADA" ? StatusPreparoKds.Cancelado : StatusPreparoKds.Recebido)
+            : StatusPreparoKds.NormalizarEValidar(statusPreparo);
         ValorTotal = 0m;
         CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
     }
@@ -79,5 +88,33 @@ public sealed class Venda : IRestauranteEntity
             throw new InvalidOperationException("A venda já se encontra cancelada.");
 
         Status = "CANCELADA";
+        StatusPreparo = StatusPreparoKds.Cancelado;
+    }
+
+    public void AtualizarStatusPreparo(string novoStatus)
+    {
+        if (Status == "CANCELADA")
+            throw new InvalidOperationException("Não é possível alterar o status de preparo de uma venda cancelada.");
+
+        var normalizado = StatusPreparoKds.NormalizarEValidar(novoStatus);
+        var agora = DateTimeOffset.UtcNow;
+
+        if (normalizado == StatusPreparoKds.EmPreparo && PreparoIniciadoEm is null)
+            PreparoIniciadoEm = agora;
+
+        if (normalizado == StatusPreparoKds.Pronto)
+        {
+            PreparoIniciadoEm ??= agora;
+            ProntoEm ??= agora;
+        }
+
+        if (normalizado == StatusPreparoKds.Entregue)
+        {
+            PreparoIniciadoEm ??= agora;
+            ProntoEm ??= agora;
+            EntregueEm ??= agora;
+        }
+
+        StatusPreparo = normalizado;
     }
 }

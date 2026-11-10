@@ -276,6 +276,30 @@ public sealed class RegistrarVendaUseCase
                 }
             }
 
+            // 12. Notificação em tempo real para o Painel de Cozinha (KDS)
+            try
+            {
+                var kdsPayload = JsonSerializer.Serialize(new
+                {
+                    vendaId = venda.Id,
+                    codigoCurto = $"#{venda.Id.ToString("N")[..4].ToUpperInvariant()}",
+                    statusPreparo = venda.StatusPreparo,
+                    quantidadeItens = venda.Itens.Count,
+                    dataHora = venda.DataHora
+                }, StreamJsonOptions);
+
+                await _streamService.PublishAsync(
+                    tenantId,
+                    "NovoPedidoCozinha",
+                    kdsPayload,
+                    Guid.NewGuid(),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao publicar evento SSE NovoPedidoCozinha para a venda {VendaId}.", venda.Id);
+            }
+
             return new RegistrarVendaOutputDto(
                 venda.Id,
                 venda.RestauranteId,

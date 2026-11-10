@@ -212,14 +212,14 @@ VALUES (
 ) ON CONFLICT ("Id") DO UPDATE SET "Status" = 'ABERTO', "ValorTotalVendas" = 327.00, "QuantidadeVendas" = 3;
 
 -- 7. Vendas Concluídas do Dia de Hoje
-INSERT INTO "Vendas" ("Id", "RestauranteId", "FechamentoCaixaId", "DataHora", "ValorTotal", "FormaPagamento", "Status", "CriadoEm")
+INSERT INTO "Vendas" ("Id", "RestauranteId", "FechamentoCaixaId", "DataHora", "ValorTotal", "StatusPreparo", "FormaPagamento", "Status", "CriadoEm")
 VALUES 
 (
     'a1111111-1111-1111-1111-111111111111'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     '8b7bb140-4f97-4330-8a94-cdd3dd0757c5'::uuid,
-    CURRENT_DATE + TIME '11:30:00',
-    76.00,
+    CURRENT_TIMESTAMP - INTERVAL '16 minutes',
+    76.00, 'PRONTO',
     'PIX',
     'CONCLUIDA',
     CURRENT_TIMESTAMP
@@ -228,8 +228,8 @@ VALUES
     'a2222222-2222-2222-2222-222222222222'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     '8b7bb140-4f97-4330-8a94-cdd3dd0757c5'::uuid,
-    CURRENT_DATE + TIME '12:15:00',
-    141.00,
+    CURRENT_TIMESTAMP - INTERVAL '11 minutes',
+    141.00, 'EM_PREPARO',
     'CARTAO',
     'CONCLUIDA',
     CURRENT_TIMESTAMP
@@ -238,8 +238,8 @@ VALUES
     'a3333333-3333-3333-3333-333333333333'::uuid,
     '11111111-1111-1111-1111-111111111111'::uuid,
     '8b7bb140-4f97-4330-8a94-cdd3dd0757c5'::uuid,
-    CURRENT_DATE + TIME '12:45:00',
-    110.00,
+    CURRENT_TIMESTAMP - INTERVAL '3 minutes',
+    110.00, 'RECEBIDO',
     'Dinheiro',
     'CONCLUIDA',
     CURRENT_TIMESTAMP
@@ -251,13 +251,29 @@ VALUES
 -- Venda 1: 2x Hambúrguer Supremo
 (gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a1111111-1111-1111-1111-111111111111'::uuid, '55555555-5555-5555-5555-555555555555'::uuid, 2.0000, 38.00, 76.00),
 -- Venda 2: 3x Double Smash Bacon + 2x Refri
-(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a2222222-2222-2222-2222-222222222222'::uuid, '55555555-5555-5555-5555-555555555557'::uuid, 3.0000, 42.00, 126.00),
+(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a2222222-2222-2222-2222-222222222222'::uuid, '55555555-5555-5555-5555-555555555552'::uuid, 3.0000, 42.00, 126.00),
 (gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a2222222-2222-2222-2222-222222222222'::uuid, '55555555-5555-5555-5555-555555555556'::uuid, 2.0000, 7.50, 15.00),
 -- Venda 3: 2x Batata Rústica + 2x Suco + 1x Hambúrguer Supremo
-(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a3333333-3333-3333-3333-333333333333'::uuid, '55555555-5555-5555-5555-555555555558'::uuid, 2.0000, 24.00, 48.00),
-(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a3333333-3333-3333-3333-333333333333'::uuid, '55555555-5555-5555-5555-555555555559'::uuid, 2.0000, 12.00, 24.00),
+(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a3333333-3333-3333-3333-333333333333'::uuid, '55555555-5555-5555-5555-555555555553'::uuid, 2.0000, 24.00, 48.00),
+(gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a3333333-3333-3333-3333-333333333333'::uuid, '55555555-5555-5555-5555-555555555557'::uuid, 2.0000, 12.00, 24.00),
 (gen_random_uuid(), '11111111-1111-1111-1111-111111111111'::uuid, 'a3333333-3333-3333-3333-333333333333'::uuid, '55555555-5555-5555-5555-555555555555'::uuid, 1.0000, 38.00, 38.00)
 ON CONFLICT ("Id") DO NOTHING;
+
+-- Adiciona tags de modificadores nas comandas demonstrativas de hoje para o KDS
+UPDATE "ItensVenda"
+SET "ModificadoresJson" = '[{"Nome":"Ao Ponto (Rosado e Suculento)","TipoAcao":"Culinario","PrecoAdicional":0},{"Nome":"Sem Cebola","TipoAcao":"Remocao","PrecoAdicional":0}]'
+WHERE "VendaId" = 'a1111111-1111-1111-1111-111111111111'::uuid
+  AND "ProdutoId" = '55555555-5555-5555-5555-555555555555'::uuid;
+
+UPDATE "ItensVenda"
+SET "ModificadoresJson" = '[{"Nome":"Bem Passado (Sem Sangue)","TipoAcao":"Culinario","PrecoAdicional":0},{"Nome":"+ Bacon Fatiado Defumado","TipoAcao":"Adicional","PrecoAdicional":4.50}]'
+WHERE "VendaId" = 'a2222222-2222-2222-2222-222222222222'::uuid
+  AND "ProdutoId" = '55555555-5555-5555-5555-555555555552'::uuid;
+
+UPDATE "ItensVenda"
+SET "ModificadoresJson" = '[{"Nome":"Mal Passado (Selado por Fora)","TipoAcao":"Culinario","PrecoAdicional":0},{"Nome":"Sem Picles","TipoAcao":"Remocao","PrecoAdicional":0}]'
+WHERE "VendaId" = 'a3333333-3333-3333-3333-333333333333'::uuid
+  AND "ProdutoId" = '55555555-5555-5555-5555-555555555555'::uuid;
 
 -- 8. Série Temporal Histórica de Vendas (30 Dias Anteriores)
 DO $$
@@ -328,13 +344,14 @@ BEGIN
                     v_qtd := 1.0;
             END CASE;
 
-            INSERT INTO "Vendas" ("Id", "RestauranteId", "FechamentoCaixaId", "DataHora", "Status", "FormaPagamento", "ValorTotal", "CriadoEm")
+            INSERT INTO "Vendas" ("Id", "RestauranteId", "FechamentoCaixaId", "DataHora", "Status", "StatusPreparo", "FormaPagamento", "ValorTotal", "CriadoEm")
             VALUES (
                 v_venda_id,
                 '11111111-1111-1111-1111-111111111111'::uuid,
                 v_caixa_id,
                 v_data_cursor + ((11 + (v_i % 10)) || ' hours')::interval,
                 'CONCLUIDA',
+                'ENTREGUE',
                 v_forma_pgto,
                 v_preco * v_qtd,
                 CURRENT_TIMESTAMP

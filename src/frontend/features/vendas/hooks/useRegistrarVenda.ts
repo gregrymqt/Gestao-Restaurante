@@ -30,6 +30,8 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
       // 2. Invalida cache de produtos e estoque para forçar atualização de saldos
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ['estoque'] });
+      queryClient.invalidateQueries({ queryKey: ['kds-pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
 
       // 3. Executa callback opcional (fechar o modal)
       if (options?.onSuccessCallback) {

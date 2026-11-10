@@ -5,7 +5,8 @@ public sealed record DashboardKpisDto(
     int QuantidadePedidos,
     decimal TicketMedio,
     decimal PercentualMeta,
-    decimal FaturamentoOntem
+    decimal FaturamentoOntem,
+    int PedidosNaCozinha = 0
 );
 
 public sealed record DistribuicaoPagamentoDto(

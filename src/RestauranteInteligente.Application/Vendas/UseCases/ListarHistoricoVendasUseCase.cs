@@ -41,6 +41,7 @@ public sealed class ListarHistoricoVendasUseCase
             FechamentoCaixaId: v.FechamentoCaixaId,
             DataHora: v.DataHora,
             Status: v.Status,
+            StatusPreparo: v.StatusPreparo,
             FormaPagamento: v.FormaPagamento,
             ValorTotal: v.ValorTotal,
             QuantidadeItens: v.Itens.Count,

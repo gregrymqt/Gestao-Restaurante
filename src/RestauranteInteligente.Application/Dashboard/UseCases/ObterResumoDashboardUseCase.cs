@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using RestauranteInteligente.Application.Common.Interfaces;
 using RestauranteInteligente.Application.Dashboard.DTOs;
 using RestauranteInteligente.Domain.Common.Interfaces;
+using RestauranteInteligente.Domain.Enums;
 
 namespace RestauranteInteligente.Application.Dashboard.UseCases;
 
@@ -74,6 +75,9 @@ public sealed class ObterResumoDashboardUseCase
             : 0m;
 
         var faturamentoOntem = vendasOntem.Sum(v => v.ValorTotal);
+        var pedidosKdsAtivos = await _vendaRepository.ObterPedidosAtivosKdsAsync(ct);
+        var pedidosNaCozinha = pedidosKdsAtivos?.Count
+            ?? vendasHoje.Count(v => StatusPreparoKds.IsAtivoNoKds(v.StatusPreparo));
         const decimal metaDia = 3000.00m;
         var percentualMeta = metaDia > 0
             ? Math.Min(100m, Math.Round((totalFaturadoHoje / metaDia) * 100m, 1))
@@ -138,7 +142,8 @@ public sealed class ObterResumoDashboardUseCase
                 QuantidadePedidos: quantidadePedidosHoje,
                 TicketMedio: ticketMedio,
                 PercentualMeta: percentualMeta,
-                FaturamentoOntem: faturamentoOntem
+                FaturamentoOntem: faturamentoOntem,
+                PedidosNaCozinha: pedidosNaCozinha
             ),
             Pagamentos: pagamentos,
             InsumosCriticos: insumosCriticos,

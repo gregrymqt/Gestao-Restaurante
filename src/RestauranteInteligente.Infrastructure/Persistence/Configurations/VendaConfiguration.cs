@@ -34,6 +34,23 @@ public sealed class VendaConfiguration : IEntityTypeConfiguration<Venda>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(v => v.StatusPreparo)
+            .HasMaxLength(20)
+            .HasDefaultValue("RECEBIDO")
+            .IsRequired();
+
+        builder.Property(v => v.PreparoIniciadoEm)
+            .HasColumnType("timestamptz")
+            .IsRequired(false);
+
+        builder.Property(v => v.ProntoEm)
+            .HasColumnType("timestamptz")
+            .IsRequired(false);
+
+        builder.Property(v => v.EntregueEm)
+            .HasColumnType("timestamptz")
+            .IsRequired(false);
+
         builder.Property(v => v.CriadoEm)
             .HasColumnType("timestamptz")
             .IsRequired();
@@ -58,5 +75,8 @@ public sealed class VendaConfiguration : IEntityTypeConfiguration<Venda>
 
         builder.HasIndex(v => v.FechamentoCaixaId)
             .HasDatabaseName("IX_Vendas_FechamentoCaixaId");
+
+        builder.HasIndex(v => new { v.RestauranteId, v.StatusPreparo, v.DataHora })
+            .HasDatabaseName("IX_Vendas_Restaurante_StatusPreparo_DataHora");
     }
 }
