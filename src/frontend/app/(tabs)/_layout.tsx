@@ -1,12 +1,28 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Redirect, Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@/features/auth';
 import { tokens } from '@/components/primitives/tokens';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 12);
+  const { isAuthenticated, isInitialized, initSessionFromStorage } = useAuthStore();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initSessionFromStorage();
+    }
+  }, [isInitialized, initSessionFromStorage]);
+
+  if (!isInitialized) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs

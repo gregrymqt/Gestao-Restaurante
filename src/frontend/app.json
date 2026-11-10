@@ -12,6 +12,17 @@
     "android": {
       "predictiveBackGestureEnabled": false
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Restaurante Inteligente",
+      "shortName": "Restaurante",
+      "themeColor": "#D9381E",
+      "backgroundColor": "#FAFAFA",
+      "display": "standalone",
+      "lang": "pt-BR"
+    },
     "plugins": [
       "expo-router"
     ]

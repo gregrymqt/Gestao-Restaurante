@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+    />
+    <title>%WEB_TITLE%</title>
+    <meta
+      name="description"
+      content="Painel executivo, PDV de balcão e KDS em tempo real para gestão de restaurantes."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Restaurante" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <!-- React Native Web root style reset -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>
+      Você precisa habilitar o JavaScript para executar o Restaurante Inteligente.
+    </noscript>
+    <div id="root"></div>
+    <script>
+      if (typeof window !== 'undefined') {
+        window.__riDeferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', function (event) {
+          event.preventDefault();
+          window.__riDeferredInstallPrompt = event;
+          window.dispatchEvent(new Event('ri:beforeinstallprompt'));
+        });
+        window.addEventListener('appinstalled', function () {
+          window.__riDeferredInstallPrompt = null;
+          window.dispatchEvent(new Event('ri:appinstalled'));
+        });
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

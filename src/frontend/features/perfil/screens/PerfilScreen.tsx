@@ -9,6 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { InstallPwaBanner } from '@/shared/components/InstallPwaBanner';
 import { TenantSelectorModal } from '@/features/auth';
 import { AdminBackofficeScreen } from '@/features/admin';
 import { ModalConfirmarFechamento } from '@/features/caixa/components/ModalConfirmarFechamento';
@@ -130,6 +131,9 @@ export function PerfilScreen() {
           onBloquearTerminal={handleBloquearTerminal}
           onEncerrarTurno={handleAbrirFechamentoTurno}
         />
+
+        {/* Atalho de Instalação PWA quando disponível no navegador */}
+        <InstallPwaBanner variant="card" />
 
         {/* 6. Acesso SuperAdmin Backoffice SaaS (Restrito por RBAC) */}
         {operador?.role === 'SuperAdmin' ? (

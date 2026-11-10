@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { InstallPwaBanner } from '@/shared/components/InstallPwaBanner';
 import { createShadow } from '@/shared/utils/shadows';
 
 export function AuthHeader() {
@@ -41,6 +42,9 @@ export function AuthHeader() {
       <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.subtitle}>
         Painel Executivo de Gestão & Decisão
       </ThemedText>
+
+      {/* Botão 1-clique de Instalação PWA (oculto quando indisponível ou já instalado) */}
+      <InstallPwaBanner variant="pill" />
     </View>
   );
 }
