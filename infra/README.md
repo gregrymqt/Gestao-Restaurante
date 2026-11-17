@@ -133,6 +133,8 @@ valida o PostgreSQL, Redis e RabbitMQ sem iniciar os consumidores da aplicação
 Após recriar a produção, use o endereço HTTPS exibido pelo script. Se o CD do
 GitHub estiver ativo, atualize `PROD_SSH_HOST`, `PROD_SSH_KNOWN_HOSTS` e a
 credencial `PROD_SSH_KEY` conforme a chave autorizada para a nova VM.
+Antes de gerar um novo build mobile de produção, atualize
+`EXPO_PUBLIC_API_URL` em `src/frontend/eas.json` para o novo endereço da API.
 Com a VM online e os secrets configurados, defina a variável de repositório
 `PROD_DEPLOY_ENABLED` como `true` e dispare o workflow na branch `main`.
 Deixe essa variável desabilitada enquanto a produção estiver desprovisionada.

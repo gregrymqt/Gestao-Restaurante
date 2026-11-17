@@ -33,6 +33,7 @@ if ($SemEstado) {
         "-var=ssh_public_key_path=$ChavePublica")
 }
 if (Get-AzureGroupExists $Grupo) { throw "O grupo $Grupo ainda existe." }
-$remaining = Invoke-Azure @('resource','list','--query',"[?resourceGroup != null && tolower(resourceGroup)=='$($Grupo.ToLowerInvariant())'].id",'-o','tsv')
+$resources = Invoke-Azure @('resource','list','--query','[].{group:resourceGroup,id:id}','-o','json') | Out-String | ConvertFrom-Json
+$remaining = $resources | Where-Object { $_.group -eq $Grupo }
 if ($remaining) { throw "Ainda ha recursos associados a $Grupo." }
 Write-Host "Grupo $Grupo e seus recursos removidos."
