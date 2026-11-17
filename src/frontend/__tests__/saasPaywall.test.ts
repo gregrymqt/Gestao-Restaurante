@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { AxiosHeaders } from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 // Garante variáveis de ambiente antes de carregar dependências
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:5000/api/v1';
@@ -100,7 +101,8 @@ storage.set(
 // Executa os interceptores de requisição do Axios
 const dummyConfig = { headers: new AxiosHeaders() };
 // Simula execução do handler do interceptor
-const requestInterceptor = (apiClient.interceptors.request as any).handlers[0].fulfilled;
+const requestInterceptor: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig =
+  apiClient.interceptors.request.handlers[0].fulfilled;
 const resolvedConfig = requestInterceptor({ ...dummyConfig });
 
 assert.strictEqual(
