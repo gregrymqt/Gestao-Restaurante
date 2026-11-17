@@ -30,7 +30,22 @@ function Get-AzureStatePath {
 
 function Invoke-Azure {
     param([string[]]$Arguments)
-    Invoke-Checked az ($Arguments + @('--subscription', $AzureSubscription, '--only-show-errors'))
+    $ErrorActionPreference = 'Continue'
+    $PSNativeCommandUseErrorActionPreference = $false
+    $cliArguments = $Arguments + @('--subscription', $AzureSubscription, '--only-show-errors')
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $result = & az @cliArguments 2>&1
+        $code = $LASTEXITCODE
+        if ($code -eq 0) {
+            $result | Where-Object { $_ -is [string] }
+            return
+        }
+        $message = $result -join "`n"
+        if ($attempt -eq 3 -or $message -notmatch 'Failed to resolve|getaddrinfo failed|Temporary failure in name resolution') {
+            throw "Azure CLI falhou (codigo $code).`n$message"
+        }
+        Start-Sleep -Seconds (5 * $attempt)
+    }
 }
 
 function Invoke-RestauranteTerraform {
