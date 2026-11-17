@@ -47,7 +47,7 @@ $remoteStage = Invoke-Checked ssh ($sshOptions + @($destination, 'umask 077; mkt
 if ($remoteStage -cnotmatch '^/tmp/tmp\.[A-Za-z0-9]+$') { throw 'Diretorio temporario SSH invalido.' }
 try {
     Invoke-Checked ssh ($sshOptions + @($destination, 'sudo timeout 900 cloud-init status --wait && docker compose version'))
-    Invoke-Checked git @('-C',$AzureRepo,'archive','--format=tar.gz',"-o=$release",$commit)
+    Invoke-Checked git @('-C',$AzureRepo,'archive','--format=tar.gz','--output',$release,$commit)
     Invoke-Checked scp ($sshOptions + @($release, "$PSScriptRoot/azure-vm.sh", "${destination}:$remoteStage/"))
     if ($ArquivoEnv) {
         Invoke-Checked scp ($sshOptions + @($ArquivoEnv, "${destination}:$remoteStage/config.env"))
