@@ -11,13 +11,13 @@ export ML_WORKER_IMAGE="ghcr.io/$repository/ml-worker:$revision"
 
 docker_config=$(mktemp -d)
 trap 'rm -rf "$docker_config"' EXIT
-export DOCKER_CONFIG=$docker_config
-docker login ghcr.io --username "$registry_user" --password-stdin
+docker --config "$docker_config" login ghcr.io --username "$registry_user" --password-stdin
 
 compose=(docker compose --project-directory "$PWD" --env-file "$PWD/.env" -f "$release/docker-compose.prod.yml")
 test -f .env
 "${compose[@]}" config --quiet
-"${compose[@]}" pull webapi ml-worker
+docker --config "$docker_config" image pull "$WEBAPI_IMAGE"
+docker --config "$docker_config" image pull "$ML_WORKER_IMAGE"
 
 # Require the existing production database and its configured Compose project.
 postgres_id=$("${compose[@]}" ps -q postgres)
@@ -47,7 +47,7 @@ if ! "${compose[@]}" exec -T postgres test -f "$marker"; then
     "${compose[@]}" exec -T postgres touch "$marker"
 fi
 
-"${compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 180 webapi ml-worker
+"${compose[@]}" up -d --no-build --no-deps --pull never --wait --wait-timeout 180 webapi ml-worker
 for attempt in {1..30}; do
     if "${compose[@]}" exec -T caddy wget -q -O /dev/null http://webapi:5000/api/v1/health; then
         break
