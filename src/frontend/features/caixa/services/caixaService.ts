@@ -1,5 +1,5 @@
 import { apiClient } from '@/services/api';
-import { SessaoCaixaResumo, FecharCaixaResponseDto } from '../types';
+import { AbrirCaixaResponseDto, FecharCaixaResponseDto, SessaoCaixaResumo } from '../types';
 
 export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
   id: 'sessao-caixa-01',
@@ -67,6 +67,11 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
 };
 
 export const caixaService = {
+  async abrirCaixa(): Promise<AbrirCaixaResponseDto> {
+    const response = await apiClient.post<AbrirCaixaResponseDto>('/caixa/abrir', {});
+    return response.data;
+  },
+
   async obterSessaoAtiva(): Promise<SessaoCaixaResumo> {
     try {
       const res = await apiClient.get<any>('/dashboard/resumo');

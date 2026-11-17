@@ -10,7 +10,8 @@
       "supportsTablet": true
     },
     "android": {
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gregrymqt.restauranteinteligente"
     },
     "web": {
       "bundler": "metro",
@@ -25,6 +26,16 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "abb973ee-ef9e-4de8-b27c-27d08f83d81b"
+      }
+    }
   }
 }

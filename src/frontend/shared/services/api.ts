@@ -19,17 +19,17 @@ export const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'ngrok-skip-browser-warning': 'true',
-    ...(env.apiId ? { 'api-id': env.apiId, 'x-api-id': env.apiId } : {}),
   },
 });
 
-// Interceptor de Requisição: Injeta api-id, Bearer Token e X-Tenant-Id em todas as chamadas
+// Credenciais de sessão são enviadas apenas para chamadas autenticadas.
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Injeta identificador de API se configurado
-    if (env.apiId) {
-      config.headers['api-id'] = env.apiId;
-      config.headers['x-api-id'] = env.apiId;
+    const path = config.url?.split('?')[0];
+    if (path === '/auth/login' || path === '/auth/cadastrar-restaurante') {
+      config.headers.delete('Authorization');
+      config.headers.delete('X-Tenant-Id');
+      return config;
     }
 
     const token = storage.getString(STORAGE_KEYS.AUTH_TOKEN);

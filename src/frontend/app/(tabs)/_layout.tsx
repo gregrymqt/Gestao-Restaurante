@@ -103,13 +103,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="pdv"
         options={{
-          href: null,
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
         name="caixa"
         options={{
-          href: null,
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
     </Tabs>

@@ -66,19 +66,11 @@ export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
             </ThemedText>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Adicionar ${produto.nome} à comanda`}
-            style={({ pressed }) => [
-              styles.botaoAdicionar,
-              pressed && styles.botaoAdicionarPressionado,
-            ]}
-            onPress={() => aoAdicionar(produto)}
-          >
+          <View style={styles.botaoAdicionar}>
             <ThemedText variant="subtitle" style={styles.botaoAdicionarTexto}>
               +
             </ThemedText>
-          </Pressable>
+          </View>
         </View>
       </View>
     </Pressable>
@@ -155,10 +147,6 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  botaoAdicionarPressionado: {
-    opacity: 0.85,
-    backgroundColor: '#FED7D2',
   },
   botaoAdicionarTexto: {
     fontSize: tokens.typography.fontXl,

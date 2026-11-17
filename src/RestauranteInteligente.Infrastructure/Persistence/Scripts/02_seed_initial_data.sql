@@ -307,7 +307,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Culinario',
+    1,
     TRUE
 ),
 (
@@ -318,7 +318,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Culinario',
+    1,
     TRUE
 ),
 (
@@ -329,7 +329,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Culinario',
+    1,
     TRUE
 ),
 (
@@ -340,7 +340,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Remocao',
+    3,
     TRUE
 ),
 (
@@ -351,7 +351,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Remocao',
+    3,
     TRUE
 ),
 (
@@ -362,7 +362,7 @@ INSERT INTO "OpcoesModificadores" (
     0.00,
     NULL,
     0.0000,
-    'Remocao',
+    3,
     TRUE
 ),
 (
@@ -373,7 +373,7 @@ INSERT INTO "OpcoesModificadores" (
     4.50,
     '33333333-3333-3333-3333-333333333333'::uuid,
     0.0400,
-    'Adicional',
+    2,
     TRUE
 ),
 (
@@ -384,12 +384,12 @@ INSERT INTO "OpcoesModificadores" (
     3.50,
     '44444444-4444-4444-4444-444444444444'::uuid,
     1.0000,
-    'Adicional',
+    2,
     TRUE
 ) ON CONFLICT ("Id") DO NOTHING;
 
 INSERT INTO "ProdutosGruposModificadores" (
-    "Id", "RestauranteId", "ProdutoId", "GrupoModificadorId", "Ordem"
+    "Id", "RestauranteId", "ProdutoId", "GrupoModificadorId", "OrdemExibicao"
 ) VALUES 
 (
     'cc111111-1111-1111-1111-111111111111'::uuid,

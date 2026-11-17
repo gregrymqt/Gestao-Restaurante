@@ -100,6 +100,7 @@ services:
       - internal_backend_net
 
   webapi:
+    image: ${WEBAPI_IMAGE:-restaurante-webapi:local}
     build:
       context: .
       dockerfile: src/RestauranteInteligente.Api/Dockerfile
@@ -139,6 +140,7 @@ services:
       - internal_backend_net
 
   ml-worker:
+    image: ${ML_WORKER_IMAGE:-restaurante-ml-worker:local}
     build:
       context: ./ml/RestauranteInteligente.ML
       dockerfile: Dockerfile

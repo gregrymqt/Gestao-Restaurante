@@ -31,15 +31,6 @@ export const OPERADORES_RECENTES_PADRAO: OperadorRecente[] = [
 ];
 
 export const authService = {
-  async obterTenants(): Promise<RestauranteTenant[]> {
-    try {
-      const response = await apiClient.get<RestauranteTenant[]>('/auth/tenants');
-      return response.data;
-    } catch {
-      return TENANTS_PADRAO;
-    }
-  },
-
   async obterOperadoresRecentes(): Promise<OperadorRecente[]> {
     return OPERADORES_RECENTES_PADRAO;
   },

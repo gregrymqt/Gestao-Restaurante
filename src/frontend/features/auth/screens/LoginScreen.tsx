@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -15,7 +15,7 @@ import { AppDialog } from '@/shared/components/AppDialog';
 import { shadows } from '@/shared/utils/shadows';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useLoginMutation } from '../hooks/useLoginMutation';
-import { authService, TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
+import { TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
 import { AuthHeader } from '../components/AuthHeader';
 import { TenantSelectorCard } from '../components/TenantSelectorCard';
 import { TenantSelectorModal } from '../components/TenantSelectorModal';
@@ -37,13 +37,9 @@ export function LoginScreen() {
   const [isOperadorMode, setIsOperadorMode] = useState(false);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
-  const [tenants, setTenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
+  const [tenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
   const [operadores] = useState<OperadorRecente[]>(OPERADORES_RECENTES_PADRAO);
   const [operadorAtivoId, setOperadorAtivoId] = useState<string>('99999999-9999-9999-9999-999999999999');
-
-  useEffect(() => {
-    authService.obterTenants().then(setTenants);
-  }, []);
 
   const handleSelectOperador = (op: OperadorRecente) => {
     setOperadorAtivoId(op.id);
