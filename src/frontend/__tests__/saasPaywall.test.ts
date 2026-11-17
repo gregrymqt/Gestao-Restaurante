@@ -1,8 +1,8 @@
 import assert from 'node:assert';
+import { AxiosHeaders } from 'axios';
 
 // Garante variáveis de ambiente antes de carregar dependências
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:5000/api/v1';
-process.env.EXPO_PUBLIC_API_ID = 'restaurante-inteligente-pdv';
 
 const { ASSINATURA_PADRAO } = require('../features/assinatura/services/assinaturaService');
 const { storage, STORAGE_KEYS } = require('../shared/services/storage');
@@ -98,7 +98,7 @@ storage.set(
 );
 
 // Executa os interceptores de requisição do Axios
-const dummyConfig = { headers: {} as Record<string, string> };
+const dummyConfig = { headers: new AxiosHeaders() };
 // Simula execução do handler do interceptor
 const requestInterceptor = (apiClient.interceptors.request as any).handlers[0].fulfilled;
 const resolvedConfig = requestInterceptor({ ...dummyConfig });
@@ -113,11 +113,16 @@ assert.strictEqual(
   '99999999-9999-9999-9999-999999999999',
   'Interceptor deve injetar header X-Tenant-Id do inquilino ativo'
 );
-assert.strictEqual(
-  resolvedConfig.headers['api-id'],
-  'restaurante-inteligente-pdv',
-  'Interceptor deve injetar api-id'
-);
+
+for (const url of ['/auth/login', '/auth/cadastrar-restaurante?source=app']) {
+  const headers = new AxiosHeaders({
+    Authorization: resolvedConfig.headers.Authorization,
+    'X-Tenant-Id': resolvedConfig.headers['X-Tenant-Id'],
+  });
+  const publicConfig = requestInterceptor({ url, headers });
+  assert.strictEqual(publicConfig.headers.has('Authorization'), false);
+  assert.strictEqual(publicConfig.headers.has('X-Tenant-Id'), false);
+}
 
 console.log('[OK] 4. Interceptor Axios de isolamento Multi-Tenant e JWT validado.');
 console.log('[TEST] SUCESSO: Todos os testes de SaaS Paywall e Interceptor foram aprovados!');
