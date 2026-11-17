@@ -1,1 +1,3 @@
-az vm get-instance-view --resource-group rg-restaurante-inteligente-prod --name vm-restaurante-prod --query "{Name:name, Status:instanceView.statuses[1].displayStatus}" -o table
+. "$PSScriptRoot/azure-comum.ps1"
+Invoke-Azure @('vm','get-instance-view','-g',$AzureProduction,'-n',$AzureVm,
+    '--query','{Name:name, Status:instanceView.statuses[1].displayStatus}','-o','table')

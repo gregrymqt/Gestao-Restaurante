@@ -9,6 +9,7 @@ Este diretório concentra as diretrizes, configurações de contêineres e topol
 O sistema utiliza o **Nginx Alpine** como Gateway Unificado e Reverse Proxy de borda, protegendo os serviços internos em uma rede Docker privada e expondo uma interface única para os clientes web/mobile:
 
 ```
+
 [Cliente Web / Mobile] 
         │ Porta 80 (HTTP)
         ▼
@@ -79,3 +80,62 @@ docker compose exec frontend nginx -t
 # Recarregar configuração do Nginx a quente (sem downtime)
 docker compose exec frontend nginx -s reload
 ```
+
+---
+
+## Ciclo de vida da produção no Azure
+
+Execute a partir da raiz do repositório, no PowerShell, com Azure CLI autenticado,
+Terraform, Git, OpenSSH e curl. Os scripts usam a assinatura Azure for Students do
+Restaurante e aceitam o grupo de produção ou grupos temporários com o prefixo
+`rg-restaurante-inteligente-teste-`. O estado e a chave de operação padrão ficam
+em `%LOCALAPPDATA%\RestauranteInteligente-Azure`.
+
+```powershell
+$raiz = Join-Path $env:LOCALAPPDATA 'RestauranteInteligente-Azure'
+$backup = Join-Path $raiz 'backups/producao'
+$teste = 'rg-restaurante-inteligente-teste-ciclo'
+
+# Cria um ambiente com credenciais de teste fornecidas em um arquivo .env reservado.
+./infra/scripts/subir-azure.ps1 -Grupo $teste -ArquivoEnv "$raiz/teste.env" -SomentePlano
+./infra/scripts/subir-azure.ps1 -Grupo $teste -ArquivoEnv "$raiz/teste.env"
+
+# Captura a produção e deixa os serviços parados durante o teste.
+./infra/scripts/backup-azure.ps1 -Acao Capturar -Backup $backup -ManterParado
+./infra/scripts/backup-azure.ps1 -Acao TestarRestauracao -Grupo $teste -Backup $backup
+./infra/scripts/destruir-azure.ps1 -Grupo $teste -ConfirmarGrupo $teste
+
+# Caso seja necessário interromper a operação antes da exclusão.
+./infra/scripts/backup-azure.ps1 -Acao Religar
+
+# Depois de validar o backup, remove a produção legada.
+./infra/scripts/destruir-azure.ps1 -SemEstado -SomentePreview
+./infra/scripts/destruir-azure.ps1 -SemEstado -ConfirmarGrupo rg-restaurante-inteligente-prod
+
+# Recria a produção e restaura o backup. -Revisao aceita um commit ou uma ref local.
+./infra/scripts/subir-azure.ps1 -Backup $backup -Revisao HEAD
+
+# Para destruir a produção recriada via Terraform, use a confirmação pelo nome.
+./infra/scripts/destruir-azure.ps1 -ConfirmarGrupo rg-restaurante-inteligente-prod
+```
+
+Para provisionar com uma chave própria, informe `-ChavePrivada` ao subir e ao
+capturar. Mantenha a chave pública correspondente com extensão `.pub` e use
+`-ChavePublica` na destruição. O arquivo de configuração de um ambiente novo precisa
+definir `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `RABBITMQ_USER`,
+`RABBITMQ_PASSWORD`, `JWT_KEY`, `INTERNAL_SERVICE_API_KEY` e
+`MERCADO_PAGO_WEBHOOK_SECRET`.
+
+O backup contém o `.env` de produção, o deploy e os volumes persistentes. Guarde-o em
+armazenamento protegido fora do Azure e preserve o manifesto `SHA256SUMS`. O teste
+de restauração bloqueia HTTP/HTTPS no grupo temporário, substitui seus volumes e
+valida o PostgreSQL, Redis e RabbitMQ sem iniciar os consumidores da aplicação.
+Após recriar a produção, use o endereço HTTPS exibido pelo script. Se o CD do
+GitHub estiver ativo, atualize `PROD_SSH_HOST`, `PROD_SSH_KNOWN_HOSTS` e a
+credencial `PROD_SSH_KEY` conforme a chave autorizada para a nova VM.
+Antes de gerar um novo build mobile de produção, atualize
+`EXPO_PUBLIC_API_URL` em `src/frontend/eas.json` para o novo endereço da API.
+Com a VM online e os secrets configurados, defina a variável de repositório
+`PROD_DEPLOY_ENABLED` como `true` e dispare o workflow na branch `main`.
+Deixe essa variável desabilitada enquanto a produção estiver desprovisionada.
+O CI e a publicação no GHCR continuam disponíveis durante esse período.

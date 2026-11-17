@@ -213,7 +213,36 @@ jobs:
       - name: Validate production deployment files
         run: |
           bash -n infra/scripts/deploy-production.sh
+          bash -n infra/scripts/azure-vm.sh
           docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+
+      - name: Validate Azure PowerShell scripts
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = $env:RUNNER_TEMP
+          foreach ($file in Get-ChildItem infra/scripts -Filter '*.ps1') {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors) { throw ($errors -join "`n") }
+          }
+          try {
+            ./infra/scripts/destruir-azure.ps1 -Grupo NetworkWatcherRG -SomentePreview
+            throw 'The destroy script accepted an unrelated resource group.'
+          } catch {
+            if ($_.Exception.Message -notlike 'Grupo fora do escopo*') { throw }
+          }
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Validate Azure Terraform configuration
+        run: |
+          terraform -chdir=infra/terraform fmt -check
+          terraform -chdir=infra/terraform init -backend=false -input=false
+          terraform -chdir=infra/terraform validate
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -270,7 +299,7 @@ jobs:
     name: Continuous Deployment (GHCR)
     runs-on: ubuntu-latest
     needs: [quality-gate]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -325,7 +354,7 @@ jobs:
 
   production:
     name: Deploy PostgreSQL, API and Worker
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.PROD_DEPLOY_ENABLED == 'true'
     needs: cd-deploy
     runs-on: ubuntu-latest
     environment: production
