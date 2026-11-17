@@ -64,7 +64,7 @@ export function DashboardScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
-              onRefresh={refetch}
+              onRefresh={() => { void refetch(); }}
               colors={[tokens.colors.primary]}
               tintColor={tokens.colors.primary}
             />

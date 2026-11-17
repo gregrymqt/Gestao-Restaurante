@@ -85,7 +85,7 @@ export function PrevisoesScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
-            onRefresh={refetch}
+            onRefresh={() => { void refetch(); }}
             colors={[tokens.colors.primary]}
             tintColor={tokens.colors.primary}
           />

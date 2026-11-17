@@ -1,0 +1,28 @@
+# ==============================================================================
+# Caddyfile - Produção
+# Gateway Unificado com TLS Automático, Proxy Reverso e Streaming SSE sem buffer
+# ==============================================================================
+
+{$DOMAIN_NAME} {
+    # Otimização de compactação para tráfego geral
+    encode zstd gzip
+
+    # 1. Server-Sent Events (SSE) - streaming em tempo real com buffer desativado
+    @sse path /api/v1/events/*
+    handle @sse {
+        reverse_proxy webapi:5000 {
+            flush_interval -1
+        }
+    }
+
+    # 2. Worker de Machine Learning (/ml/*) - Bloqueio de acesso externo direto
+    @ml path /ml/*
+    handle @ml {
+        respond "Access to internal ML endpoints is denied." 403
+    }
+
+    # 3. Proxy reverso padrão para API .NET Core
+    handle {
+        reverse_proxy webapi:5000
+    }
+}

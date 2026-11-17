@@ -1,0 +1,183 @@
+# ==============================================================================
+# Monorepo Restaurante Inteligente - Infraestrutura de Produção (VM 4 GB RAM)
+# Caddy 2 (TLS Reverso), PostgreSQL 16 (Tuned 4GB), Redis 7 (256MB), RabbitMQ 3, .NET 9 WebApi e Python ML Worker
+# ==============================================================================
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: restaurante_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - webapi
+    networks:
+      - internal_backend_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: restaurante_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: restaurante_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_INITDB_WALDIR: /var/lib/postgresql/wal
+      POSTGRES_INITDB_ARGS: "--data-checksums --encoding=UTF8"
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=768MB
+      -c work_mem=8MB
+      -c maintenance_work_mem=64MB
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track_utility=off
+      -c pg_stat_statements.save=on
+      -c wal_level=replica
+      -c archive_mode=on
+      -c archive_command='test ! -f /var/lib/postgresql/backups/wal_archive/%f && cp %p /var/lib/postgresql/backups/wal_archive/%f'
+      -c archive_timeout=900
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-wal:/var/lib/postgresql/wal
+      - postgres-backup:/var/lib/postgresql/backups
+      - ./src/RestauranteInteligente.Infrastructure/Persistence/Scripts/01_init_schema_rls.sql:/docker-entrypoint-initdb.d/01_init_schema_rls.sql:ro
+      - ./src/RestauranteInteligente.Infrastructure/Persistence/Scripts/02_seed_initial_data.sql:/docker-entrypoint-initdb.d/02_seed_initial_data.sql:ro
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d restaurante_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_backend_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: restaurante_redis
+    restart: always
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_backend_net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: restaurante_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_backend_net
+
+  webapi:
+    build:
+      context: .
+      dockerfile: src/RestauranteInteligente.Api/Dockerfile
+    container_name: restaurante_webapi
+    restart: always
+    environment:
+      ENVIRONMENT: production
+      ASPNETCORE_ENVIRONMENT: Production
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: restaurante_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: 0
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      JWT_KEY: ${JWT_KEY}
+      JWT_ISSUER: ${JWT_ISSUER:-RestauranteInteligente}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-RestauranteInteligente.App}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${MERCADO_PAGO_WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - internal_backend_net
+
+  ml-worker:
+    build:
+      context: ./ml/RestauranteInteligente.ML
+      dockerfile: Dockerfile
+    container_name: restaurante_ml_worker
+    restart: always
+    environment:
+      ENVIRONMENT: production
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: 0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal_backend_net
+
+volumes:
+  postgres-data:
+    driver: local
+  postgres-wal:
+    driver: local
+  postgres-backup:
+    driver: local
+  redis-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  internal_backend_net:
+    driver: bridge
