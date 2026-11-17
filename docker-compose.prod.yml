@@ -54,7 +54,7 @@ services:
       - ./src/RestauranteInteligente.Infrastructure/Persistence/Scripts/02_seed_initial_data.sql:/docker-entrypoint-initdb.d/02_seed_initial_data.sql:ro
     shm_size: 256m
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d restaurante_db"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d restaurante_db"]
       interval: 10s
       timeout: 5s
       retries: 5

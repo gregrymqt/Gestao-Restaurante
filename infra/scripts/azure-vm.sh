@@ -126,7 +126,8 @@ case "$action" in
         else
             install -m 600 "$stage/config.env" .env
         fi
-        tar -xzf "$stage/release.tar.gz" -C "$PWD"
+        # PostgreSQL and Caddy read their bind mounts as container users.
+        (umask 022; tar -xzf "$stage/release.tar.gz" -C "$PWD")
         for name in POSTGRES_USER POSTGRES_PASSWORD REDIS_PASSWORD RABBITMQ_USER RABBITMQ_PASSWORD JWT_KEY INTERNAL_SERVICE_API_KEY MERCADO_PAGO_WEBHOOK_SECRET; do
             if ! grep -Eq "^$name=.+$" .env; then
                 echo "Variavel ausente em .env: $name" >&2
@@ -140,6 +141,8 @@ case "$action" in
             validate_restoration
         else
             compose up -d --wait --wait-timeout 180 postgres redis rabbitmq
+            database_counts restaurante_db > "$stage/initial-counts.txt"
+            test -s "$stage/initial-counts.txt"
         fi
         compose exec -T -u root postgres install -d -o postgres -g postgres /var/lib/postgresql/backups/wal_archive
         compose build webapi ml-worker
