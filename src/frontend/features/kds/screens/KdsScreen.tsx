@@ -110,7 +110,7 @@ export function KdsScreen() {
             refreshControl={
               <RefreshControl
                 refreshing={isFetching}
-                onRefresh={() => refetch()}
+                onRefresh={() => { void refetch(); }}
                 colors={[tokens.colors.primary]}
                 tintColor={tokens.colors.primary}
               />

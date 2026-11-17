@@ -54,7 +54,7 @@ export default function TabLayout() {
             <Ionicons
               name={focused ? 'stats-chart' : 'stats-chart-outline'}
               size={20}
-              color={color}
+              color={color as string}
             />
           ),
         }}
@@ -67,7 +67,7 @@ export default function TabLayout() {
             <Ionicons
               name={focused ? 'cube' : 'cube-outline'}
               size={20}
-              color={color}
+              color={color as string}
             />
           ),
         }}
@@ -80,7 +80,7 @@ export default function TabLayout() {
             <Ionicons
               name={focused ? 'sparkles' : 'sparkles-outline'}
               size={20}
-              color={color}
+              color={color as string}
             />
           ),
         }}
@@ -93,7 +93,7 @@ export default function TabLayout() {
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}
               size={20}
-              color={color}
+              color={color as string}
             />
           ),
         }}
