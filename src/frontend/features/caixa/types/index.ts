@@ -36,6 +36,14 @@ export interface SessaoCaixaResumo {
   readonly clima: DadosClimaticos;
 }
 
+export interface AbrirCaixaResponseDto {
+  readonly fechamentoCaixaId: string;
+  readonly restauranteId: string;
+  readonly usuarioId: string;
+  readonly dataAbertura: string;
+  readonly status: string;
+}
+
 export interface FecharCaixaResponseDto {
   readonly fechamentoCaixaId: string;
   readonly restauranteId: string;

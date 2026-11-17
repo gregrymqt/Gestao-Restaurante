@@ -20,6 +20,8 @@ import {
 } from '../types';
 import { useModificadoresProduto } from '../hooks/useModificadoresProduto';
 
+const GRUPOS_VAZIOS: GrupoModificador[] = [];
+
 interface ModalModificadoresProdutoProps {
   produto: Produto | null;
   visible: boolean;
@@ -36,7 +38,7 @@ export function ModalModificadoresProduto({
   const insets = useSafeAreaInsets();
   const paddingInferior = Math.max(insets.bottom, 24) + (Platform.OS === 'web' ? 16 : 0);
 
-  const { data: grupos = [], isLoading } = useModificadoresProduto(produto?.id);
+  const { data: grupos = GRUPOS_VAZIOS, isLoading } = useModificadoresProduto(produto?.id);
 
   // Armazena as opções selecionadas agrupadas por grupoId
   const [selecoes, setSelecoes] = useState<Record<string, OpcaoModificador[]>>({});

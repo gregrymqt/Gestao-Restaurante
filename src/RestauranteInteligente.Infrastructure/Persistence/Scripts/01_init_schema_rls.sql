@@ -173,7 +173,7 @@ CREATE TABLE "ItensVenda" (
     "Quantidade" NUMERIC(18, 4) NOT NULL,
     "PrecoUnitario" NUMERIC(18, 2) NOT NULL,
     "Subtotal" NUMERIC(18, 2) NOT NULL,
-    "ModificadoresJson" TEXT NULL,
+    "ModificadoresJson" JSONB NULL,
     CONSTRAINT "FK_ItensVenda_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ItensVenda_Venda" FOREIGN KEY ("VendaId") 
@@ -307,6 +307,7 @@ CREATE TABLE "GruposModificadores" (
     "MaximoSelecoes" INT NOT NULL DEFAULT 1,
     "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
     "OrdemExibicao" INT NOT NULL DEFAULT 0,
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_GruposModificadores_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE
 );
@@ -325,9 +326,10 @@ CREATE TABLE "OpcoesModificadores" (
     "PrecoAdicional" NUMERIC(18, 2) NOT NULL DEFAULT 0,
     "InsumoId" UUID NULL,
     "QuantidadeInsumo" NUMERIC(18, 4) NOT NULL DEFAULT 0,
-    "TipoAcao" VARCHAR(30) NOT NULL DEFAULT 'Culinario',
+    "TipoAcao" INT NOT NULL DEFAULT 1,
     "Ativo" BOOLEAN NOT NULL DEFAULT TRUE,
     "OrdemExibicao" INT NOT NULL DEFAULT 0,
+    "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_OpcoesModificadores_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_OpcoesModificadores_Grupo" FOREIGN KEY ("GrupoModificadorId") 
@@ -347,7 +349,7 @@ CREATE TABLE "ProdutosGruposModificadores" (
     "RestauranteId" UUID NOT NULL,
     "ProdutoId" UUID NOT NULL,
     "GrupoModificadorId" UUID NOT NULL,
-    "Ordem" INT NOT NULL DEFAULT 0,
+    "OrdemExibicao" INT NOT NULL DEFAULT 0,
     CONSTRAINT "FK_ProdutosGrupos_Restaurante" FOREIGN KEY ("RestauranteId") 
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_ProdutosGrupos_Produto" FOREIGN KEY ("ProdutoId") 

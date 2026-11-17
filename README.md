@@ -146,6 +146,41 @@ docker compose up -d
 * **Redis:** `localhost:6379`
 * **RabbitMQ UI:** `http://localhost:15672` (Usuário: `admin` / Senha: `adminpassword`)
 
+### Atualizar modificadores em um banco existente
+
+Em produção, cada push na `main` passa pelo CI, publica as imagens da API e
+do worker no GHCR e executa o deploy na VM. O deploy confere o PostgreSQL
+existente, faz um backup em formato `pg_dump -Fc` no volume `postgres-backup`
+e aplica a migração antes de trocar os contêineres da API e do worker.
+O volume registra a aplicação por checksum do SQL. Se o banco for restaurado
+para um ponto anterior à migração, remova o marcador correspondente do volume
+de backup antes de executar o pipeline novamente.
+
+No ambiente `production` do GitHub, cadastre `PROD_SSH_HOST`, `PROD_SSH_USER`,
+`PROD_SSH_KEY` e `PROD_SSH_KNOWN_HOSTS`. Use uma chave de deploy dedicada e
+cadastre a chave pública do host SSH conferida na VM. A conta SSH precisa
+acessar o Docker e a instalação existente em `/opt/restaurante-inteligente`,
+com o `.env` local. Preserve o nome de projeto Compose usado pelo banco
+existente. O pacote enviado à VM contém o Compose, o script de deploy e a
+migração SQL. O APK continua no fluxo de build do Expo.
+
+#### Aplicação manual
+
+Antes de publicar a API, aplique a atualização em homologação e valide a consulta de
+modificadores. No servidor de destino, faça o backup com a conta administrativa
+do PostgreSQL e execute o SQL a partir da raiz do repositório.
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d restaurante_db' > restaurante_antes_modificadores.sql
+docker compose -f docker-compose.prod.yml exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d restaurante_db' < scripts/sql/03_modificadores_schema.sql
+```
+
+Confirme que o backup foi concluído com sucesso antes de executar o segundo
+comando. Se a atualização falhar, interrompa a publicação e consulte a mensagem
+do PostgreSQL. O SQL roda em uma única transação e pode ser reaplicado.
+O script `03_modificadores_schema_seed.sql` contém dados ilustrativos para uso
+em um ambiente de demonstração que já tenha o catálogo correspondente.
+
 ### Passo 2: Executar a API ASP.NET Core
 ```bash
 dotnet run --project src/RestauranteInteligente.Api/RestauranteInteligente.Api.csproj

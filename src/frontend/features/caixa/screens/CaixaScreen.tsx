@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
-import { useCaixaAtual } from '../hooks/useCaixaAtual';
+import { useAbrirCaixa, useCaixaAtual } from '../hooks/useCaixaAtual';
 import { useFecharCaixa } from '../hooks/useFecharCaixa';
 import { ContextoOperacionalHeader } from '../components/ContextoOperacionalHeader';
 import { useRouter } from 'expo-router';
@@ -22,6 +22,7 @@ export function CaixaScreen() {
   const router = useRouter();
   const [isModalVisivel, setIsModalVisivel] = useState(false);
   const { sessao, isLoading, refetch } = useCaixaAtual();
+  const { mutate: dispararAbertura, isPending: isAbrindo } = useAbrirCaixa();
 
   const { mutate: dispararFechamento, isPending } = useFecharCaixa({
     onSuccessCallback: () => {
@@ -34,6 +35,10 @@ export function CaixaScreen() {
   };
 
   const isCaixaAberto = sessao.status === 'Aberta';
+  const acaoDesabilitada = isLoading || isAbrindo || isPending;
+  const textoAcao = isAbrindo
+    ? 'Abrindo caixa…'
+    : isCaixaAberto ? 'Encerrar Sessão e Fechar Caixa' : 'Abrir Caixa';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -75,41 +80,38 @@ export function CaixaScreen() {
           {/* Card 3: Contexto Climático da Sessão */}
           <WidgetClimaSessao clima={sessao.clima} />
 
-          {/* Botão de Encerramento do Caixa */}
           <View style={styles.acaoRodapeContainer}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Encerrar sessão e fechar caixa"
-              accessibilityState={{ disabled: !isCaixaAberto }}
-              disabled={!isCaixaAberto}
+              accessibilityLabel={textoAcao}
+              accessibilityState={{ disabled: acaoDesabilitada, busy: isAbrindo || isPending }}
+              disabled={acaoDesabilitada}
               style={({ pressed }) => [
                 styles.botaoEncerrar,
-                !isCaixaAberto && styles.botaoEncerrarDesabilitado,
-                pressed && isCaixaAberto && styles.botaoEncerrarPressionado,
+                acaoDesabilitada && styles.botaoEncerrarDesabilitado,
+                pressed && !acaoDesabilitada && styles.botaoEncerrarPressionado,
               ]}
-              onPress={() => setIsModalVisivel(true)}
+              onPress={() => {
+                if (isCaixaAberto) setIsModalVisivel(true);
+                else dispararAbertura();
+              }}
             >
-              <View style={styles.conteudoBotao}>
-                <ThemedText variant="title" style={styles.iconeBotao}>
-                  🔄
-                </ThemedText>
-                <ThemedText
-                  variant="subtitle"
-                  weight="bold"
-                  color={tokens.colors.white}
-                  style={styles.textoBotao}
-                >
-                  {isCaixaAberto
-                    ? 'Encerrar Sessão e Fechar Caixa'
-                    : 'Caixa do Turno Encerrado'}
-                </ThemedText>
-              </View>
+              <ThemedText
+                variant="subtitle"
+                weight="bold"
+                color={tokens.colors.white}
+                style={styles.textoBotao}
+              >
+                {textoAcao}
+              </ThemedText>
             </Pressable>
 
-            <ThemedText variant="caption" style={styles.microcopiaRodape}>
-              O encerramento consolida o histórico de vendas e dispara o
-              processamento preditivo de inteligência artificial.
-            </ThemedText>
+            {isCaixaAberto && (
+              <ThemedText variant="caption" style={styles.microcopiaRodape}>
+                O encerramento consolida o histórico de vendas e dispara o
+                processamento preditivo de inteligência artificial.
+              </ThemedText>
+            )}
           </View>
         </ScrollView>
 
@@ -157,14 +159,6 @@ const styles = StyleSheet.create({
   botaoEncerrarPressionado: {
     backgroundColor: tokens.colors.primaryDark,
     opacity: 0.88,
-  },
-  conteudoBotao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  iconeBotao: {
-    fontSize: tokens.typography.fontMd,
   },
   textoBotao: {
     fontSize: tokens.typography.fontMd,
