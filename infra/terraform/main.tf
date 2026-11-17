@@ -115,3 +115,16 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   custom_data = base64encode(file("${path.module}/cloud-init.yaml"))
 }
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm" {
+  virtual_machine_id = azurerm_linux_virtual_machine.vm.id
+  location           = azurerm_resource_group.rg.location
+  enabled            = true
+
+  daily_recurrence_time = "0200"
+  timezone              = "UTC"
+
+  notification_settings {
+    enabled = false
+  }
+}
