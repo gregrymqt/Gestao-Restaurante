@@ -34,14 +34,15 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginBottom: 2,
+          marginBottom: 0,
+          lineHeight: 14,
         },
         tabBarStyle: {
           backgroundColor: tokens.colors.card,
           borderTopColor: tokens.colors.border,
-          height: 56 + bottomPadding,
+          height: 64 + bottomPadding,
           paddingBottom: bottomPadding,
-          paddingTop: 6,
+          paddingTop: 8,
         },
       }}
     >

@@ -25,6 +25,21 @@ export function HeaderGestorBoasVindas({
   const isAberta = statusLoja === 'ABERTA';
   const sseStatus = useSseStatus((state) => state.status);
   const isSseActive = sseStatus === 'CONNECTED';
+  const isOnline = isSseActive;
+
+  // Dot: verde → operacional, âmbar → offline/sync, cinza → fechado
+  const dotStyle = isAberta && isOnline
+    ? styles.dotGreen
+    : isAberta && !isOnline
+    ? styles.dotAmber
+    : styles.dotGray;
+
+  // Subtexto: nunca contradiz dot
+  const subtextoStatus = isAberta && isOnline
+    ? 'Operação Ativa'
+    : isAberta && !isOnline
+    ? 'Offline'
+    : 'Loja Fechada';
 
   // Iniciais do gestor para avatar compacto (ex: "Gestor Restaurante" -> "GR")
   const iniciais = (nomeGestor || 'Gestor')
@@ -38,7 +53,7 @@ export function HeaderGestorBoasVindas({
     <View style={styles.container}>
       {/* Lado Esquerdo: Identidade da Unidade + Status Operacional Integrado */}
       <View style={styles.ladoEsquerdo}>
-        <View style={[styles.statusDot, isAberta ? styles.dotGreen : styles.dotGray]} />
+        <View style={[styles.statusDot, dotStyle]} />
         <View style={styles.textosContexto}>
           <ThemedText
             variant="subtitle"
@@ -49,7 +64,7 @@ export function HeaderGestorBoasVindas({
             {nomeRestaurante || 'Restaurante Inteligente'}
           </ThemedText>
           <ThemedText variant="caption" style={styles.subtexto}>
-            {turnoAtual || 'Turno Ativo'} • {isAberta ? 'Operação Ativa' : 'Loja Fechada'}
+            {turnoAtual || 'Turno Ativo'} • {subtextoStatus}
           </ThemedText>
         </View>
       </View>
@@ -93,7 +108,8 @@ export function HeaderGestorBoasVindas({
 
 const styles = StyleSheet.create({
   container: {
-    height: 52,
+    minHeight: 52,
+    paddingVertical: tokens.spacing.sm,
     backgroundColor: tokens.colors.card,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,

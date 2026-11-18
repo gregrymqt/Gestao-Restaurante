@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { PrevisaoIaResumo } from '../types';
@@ -17,7 +18,7 @@ export function PrevisaoDemandaIaCard({
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.tituloRow}>
-          <ThemedText style={styles.iconeIa}>🤖</ThemedText>
+          <Ionicons name="sparkles" size={22} color={tokens.colors.primary} />
           <View style={styles.tituloTextos}>
             <ThemedText variant="subtitle" weight="bold">
               Inteligência Preditiva de Demanda
@@ -46,9 +47,14 @@ export function PrevisaoDemandaIaCard({
             VOLUME TOTAL ESPERADO
           </ThemedText>
           <View style={styles.valorPrevisaoLinha}>
-            <ThemedText variant="title" weight="bold" color={tokens.colors.primary}>
-              ~{previsao.totalItensPrevistos} pratos
-            </ThemedText>
+            <View style={styles.valorPrevisaoAgrupamento}>
+              <ThemedText style={styles.numeroDestaque}>
+                ~{previsao.totalItensPrevistos}
+              </ThemedText>
+              <ThemedText style={styles.unidadePratos}>
+                pratos
+              </ThemedText>
+            </View>
             <View style={styles.tagCrescimento}>
               <ThemedText variant="caption" weight="bold" color={tokens.colors.status.greenText}>
                 +{previsao.variacaoPercentual}%
@@ -63,8 +69,8 @@ export function PrevisaoDemandaIaCard({
           <ThemedText variant="caption" style={styles.labelBloco}>
             ITEM MAIS DEMANDADO
           </ThemedText>
-          <ThemedText variant="caption" weight="bold" numberOfLines={1}>
-            🍔 {previsao.produtoDestaque}
+          <ThemedText variant="caption" weight="bold" numberOfLines={2}>
+            {previsao.produtoDestaque}
           </ThemedText>
           <ThemedText variant="caption" style={styles.textoClima}>
             Clima: {previsao.condicaoClimaPrevista}
@@ -101,9 +107,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: tokens.spacing.xs,
   },
-  iconeIa: {
-    fontSize: 24,
-  },
   subtituloIa: {
     fontSize: tokens.typography.fontXs,
     color: tokens.colors.textMuted,
@@ -121,9 +124,10 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   blocoPrevisao: {
-    flex: 1,
+    flex: 2,
   },
   labelBloco: {
     fontSize: 10,
@@ -134,6 +138,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
+  },
+  valorPrevisaoAgrupamento: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+  },
+  numeroDestaque: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  unidadePratos: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: tokens.colors.textSecondary,
   },
   tagCrescimento: {
     backgroundColor: tokens.colors.status.greenBg,
@@ -147,7 +167,7 @@ const styles = StyleSheet.create({
     marginHorizontal: tokens.spacing.md,
   },
   blocoContexto: {
-    flex: 1,
+    flex: 3,
   },
   textoClima: {
     fontSize: 10,

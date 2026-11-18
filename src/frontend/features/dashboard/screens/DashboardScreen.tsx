@@ -4,17 +4,17 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '@/components/primitives/tokens';
-import { ThemedText } from '@/components/primitives/ThemedText';
+import { useSseStatus } from '@/shared';
 import { useAssinatura, ModalPaywall } from '@/features/assinatura';
 import { OrdemCompraModal } from '@/features/previsoes';
 import { ModalHistoricoVendas } from '@/features/vendas';
 import { useDashboardExecutivo } from '../hooks/useDashboardExecutivo';
 import { HeaderGestorBoasVindas } from '../components/HeaderGestorBoasVindas';
+import { HeroActionsGrid } from '../components/HeroActionsGrid';
 import { KpisFaturamentoCard } from '../components/KpisFaturamentoCard';
 import { AlertaEstoqueCriticoCard } from '../components/AlertaEstoqueCriticoCard';
 import { PrevisaoDemandaIaCard } from '../components/PrevisaoDemandaIaCard';
@@ -28,6 +28,8 @@ export function DashboardScreen() {
 
   const { dashboard, isLoading, refetch, tenant, operador } = useDashboardExecutivo();
   const { assinatura, isAssinando, assinarPlano } = useAssinatura();
+  const sseStatus = useSseStatus((state) => state.status);
+  const isOffline = sseStatus !== 'CONNECTED';
 
   const sugestoesCompra = dashboard.insumosCriticos.map((i) => ({
     insumoId: i.id,
@@ -70,64 +72,28 @@ export function DashboardScreen() {
             />
           }
         >
-          {/* Card 1: KPIs Financeiros e Faturamento do Dia */}
-          <KpisFaturamentoCard kpis={dashboard.kpis} />
+          {/* Zona de Ação Primária: PDV e KDS */}
+          <HeroActionsGrid
+            pedidosNaCozinha={dashboard.kpis.pedidosNaCozinha ?? 0}
+            isOffline={isOffline}
+            onAbrirPdv={handleAbrirPdvTeste}
+            onAbrirKds={handleAbrirKds}
+          />
 
-          {/* Botão Operacional: Ver Histórico de Vendas */}
-          <Pressable
-            style={({ pressed }) => [styles.btnHistorico, pressed && styles.btnHistoricoPressed]}
-            onPress={() => setIsHistoricoVendasOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Ver Histórico de Vendas do Dia"
-          >
-            <View style={styles.btnHistoricoLeft}>
-              <ThemedText style={styles.btnHistoricoIcone}>🧾</ThemedText>
-              <View>
-                <ThemedText variant="body" weight="bold" style={styles.btnHistoricoTexto}>
-                  Histórico de Vendas do Dia
-                </ThemedText>
-                <ThemedText variant="caption" style={styles.btnHistoricoSub}>
-                  {dashboard.kpis.quantidadePedidos} {dashboard.kpis.quantidadePedidos === 1 ? 'pedido registrado' : 'pedidos registrados'} • Toque para auditar cupons
-                </ThemedText>
-              </View>
-            </View>
-            <ThemedText variant="subtitle" weight="bold" style={styles.btnHistoricoSeta}>
-              →
-            </ThemedText>
-          </Pressable>
-
-          {/* Botão Operacional: Painel da Cozinha (KDS) */}
-          <Pressable
-            style={({ pressed }) => [styles.btnHistorico, pressed && styles.btnHistoricoPressed]}
-            onPress={handleAbrirKds}
-            accessibilityRole="button"
-            accessibilityLabel="Abrir Painel da Cozinha KDS"
-          >
-            <View style={styles.btnHistoricoLeft}>
-              <ThemedText style={styles.btnHistoricoIcone}>👨‍🍳</ThemedText>
-              <View>
-                <ThemedText variant="body" weight="bold" style={styles.btnHistoricoTexto}>
-                  Painel da Cozinha (KDS)
-                </ThemedText>
-                <ThemedText variant="caption" style={styles.btnHistoricoSub}>
-                  {dashboard.kpis.pedidosNaCozinha ?? 0}{' '}
-                  {(dashboard.kpis.pedidosNaCozinha ?? 0) === 1 ? 'pedido em preparo na chapa' : 'pedidos ativos na cozinha'} • Tela cheia
-                </ThemedText>
-              </View>
-            </View>
-            <ThemedText variant="subtitle" weight="bold" style={styles.btnHistoricoSeta}>
-              →
-            </ThemedText>
-          </Pressable>
-
-          {/* Card 2: Alertas Reativos de Estoque Crítico (SSE) */}
+          {/* Alertas Reativos de Estoque Crítico (SSE) */}
           <AlertaEstoqueCriticoCard
             insumos={dashboard.insumosCriticos}
             onNavegarEstoque={handleNavegarEstoque}
             onAbrirOrdemCompra={() => setIsOrdemCompraOpen(true)}
           />
 
-          {/* Card 3: Previsão Preditiva de Demanda com IA */}
+          {/* Card: KPIs Financeiros e Faturamento do Dia (clicável para histórico) */}
+          <KpisFaturamentoCard
+            kpis={dashboard.kpis}
+            onPress={() => setIsHistoricoVendasOpen(true)}
+          />
+
+          {/* Previsão Preditiva de Demanda com IA */}
           <PrevisaoDemandaIaCard
             previsao={dashboard.previsaoIa}
             onNavegarPrevisoes={handleNavegarPrevisoes}
@@ -135,10 +101,7 @@ export function DashboardScreen() {
 
           {/* Grade de Atalhos Operacionais Rápidos */}
           <AtalhosOperacionaisGrid
-            onNavegarEstoque={handleNavegarEstoque}
             onNavegarCaixa={handleNavegarCaixa}
-            onNavegarPrevisoes={handleNavegarPrevisoes}
-            onAbrirPdvTeste={handleAbrirPdvTeste}
           />
         </ScrollView>
 
@@ -187,43 +150,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: tokens.spacing.xl,
-  },
-  btnHistorico: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: tokens.colors.card,
-    marginHorizontal: tokens.spacing.md,
-    marginTop: tokens.spacing.sm,
-    marginBottom: tokens.spacing.xs,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    borderRadius: tokens.radii.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  btnHistoricoPressed: {
-    opacity: 0.8,
-    backgroundColor: tokens.colors.primaryLight,
-  },
-  btnHistoricoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  btnHistoricoIcone: {
-    fontSize: 22,
-    marginRight: 12,
-  },
-  btnHistoricoTexto: {
-    color: tokens.colors.textPrimary,
-  },
-  btnHistoricoSub: {
-    color: tokens.colors.textSecondary,
-    marginTop: 2,
-  },
-  btnHistoricoSeta: {
-    color: tokens.colors.primary,
-    marginLeft: 8,
   },
 });

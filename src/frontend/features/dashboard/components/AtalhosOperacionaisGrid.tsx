@@ -1,49 +1,23 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
 interface AtalhosOperacionaisGridProps {
-  onNavegarEstoque: () => void;
   onNavegarCaixa: () => void;
-  onNavegarPrevisoes: () => void;
-  onAbrirPdvTeste: () => void;
 }
 
 export function AtalhosOperacionaisGrid({
-  onNavegarEstoque,
   onNavegarCaixa,
-  onNavegarPrevisoes,
-  onAbrirPdvTeste,
 }: AtalhosOperacionaisGridProps) {
   const atalhos = [
     {
-      id: 'atalho-estoque',
-      titulo: 'Estoque & Ficha',
-      descricao: 'Saldo e baixas BOM',
-      icone: '📦',
-      onPress: onNavegarEstoque,
-    },
-    {
       id: 'atalho-caixa',
       titulo: 'Auditoria de Caixa',
-      descricao: 'Conferência e turno',
-      icone: '🔒',
+      descricao: 'Conferência de sangrias e turno',
+      icone: 'lock-closed' as const,
       onPress: onNavegarCaixa,
-    },
-    {
-      id: 'atalho-previsoes',
-      titulo: 'Previsões com IA',
-      descricao: 'Sugestões de compra',
-      icone: '🤖',
-      onPress: onNavegarPrevisoes,
-    },
-    {
-      id: 'atalho-pdv',
-      titulo: 'Simulador PDV',
-      descricao: 'Testar venda balcão',
-      icone: '🛒',
-      onPress: onAbrirPdvTeste,
     },
   ];
 
@@ -62,13 +36,20 @@ export function AtalhosOperacionaisGrid({
             onPress={item.onPress}
             style={({ pressed }) => [styles.cardAtalho, pressed && styles.cardPressionado]}
           >
-            <ThemedText style={styles.icone}>{item.icone}</ThemedText>
-            <ThemedText variant="caption" weight="bold" style={styles.titulo}>
-              {item.titulo}
-            </ThemedText>
-            <ThemedText variant="caption" style={styles.descricao}>
-              {item.descricao}
-            </ThemedText>
+            <View style={styles.conteudoEsquerda}>
+              <View style={styles.iconeWrapper}>
+                <Ionicons name={item.icone} size={18} color={tokens.colors.primary} />
+              </View>
+              <View style={styles.textos}>
+                <ThemedText variant="body" weight="bold" style={styles.titulo}>
+                  {item.titulo}
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.descricao}>
+                  {item.descricao}
+                </ThemedText>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={tokens.colors.textMuted} />
           </Pressable>
         ))}
       </View>
@@ -93,28 +74,47 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.sm,
   },
   cardAtalho: {
-    width: '48%',
+    width: '100%',
     backgroundColor: tokens.colors.card,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    padding: tokens.spacing.md,
-    alignItems: 'flex-start',
+    borderRadius: tokens.radii.lg,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   cardPressionado: {
     backgroundColor: tokens.colors.primaryLight,
     borderColor: tokens.colors.primary,
   },
-  icone: {
-    fontSize: 22,
-    marginBottom: 6,
+  conteudoEsquerda: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+    flex: 1,
+  },
+  iconeWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textos: {
+    flex: 1,
   },
   titulo: {
     color: tokens.colors.textPrimary,
-    marginBottom: 2,
+    fontSize: 13,
+    lineHeight: 16,
   },
   descricao: {
     color: tokens.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 1,
   },
 });

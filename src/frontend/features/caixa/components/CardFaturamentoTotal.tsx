@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 
@@ -32,6 +33,11 @@ export function CardFaturamentoTotal({
             isMetaPositiva ? styles.badgeMetaPositiva : styles.badgeMetaNegativa,
           ]}
         >
+          {isMetaPositiva ? (
+            <Ionicons name="trending-up" size={14} color={tokens.colors.status.greenText} />
+          ) : (
+            <Ionicons name="trending-down" size={14} color={tokens.colors.status.redText} />
+          )}
           <ThemedText
             variant="caption"
             weight="bold"
@@ -41,7 +47,7 @@ export function CardFaturamentoTotal({
                 : tokens.colors.status.redText
             }
           >
-            {isMetaPositiva ? '📈 +' : '📉 '}
+            {isMetaPositiva ? ' +' : ' '}
             {percentualMeta.toFixed(1)}% vs meta
           </ThemedText>
         </View>
@@ -62,7 +68,7 @@ export function CardFaturamentoTotal({
         {/* Submétrica 1: Transações */}
         <View style={styles.submetricaCard}>
           <View style={styles.iconeWrapper}>
-            <ThemedText variant="title">🧾</ThemedText>
+            <Ionicons name="receipt-outline" size={18} color={tokens.colors.textMuted} />
           </View>
           <View style={styles.submetricaCol}>
             <ThemedText variant="caption" style={styles.submetricaLabel}>
@@ -77,7 +83,7 @@ export function CardFaturamentoTotal({
         {/* Submétrica 2: Ticket Médio */}
         <View style={styles.submetricaCard}>
           <View style={styles.iconeWrapper}>
-            <ThemedText variant="title">📊</ThemedText>
+            <Ionicons name="bar-chart-outline" size={18} color={tokens.colors.textMuted} />
           </View>
           <View style={styles.submetricaCol}>
             <ThemedText variant="caption" style={styles.submetricaLabel}>
@@ -115,6 +121,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   badgeMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 2,
     borderRadius: tokens.radii.full,
