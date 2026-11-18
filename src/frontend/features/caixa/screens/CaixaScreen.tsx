@@ -7,49 +7,96 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { useSseStatus } from '@/shared';
 import { useAbrirCaixa, useCaixaAtual } from '../hooks/useCaixaAtual';
 import { useFecharCaixa } from '../hooks/useFecharCaixa';
+import { useMovimentacaoCaixa } from '../hooks/useMovimentacaoCaixa';
 import { ContextoOperacionalHeader } from '../components/ContextoOperacionalHeader';
-import { useRouter } from 'expo-router';
 import { CardFaturamentoTotal } from '../components/CardFaturamentoTotal';
+import { BotoesMovimentacaoTurno } from '../components/BotoesMovimentacaoTurno';
 import { DistribuicaoPagamentos } from '../components/DistribuicaoPagamentos';
-import { WidgetClimaSessao } from '../components/WidgetClimaSessao';
 import { ModalConfirmarFechamento } from '../components/ModalConfirmarFechamento';
+import { ModalMovimentacaoCaixa } from '@/features/perfil/components/ModalMovimentacaoCaixa';
+import { TipoMovimentacaoCaixa } from '@/features/perfil/types';
 
 export function CaixaScreen() {
   const router = useRouter();
-  const [isModalVisivel, setIsModalVisivel] = useState(false);
+  const [isModalFechamentoVisivel, setIsModalFechamentoVisivel] = useState(false);
+  const [isModalMovimentacaoVisivel, setIsModalMovimentacaoVisivel] = useState(false);
+  const [tipoMovimentacao, setTipoMovimentacao] = useState<TipoMovimentacaoCaixa>('SUPRIMENTO');
+
+  const sseStatus = useSseStatus((state) => state.status);
+  const isOffline = sseStatus !== 'CONNECTED';
+
   const { sessao, isLoading, refetch } = useCaixaAtual();
   const { mutate: dispararAbertura, isPending: isAbrindo } = useAbrirCaixa();
 
-  const { mutate: dispararFechamento, isPending } = useFecharCaixa({
+  const { mutate: dispararFechamento, isPending: isFechando } = useFecharCaixa({
     onSuccessCallback: () => {
-      setIsModalVisivel(false);
+      setIsModalFechamentoVisivel(false);
     },
   });
+
+  const saldoDinheiro =
+    sessao.pagamentos.find((p) => p.tipo === 'Dinheiro')?.valor ?? 0;
+
+  const { mutateAsync: dispararMovimentacao, isPending: isMovimentando } =
+    useMovimentacaoCaixa(saldoDinheiro);
 
   const handleConfirmarFechamento = () => {
     dispararFechamento();
   };
 
+  const handleAbrirSuprimento = () => {
+    setTipoMovimentacao('SUPRIMENTO');
+    setIsModalMovimentacaoVisivel(true);
+  };
+
+  const handleAbrirSangria = () => {
+    setTipoMovimentacao('SANGRIA');
+    setIsModalMovimentacaoVisivel(true);
+  };
+
+  const handleSubmitMovimentacao = async (dados: { valor: number; motivo: string }) => {
+    try {
+      await dispararMovimentacao({
+        tipo: tipoMovimentacao,
+        valor: dados.valor,
+        motivo: dados.motivo,
+      });
+      setIsModalMovimentacaoVisivel(false);
+    } catch {
+      // O hook gerencia a notificação de erro via AppDialog
+    }
+  };
+
   const isCaixaAberto = sessao.status === 'Aberta';
-  const acaoDesabilitada = isLoading || isAbrindo || isPending;
-  const textoAcao = isAbrindo
-    ? 'Abrindo caixa…'
-    : isCaixaAberto ? 'Encerrar Sessão e Fechar Caixa' : 'Abrir Caixa';
+  const acaoDesabilitada =
+    isLoading || isAbrindo || isFechando || (isCaixaAberto && isOffline);
+
+  const textoAcao =
+    isCaixaAberto && isOffline
+      ? 'Conexão necessária para encerrar'
+      : isAbrindo
+      ? 'Abrindo caixa…'
+      : isCaixaAberto
+      ? 'Encerrar Sessão e Fechar Caixa'
+      : 'Abrir Caixa';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        {/* Header Fixo de Contexto Operacional */}
+        {/* Header Compacto Fixo de Contexto Operacional (52px) */}
         <ContextoOperacionalHeader
           status={sessao.status}
           terminal={sessao.terminal}
           dataHora={sessao.dataHoraFormatada}
           turno={sessao.turno}
           operador={sessao.operador}
+          isOffline={isOffline}
           onPressVoltar={() => router.push('/(tabs)')}
         />
 
@@ -66,6 +113,13 @@ export function CaixaScreen() {
             />
           }
         >
+          {/* Metadados Operacionais Scrolláveis */}
+          <View style={styles.metaRow}>
+            <ThemedText variant="caption" style={styles.metaTexto}>
+              {sessao.terminal} • Abertura {sessao.dataHoraFormatada} • {sessao.operador}
+            </ThemedText>
+          </View>
+
           {/* Card 1: Faturamento Consolidado */}
           <CardFaturamentoTotal
             totalApurado={sessao.totalApurado}
@@ -74,17 +128,25 @@ export function CaixaScreen() {
             ticketMedio={sessao.ticketMedio}
           />
 
+          {/* Ações Operacionais de Turno: Suprimento e Sangria */}
+          <BotoesMovimentacaoTurno
+            onSuprimento={handleAbrirSuprimento}
+            onSangria={handleAbrirSangria}
+            disabled={!isCaixaAberto}
+          />
+
           {/* Card 2: Distribuição dos 4 Métodos de Pagamento */}
           <DistribuicaoPagamentos pagamentos={sessao.pagamentos} />
 
-          {/* Card 3: Contexto Climático da Sessão */}
-          <WidgetClimaSessao clima={sessao.clima} />
-
+          {/* Ação de Encerramento / Abertura de Caixa */}
           <View style={styles.acaoRodapeContainer}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={textoAcao}
-              accessibilityState={{ disabled: acaoDesabilitada, busy: isAbrindo || isPending }}
+              accessibilityState={{
+                disabled: acaoDesabilitada,
+                busy: isAbrindo || isFechando,
+              }}
               disabled={acaoDesabilitada}
               style={({ pressed }) => [
                 styles.botaoEncerrar,
@@ -92,7 +154,7 @@ export function CaixaScreen() {
                 pressed && !acaoDesabilitada && styles.botaoEncerrarPressionado,
               ]}
               onPress={() => {
-                if (isCaixaAberto) setIsModalVisivel(true);
+                if (isCaixaAberto) setIsModalFechamentoVisivel(true);
                 else dispararAbertura();
               }}
             >
@@ -117,11 +179,21 @@ export function CaixaScreen() {
 
         {/* Modal Seguro de Confirmação com Dupla Etapa */}
         <ModalConfirmarFechamento
-          visible={isModalVisivel}
+          visible={isModalFechamentoVisivel}
           sessao={sessao}
-          isPending={isPending}
+          isPending={isFechando}
           onConfirmar={handleConfirmarFechamento}
-          onClose={() => setIsModalVisivel(false)}
+          onClose={() => setIsModalFechamentoVisivel(false)}
+        />
+
+        {/* Modal de Movimentação de Caixa (Suprimento / Sangria) */}
+        <ModalMovimentacaoCaixa
+          visible={isModalMovimentacaoVisivel}
+          tipo={tipoMovimentacao}
+          saldoDisponivel={saldoDinheiro}
+          isSubmitting={isMovimentando}
+          onClose={() => setIsModalMovimentacaoVisivel(false)}
+          onSubmit={handleSubmitMovimentacao}
         />
       </View>
     </SafeAreaView>
@@ -139,6 +211,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: tokens.spacing.xxl,
+  },
+  metaRow: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xs,
+  },
+  metaTexto: {
+    fontSize: tokens.typography.fontXs,
+    color: tokens.colors.textMuted,
   },
   acaoRodapeContainer: {
     paddingHorizontal: tokens.spacing.lg,

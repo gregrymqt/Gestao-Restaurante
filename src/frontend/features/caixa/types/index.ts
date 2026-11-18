@@ -9,7 +9,8 @@ export interface MetodoPagamentoResumo {
   readonly transacoesTexto: string;
   readonly badge?: string;
   readonly corBarra: string;
-  readonly icone: string;
+  readonly iconeVector: 'flash' | 'card' | 'cash';
+  readonly corContainer: string;
 }
 
 export interface DadosClimaticos {
@@ -33,7 +34,6 @@ export interface SessaoCaixaResumo {
   readonly totalVendas: number;
   readonly ticketMedio: number;
   readonly pagamentos: readonly MetodoPagamentoResumo[];
-  readonly clima: DadosClimaticos;
 }
 
 export interface AbrirCaixaResponseDto {

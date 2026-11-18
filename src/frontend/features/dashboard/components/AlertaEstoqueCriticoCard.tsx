@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { formatarQuantidade } from '@/shared/utils/formatters';
@@ -17,27 +18,15 @@ export function AlertaEstoqueCriticoCard({
   onAbrirOrdemCompra,
 }: AlertaEstoqueCriticoCardProps) {
   if (!insumos || insumos.length === 0) {
-    return (
-      <View style={styles.cardOk}>
-        <ThemedText style={styles.iconeOk}>✅</ThemedText>
-        <View style={styles.textosOk}>
-          <ThemedText variant="subtitle" weight="bold" color={tokens.colors.status.greenText}>
-            Estoque em Nível Seguro
-          </ThemedText>
-          <ThemedText variant="caption" style={styles.subtextoOk}>
-            Nenhum insumo está abaixo da margem mínima operacional.
-          </ThemedText>
-        </View>
-      </View>
-    );
+    return null;
   }
 
   return (
     <View style={styles.cardAlerta}>
       <View style={styles.header}>
         <View style={styles.tituloRow}>
-          <ThemedText style={styles.iconeAlerta}>⚠️</ThemedText>
-          <ThemedText variant="subtitle" weight="bold" color={tokens.colors.status.redText}>
+          <Ionicons name="warning" size={18} color="#D97706" />
+          <ThemedText variant="subtitle" weight="bold" color="#92400E">
             Atenção: {insumos.length} {insumos.length === 1 ? 'Insumo Crítico' : 'Insumos Críticos'}
           </ThemedText>
         </View>
@@ -86,9 +75,12 @@ export function AlertaEstoqueCriticoCard({
           onPress={onAbrirOrdemCompra}
           style={({ pressed }) => [styles.botaoOrdemCompra, pressed && styles.pressed]}
         >
-          <ThemedText variant="caption" weight="bold" color={tokens.colors.white}>
-            📋 Gerar Pedido de Compra ({insumos.length})
-          </ThemedText>
+          <View style={styles.botaoOrdemCompraConteudo}>
+            <Ionicons name="document-text-outline" size={16} color={tokens.colors.white} />
+            <ThemedText variant="caption" weight="bold" color={tokens.colors.white}>
+              Gerar Pedido de Compra ({insumos.length})
+            </ThemedText>
+          </View>
         </Pressable>
       )}
     </View>
@@ -97,35 +89,13 @@ export function AlertaEstoqueCriticoCard({
 
 const styles = StyleSheet.create({
   cardAlerta: {
-    backgroundColor: '#FFF5F5',
+    backgroundColor: '#FFFBEB',
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: '#FCD34D',
     borderRadius: tokens.radii.lg,
     padding: tokens.spacing.md,
     marginHorizontal: tokens.spacing.lg,
     marginTop: tokens.spacing.md,
-  },
-  cardOk: {
-    backgroundColor: '#F1F8E9',
-    borderWidth: 1,
-    borderColor: '#C8E6C9',
-    borderRadius: tokens.radii.lg,
-    padding: tokens.spacing.md,
-    marginHorizontal: tokens.spacing.lg,
-    marginTop: tokens.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  iconeOk: {
-    fontSize: 22,
-  },
-  textosOk: {
-    flex: 1,
-  },
-  subtextoOk: {
-    color: tokens.colors.textSecondary,
-    fontSize: tokens.typography.fontXs,
   },
   header: {
     flexDirection: 'row',
@@ -165,7 +135,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#FFE0E0',
+    borderColor: '#FDE68A',
   },
   itemInfo: {
     flex: 1,
@@ -175,7 +145,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
   },
   badgeQtd: {
-    backgroundColor: tokens.colors.status.redBg,
+    backgroundColor: '#FEF3C7',
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 2,
     borderRadius: tokens.radii.full,
@@ -187,5 +157,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: tokens.spacing.md,
+  },
+  botaoOrdemCompraConteudo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });

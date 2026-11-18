@@ -21,8 +21,9 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
       percentual: 45,
       transacoesTexto: 'Taxa líquida 0%',
       badge: 'Instantâneo',
-      corBarra: '#B3261E',
-      icone: '⚡',
+      corBarra: '#00897B',
+      corContainer: '#E0F2F1',
+      iconeVector: 'flash',
     },
     {
       id: 'metodo-credito',
@@ -31,8 +32,9 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
       valor: 740.50,
       percentual: 30,
       transacoesTexto: '14 transações',
-      corBarra: '#D9381E',
-      icone: '💳',
+      corBarra: '#1E88E5',
+      corContainer: '#E3F2FD',
+      iconeVector: 'card',
     },
     {
       id: 'metodo-debito',
@@ -41,8 +43,9 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
       valor: 420.00,
       percentual: 17,
       transacoesTexto: '9 transações',
-      corBarra: '#F28B82',
-      icone: '📟',
+      corBarra: '#7E57C2',
+      corContainer: '#EDE7F6',
+      iconeVector: 'card',
     },
     {
       id: 'metodo-dinheiro',
@@ -52,18 +55,11 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
       percentual: 8,
       transacoesTexto: '5 transações físicas',
       badge: 'Gaveta OK',
-      corBarra: '#FCE8E6',
-      icone: '💵',
+      corBarra: '#F59E0B',
+      corContainer: '#FEF3C7',
+      iconeVector: 'cash',
     },
   ],
-  clima: {
-    temperatura: 26,
-    condicao: 'Parc. Nublado',
-    umidade: 68,
-    statusUmidade: 'Ideal Cozinha',
-    chuvaMm: 0.0,
-    statusChuva: 'Sem Impacto',
-  },
 };
 
 export const caixaService = {

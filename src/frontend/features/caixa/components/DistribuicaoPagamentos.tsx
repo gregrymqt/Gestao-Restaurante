@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { ComponentProps } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { MetodoPagamentoResumo } from '../types';
 
 interface DistribuicaoPagamentosProps {
   pagamentos: readonly MetodoPagamentoResumo[];
+}
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+function obterNomeIcone(tipo: 'flash' | 'card' | 'cash'): IoniconsName {
+  if (tipo === 'flash') return 'flash-outline';
+  if (tipo === 'card') return 'card-outline';
+  return 'cash-outline';
 }
 
 export function DistribuicaoPagamentos({ pagamentos }: DistribuicaoPagamentosProps) {
@@ -42,12 +51,18 @@ export function DistribuicaoPagamentos({ pagamentos }: DistribuicaoPagamentosPro
         {pagamentos.map((metodo) => {
           const isGaveta = metodo.badge === 'Gaveta OK';
           const isInstantaneo = metodo.badge === 'Instantâneo';
+          const iconName = obterNomeIcone(metodo.iconeVector);
 
           return (
             <View key={metodo.id} style={styles.cardModalidade}>
               <View style={styles.cardEsquerda}>
-                <View style={styles.iconeWrapper}>
-                  <ThemedText variant="title">{metodo.icone}</ThemedText>
+                <View
+                  style={[
+                    styles.iconeWrapper,
+                    metodo.corContainer ? { backgroundColor: metodo.corContainer } : null,
+                  ]}
+                >
+                  <Ionicons name={iconName} size={20} color={metodo.corBarra} />
                 </View>
 
                 <View style={styles.infoCol}>
@@ -112,9 +127,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: tokens.spacing.sm,
     marginBottom: tokens.spacing.sm,
   },
   tituloSecao: {
+    flex: 1,
     fontSize: tokens.typography.fontMd,
     fontWeight: '700',
     color: tokens.colors.textPrimary,
@@ -122,6 +139,8 @@ const styles = StyleSheet.create({
   modalidadesTexto: {
     fontSize: tokens.typography.fontXs,
     color: tokens.colors.textMuted,
+    flexShrink: 0,
+    textAlign: 'right',
   },
   barraProporcionalContainer: {
     flexDirection: 'row',

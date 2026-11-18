@@ -124,3 +124,6 @@ infra/terraform/.env.deployed.local
 *.tfstate.*
 .terraform/
 
+# Machine-specific agent MCP configuration
+.agents/mcp_config.json
+
