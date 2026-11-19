@@ -7,9 +7,12 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { formatarMoeda } from '@/shared/utils/formatters';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { SugestaoReposicaoInsumo } from '../types';
 import { OrdemCompraItemRow } from './OrdemCompraItemRow';
 
@@ -35,22 +38,29 @@ export function OrdemCompraModal({
 }: OrdemCompraModalProps) {
   const itensParaComprar = sugestoes.filter((s) => s.quantidadeComprar > 0);
   const [itensSelecionados, setItensSelecionados] = useState<Record<string, boolean>>({});
+  const [qtdOverrides, setQtdOverrides] = useState<Record<string, number>>({});
+  const isApiOnline = useConnectionStore((s) => s.isApiOnline);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!visible) return;
 
-    const initial: Record<string, boolean> = {};
+    const initialSel: Record<string, boolean> = {};
+    const initialQtd: Record<string, number> = {};
     if (insumoFocoId) {
       const focoExiste = itensParaComprar.some((i) => i.insumoId === insumoFocoId);
       itensParaComprar.forEach((i) => {
-        initial[i.insumoId] = focoExiste ? i.insumoId === insumoFocoId : true;
+        initialSel[i.insumoId] = focoExiste ? i.insumoId === insumoFocoId : true;
+        initialQtd[i.insumoId] = i.quantidadeComprar;
       });
     } else {
       itensParaComprar.forEach((i) => {
-        initial[i.insumoId] = true;
+        initialSel[i.insumoId] = true;
+        initialQtd[i.insumoId] = i.quantidadeComprar;
       });
     }
-    setItensSelecionados(initial);
+    setItensSelecionados(initialSel);
+    setQtdOverrides(initialQtd);
   }, [visible, sugestoes, insumoFocoId]);
 
   const toggleItem = (insumoId: string) => {
@@ -60,9 +70,23 @@ export function OrdemCompraModal({
     }));
   };
 
+  const handleQtdChange = (insumoId: string, novaQtd: number) => {
+    setQtdOverrides((prev) => ({
+      ...prev,
+      [insumoId]: novaQtd,
+    }));
+  };
+
   const valorTotal = itensParaComprar
     .filter((i) => itensSelecionados[i.insumoId])
-    .reduce((acc, i) => acc + i.quantidadeComprar * (i.precoEstimadoUnitario || 35.0), 0);
+    .reduce((acc, i) => {
+      const qtd = qtdOverrides[i.insumoId] ?? i.quantidadeComprar;
+      return acc + qtd * (i.precoEstimadoUnitario || 35.0);
+    }, 0);
+
+  const countSelecionados = itensParaComprar.filter(
+    (i) => itensSelecionados[i.insumoId]
+  ).length;
 
   const handleConfirmar = async () => {
     const selecionados = itensParaComprar
@@ -70,7 +94,7 @@ export function OrdemCompraModal({
       .map((i) => ({
         insumoId: i.insumoId,
         nomeInsumo: i.nomeInsumo,
-        quantidade: i.quantidadeComprar,
+        quantidade: qtdOverrides[i.insumoId] ?? i.quantidadeComprar,
         unidadeMedida: i.unidadeMedida,
       }));
 
@@ -79,6 +103,9 @@ export function OrdemCompraModal({
       valorTotal,
     });
   };
+
+  const isBotaoConfirmarDesabilitado =
+    isEnviando || valorTotal === 0 || countSelecionados === 0 || !isApiOnline;
 
   return (
     <Modal
@@ -95,7 +122,7 @@ export function OrdemCompraModal({
               Ordem de Compra Sugerida
             </ThemedText>
             <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.subtitle}>
-              Reposição preditiva calculada para eliminar risco de ruptura (D+1)
+              Reposição preditiva calculada para eliminar risco de ruptura
             </ThemedText>
           </View>
 
@@ -109,7 +136,9 @@ export function OrdemCompraModal({
                 key={item.insumoId}
                 item={item}
                 isChecked={!!itensSelecionados[item.insumoId]}
+                qtdOverride={qtdOverrides[item.insumoId]}
                 onToggle={toggleItem}
+                onChangeQtd={handleQtdChange}
               />
             ))}
 
@@ -126,7 +155,7 @@ export function OrdemCompraModal({
             </View>
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, tokens.spacing.md) }]}>
             <View style={styles.totalRow}>
               <ThemedText variant="body" color={tokens.colors.textMuted}>
                 Custo Total Estimado:
@@ -142,6 +171,8 @@ export function OrdemCompraModal({
                 onPress={onClose}
                 disabled={isEnviando}
                 style={styles.cancelarButton}
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
               >
                 <ThemedText variant="body" style={styles.cancelarText}>
                   Voltar
@@ -151,17 +182,30 @@ export function OrdemCompraModal({
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={handleConfirmar}
-                disabled={isEnviando || valorTotal === 0}
+                disabled={isBotaoConfirmarDesabilitado}
                 style={[
                   styles.confirmarButton,
-                  (isEnviando || valorTotal === 0) && styles.buttonDisabled,
+                  isBotaoConfirmarDesabilitado && styles.buttonDisabled,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  !isApiOnline
+                    ? 'Sem conexão com a internet'
+                    : `Confirmar Envio com ${countSelecionados} itens selecionados`
+                }
               >
                 {isEnviando ? (
                   <ActivityIndicator color={tokens.colors.white} />
+                ) : !isApiOnline ? (
+                  <View style={styles.offlineRow}>
+                    <Ionicons name="cloud-offline-outline" size={16} color={tokens.colors.white} />
+                    <ThemedText variant="body" style={styles.confirmarText}>
+                      Sem Conexão
+                    </ThemedText>
+                  </View>
                 ) : (
                   <ThemedText variant="body" style={styles.confirmarText}>
-                    Confirmar Envio
+                    Confirmar Envio ({countSelecionados})
                   </ThemedText>
                 )}
               </TouchableOpacity>
@@ -184,7 +228,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: tokens.radii.lg,
     borderTopRightRadius: tokens.radii.lg,
     maxHeight: '85%',
-    paddingBottom: tokens.spacing.lg,
   },
   dragIndicator: {
     width: 40,
@@ -268,7 +311,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
   },
   confirmarButton: {
-    flex: 2,
+    flex: 3,
     backgroundColor: tokens.colors.primary,
     paddingVertical: tokens.spacing.sm + 2,
     borderRadius: tokens.radii.md,
@@ -279,6 +322,11 @@ const styles = StyleSheet.create({
   confirmarText: {
     color: tokens.colors.white,
     fontWeight: '800',
+  },
+  offlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   buttonDisabled: {
     opacity: 0.6,

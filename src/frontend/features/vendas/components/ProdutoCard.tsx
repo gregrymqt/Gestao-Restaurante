@@ -2,11 +2,26 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { Beef, UtensilsCrossed, CupSoda, Utensils, Plus } from 'lucide-react-native';
 import { Produto } from '../types';
 
 interface ProdutoCardProps {
   produto: Produto;
   aoAdicionar: (produto: Produto) => void;
+}
+
+function renderIconeCategoria(categoria?: string) {
+  const cat = categoria?.toLowerCase() || '';
+  if (cat.includes('bebida') || cat.includes('refrigerante') || cat.includes('suco')) {
+    return <CupSoda size={32} color={tokens.colors.primary} />;
+  }
+  if (cat.includes('sobremesa') || cat.includes('doce')) {
+    return <UtensilsCrossed size={32} color={tokens.colors.primary} />;
+  }
+  if (cat.includes('burger') || cat.includes('hamburguer') || cat.includes('lanche') || cat.includes('carne')) {
+    return <Beef size={32} color={tokens.colors.primary} />;
+  }
+  return <Utensils size={32} color={tokens.colors.primary} />;
 }
 
 export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
@@ -24,9 +39,9 @@ export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
     >
       {/* Imagem Placeholder Decorativa */}
       <View style={styles.imagePlaceholder}>
-        <ThemedText variant="title" style={styles.imageIcon}>
-          🍔
-        </ThemedText>
+        <View style={styles.iconContainer}>
+          {renderIconeCategoria(produto.categoria)}
+        </View>
         {isEstoqueBaixo && (
           <View style={styles.badgeEstoque}>
             <ThemedText
@@ -67,9 +82,7 @@ export function ProdutoCard({ produto, aoAdicionar }: ProdutoCardProps) {
           </View>
 
           <View style={styles.botaoAdicionar}>
-            <ThemedText variant="subtitle" style={styles.botaoAdicionarTexto}>
-              +
-            </ThemedText>
+            <Plus size={20} color={tokens.colors.primary} />
           </View>
         </View>
       </View>
@@ -92,14 +105,19 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   imagePlaceholder: {
-    height: 110,
+    height: 100,
     backgroundColor: tokens.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  imageIcon: {
-    fontSize: 40,
+  iconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: tokens.radii.lg,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badgeEstoque: {
     position: 'absolute',
@@ -147,11 +165,5 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  botaoAdicionarTexto: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '700',
-    color: tokens.colors.primary,
-    lineHeight: 26,
   },
 });

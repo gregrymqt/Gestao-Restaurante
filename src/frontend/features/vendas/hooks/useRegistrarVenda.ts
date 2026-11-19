@@ -9,6 +9,7 @@ import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 interface UseRegistrarVendaOptions {
   onSuccessCallback?: (venda: VendaResponseDto) => void;
   troco?: number;
+  skipDialog?: boolean;
 }
 
 export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
@@ -38,16 +39,18 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
         options.onSuccessCallback(data);
       }
 
-      // 4. Feedback visual completo com comprovante de venda
-      const trocoTexto =
-        options?.troco && options.troco > 0
-          ? `\n💰 Troco a Devolver: R$ ${options.troco.toFixed(2).replace('.', ',')}`
-          : '';
+      // 4. Feedback visual opcional com comprovante de venda
+      if (!options?.skipDialog) {
+        const trocoTexto =
+          options?.troco && options.troco > 0
+            ? `\n💰 Troco a Devolver: R$ ${options.troco.toFixed(2).replace('.', ',')}`
+            : '';
 
-      AppDialog.success(
-        'Venda Emitida com Sucesso! 🖨️',
-        `Comprovante: #${data.vendaId}\nForma de Pagamento: ${data.formaPagamento}\nTotal: R$ ${data.valorTotal.toFixed(2).replace('.', ',')}${trocoTexto}\n\n✅ A dedução dos insumos da ficha técnica (BOM) foi confirmada no servidor.`
-      );
+        AppDialog.success(
+          'Venda Emitida com Sucesso! 🖨️',
+          `Comprovante: #${data.vendaId}\nForma de Pagamento: ${data.formaPagamento}\nTotal: R$ ${data.valorTotal.toFixed(2).replace('.', ',')}${trocoTexto}\n\n✅ A dedução dos insumos da ficha técnica (BOM) foi confirmada no servidor.`
+        );
+      }
     },
     onError: (error: any) => {
       const serverMessage =

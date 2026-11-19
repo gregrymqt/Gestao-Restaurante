@@ -1,16 +1,32 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import type { SseConnectionState } from '@/shared/types/sse.types';
 
 interface KdsHeaderProps {
   totalAtivos: number;
   isAtualizando: boolean;
+  sseStatus: SseConnectionState;
   onVoltar: () => void;
   onRecarregar: () => void;
 }
 
-export function KdsHeader({ totalAtivos, isAtualizando, onVoltar, onRecarregar }: KdsHeaderProps) {
+export function KdsHeader({
+  totalAtivos,
+  isAtualizando,
+  sseStatus,
+  onVoltar,
+  onRecarregar,
+}: KdsHeaderProps) {
+  const isConnected = sseStatus === 'CONNECTED';
+  const isReconnecting = sseStatus === 'RECONNECTING' || sseStatus === 'CONNECTING';
+
+  const liveColor = isConnected ? '#16A34A' : isReconnecting ? '#D97706' : '#DC2626';
+  const liveBg = isConnected ? '#DCFCE7' : isReconnecting ? '#FEF3C7' : '#FEE2E2';
+  const liveLabel = isConnected ? 'Live' : isReconnecting ? 'Sync...' : 'Offline';
+
   return (
     <View style={styles.container}>
       <View style={styles.leftRow}>
@@ -31,10 +47,10 @@ export function KdsHeader({ totalAtivos, isAtualizando, onVoltar, onRecarregar }
             <ThemedText variant="subtitle" weight="bold" style={styles.title}>
               KDS • Cozinha
             </ThemedText>
-            <View style={styles.livePill}>
-              <View style={styles.liveDot} />
-              <ThemedText variant="caption" weight="bold" style={styles.liveText}>
-                Live
+            <View style={[styles.livePill, { backgroundColor: liveBg }]}>
+              <View style={[styles.liveDot, { backgroundColor: liveColor }]} />
+              <ThemedText variant="caption" weight="bold" style={[styles.liveText, { color: liveColor }]}>
+                {liveLabel}
               </ThemedText>
             </View>
           </View>
@@ -47,13 +63,15 @@ export function KdsHeader({ totalAtivos, isAtualizando, onVoltar, onRecarregar }
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Atualizar pedidos da cozinha"
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={onRecarregar}
         style={({ pressed }) => [styles.btnRefresh, pressed && styles.pressed]}
       >
-        <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-          {isAtualizando ? '...' : '↻ Atualizar'}
-        </ThemedText>
+        {isAtualizando ? (
+          <ActivityIndicator size="small" color={tokens.colors.primary} />
+        ) : (
+          <Ionicons name="refresh" size={18} color={tokens.colors.primary} />
+        )}
       </Pressable>
     </View>
   );
@@ -118,8 +136,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   btnRefresh: {
-    paddingHorizontal: tokens.spacing.sm + 4,
-    paddingVertical: tokens.spacing.xs + 4,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: tokens.radii.md,
     backgroundColor: '#FFF5F2',
     borderWidth: 1,

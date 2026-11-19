@@ -1,14 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
-  StyleSheet,
   Pressable,
-  ActivityIndicator,
   ScrollView,
   Platform,
+  Animated,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { FormaPagamento } from '../types';
@@ -18,17 +19,30 @@ import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { ResumoComandaBox } from './ResumoComandaBox';
 import { GradeFormasPagamento } from './GradeFormasPagamento';
 import { PainelDinheiroTroco } from './PainelDinheiroTroco';
+import { CheckoutFooter } from './CheckoutFooter';
+import { checkoutStyles as styles } from './CheckoutBottomSheet.styles';
+import {
+  calcularPilulasSugestao,
+  mapearItensParaVenda,
+} from '../utils/checkoutHelpers';
 
 interface CheckoutBottomSheetProps {
   visible: boolean;
   onClose: () => void;
+  onRedirecionarKds?: () => void;
 }
 
-export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetProps) {
+export function CheckoutBottomSheet({
+  visible,
+  onClose,
+  onRedirecionarKds,
+}: CheckoutBottomSheetProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const paddingInferior = Math.max(insets.bottom, 24) + (Platform.OS === 'web' ? 16 : 0);
+  const paddingInferior = Math.max(insets.bottom, 16) + (Platform.OS === 'web' ? 16 : 0);
   const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   const itens = useCarrinho((state) => state.itens);
+  const removerItem = useCarrinho((state) => state.removerItem);
   const totalItens = useCarrinho((state) => state.obterTotalItens());
   const subtotal = useCarrinho((state) => state.obterSubtotal());
   const comandaAtiva = useCarrinho((state) => state.comandaAtiva);
@@ -36,28 +50,39 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('Dinheiro');
   const [valorRecebidoInput, setValorRecebidoInput] = useState<string>('');
   const [pilulaSelecionada, setPilulaSelecionada] = useState<string>('');
+  const [isSucesso, setIsSucesso] = useState(false);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      setIsSucesso(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   // Sugestões dinâmicas de cédulas com base no subtotal da comanda
-  const pilulasCalculadas = useMemo(() => {
-    if (subtotal <= 0) return [];
+  const pilulasCalculadas = useMemo(
+    () => calcularPilulasSugestao(subtotal),
+    [subtotal]
+  );
 
-    const proximaDezena = Math.ceil(subtotal / 10) * 10;
-    const valor1 = proximaDezena === subtotal ? proximaDezena + 10 : proximaDezena;
-    const valor2 = Math.ceil((subtotal + 1) / 50) * 50;
-    const valorFinal2 = valor2 <= valor1 ? valor1 + 10 : valor2;
-
-    return [
-      { id: 'p1', label: `+ R$ ${valor1.toFixed(2).replace('.', ',')}`, valor: valor1 },
-      { id: 'p2', label: `+ R$ ${valorFinal2.toFixed(2).replace('.', ',')}`, valor: valorFinal2 },
-      { id: 'exato', label: `Valor Exato (R$ ${subtotal.toFixed(2).replace('.', ',')})`, valor: subtotal },
-    ];
-  }, [subtotal]);
-
-  // Ao abrir o modal, define a sugestão padrão de dinheiro
+  // Ao abrir o modal, define a sugestão padrão de dinheiro formatada com vírgula pt-BR
   useEffect(() => {
     if (visible && subtotal > 0 && pilulasCalculadas.length > 1) {
       const sugestaoInicial = pilulasCalculadas[1] || pilulasCalculadas[0];
-      setValorRecebidoInput(sugestaoInicial.valor.toFixed(2));
+      setValorRecebidoInput(sugestaoInicial.valor.toFixed(2).replace('.', ','));
       setPilulaSelecionada(sugestaoInicial.id);
     }
   }, [visible, subtotal, pilulasCalculadas]);
@@ -78,42 +103,60 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
 
   const { mutate: dispararVenda, isPending } = useRegistrarVenda({
     troco: formaPagamento === 'Dinheiro' ? troco : undefined,
+    skipDialog: true,
     onSuccessCallback: () => {
-      onClose();
+      setIsSucesso(true);
+
+      // Pulso sutil de feedback visual (escala 1 -> 1.03 -> 1)
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.03,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Transição fluida: aguarda o pulso de confirmação, fecha o modal e redireciona direto ao KDS
+      timeoutRef.current = setTimeout(() => {
+        onClose();
+        if (onRedirecionarKds) {
+          onRedirecionarKds();
+        } else {
+          router.push('/kds');
+        }
+      }, 450);
     },
   });
 
   const handleConfirmar = () => {
-    if (totalItens === 0 || isValorInsuficiente || isPending) return;
+    if (totalItens === 0 || isValorInsuficiente || isPending || isSucesso) return;
 
     dispararVenda({
       formaPagamento,
-      itens: itens.map((i) => ({
-        produtoId: i.produto.id,
-        quantidade: i.quantidade,
-        modificadores: i.modificadores?.map((m) => ({
-          opcaoId: m.opcaoId,
-          grupoId: m.grupoId,
-          nome: m.nome,
-          precoAdicional: Number(m.precoAdicional) || 0,
-          insumoId: m.insumoId || null,
-          quantidadeInsumo: Number(m.quantidadeInsumo) || 0,
-          tipoAcao:
-            typeof m.tipoAcao === 'number'
-              ? m.tipoAcao
-              : m.tipoAcao === 'Culinario'
-              ? 1
-              : m.tipoAcao === 'Adicional'
-              ? 2
-              : 3,
-        })),
-      })),
+      itens: mapearItensParaVenda(itens),
     });
   };
 
   const handleSelecionarPilula = (id: string, valor: number) => {
     setPilulaSelecionada(id);
-    setValorRecebidoInput(valor.toFixed(2));
+    setValorRecebidoInput(valor.toFixed(2).replace('.', ','));
+  };
+
+  const handleLimparValorRecebido = () => {
+    setPilulaSelecionada('');
+    setValorRecebidoInput('');
+  };
+
+  const handleRemoverItem = (itemId: string) => {
+    removerItem(itemId);
+    if (totalItens - 1 <= 0) {
+      onClose();
+    }
   };
 
   const nomesResumo = useMemo(() => {
@@ -159,21 +202,21 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Fechar modal"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={styles.botaoFechar}
                 onPress={onClose}
               >
-                <ThemedText variant="subtitle" style={styles.textoFechar}>
-                  ✕
-                </ThemedText>
+                <X size={18} color={tokens.colors.textSecondary} />
               </Pressable>
             </View>
 
-            {/* Subcomponente 1: Resumo da Comanda e Total */}
+            {/* Subcomponente 1: Resumo da Comanda e Total com exclusão por linha */}
             <ResumoComandaBox
               totalItens={totalItens}
               subtotal={subtotal}
               nomesResumo={nomesResumo}
               itens={itens}
+              onRemoverItem={handleRemoverItem}
             />
 
             {/* Subcomponente 2: Seletor de Formas de Pagamento */}
@@ -191,6 +234,7 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
                   setPilulaSelecionada('');
                   setValorRecebidoInput(val);
                 }}
+                aoLimpar={handleLimparValorRecebido}
                 pilulasCalculadas={pilulasCalculadas}
                 pilulaSelecionada={pilulaSelecionada}
                 aoSelecionarPilula={handleSelecionarPilula}
@@ -199,155 +243,20 @@ export function CheckoutBottomSheet({ visible, onClose }: CheckoutBottomSheetPro
                 valorRecebidoNumerico={valorRecebidoNumerico}
               />
             )}
-
-            {/* Botão de Confirmação da Venda */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={!isApiOnline ? 'Servidor offline - emissão bloqueada' : 'Confirmar pagamento e emitir venda'}
-              accessibilityState={{ disabled: isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline }}
-              disabled={isValorInsuficiente || isPending || totalItens === 0 || !isApiOnline}
-              hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
-              style={({ pressed }) => [
-                styles.botaoConfirmar,
-                (isValorInsuficiente || totalItens === 0 || !isApiOnline) && styles.botaoConfirmarDesabilitado,
-                pressed && !isValorInsuficiente && isApiOnline && styles.botaoConfirmarPressionado,
-              ]}
-              onPress={handleConfirmar}
-            >
-              {isPending ? (
-                <ActivityIndicator color={tokens.colors.white} />
-              ) : (
-                <View style={styles.botaoConfirmarConteudo}>
-                  <ThemedText variant="title" style={styles.iconeImpressora}>
-                    {!isApiOnline ? '📡' : '🖨️'}
-                  </ThemedText>
-                  <ThemedText
-                    variant="subtitle"
-                    weight="bold"
-                    color={tokens.colors.white}
-                    style={styles.textoConfirmar}
-                  >
-                    {!isApiOnline ? 'Servidor Offline - Venda Suspensa' : 'Confirmar Pagamento e Emitir Venda'}
-                  </ThemedText>
-                </View>
-              )}
-            </Pressable>
-
-            {/* Microcópia de Transparência Operacional */}
-            <ThemedText variant="caption" style={styles.microcopiaRodape}>
-              {!isApiOnline
-                ? 'Conectividade interrompida: aguarde a reconexão para emitir a venda e atualizar o estoque.'
-                : 'A confirmação deduz imediatamente os insumos do estoque no servidor.'}
-            </ThemedText>
           </ScrollView>
+
+          {/* Rodapé Fixo Fora do ScrollView */}
+          <CheckoutFooter
+            isPending={isPending}
+            isSucesso={isSucesso}
+            isApiOnline={isApiOnline}
+            isDesabilitado={isValorInsuficiente || totalItens === 0 || !isApiOnline}
+            isValorInsuficiente={isValorInsuficiente}
+            scaleAnim={scaleAnim}
+            onConfirmar={handleConfirmar}
+          />
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    flex: 1,
-  },
-  bottomSheet: {
-    backgroundColor: tokens.colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: tokens.spacing.lg,
-    paddingTop: tokens.spacing.sm,
-    paddingBottom: tokens.spacing.xl,
-    maxHeight: '90%',
-  },
-  dragIndicator: {
-    width: 44,
-    height: 4,
-    backgroundColor: '#D9D9D9',
-    borderRadius: tokens.radii.full,
-    alignSelf: 'center',
-    marginBottom: tokens.spacing.md,
-  },
-  scrollContent: {
-    paddingBottom: tokens.spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: tokens.spacing.md,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-    flex: 1,
-  },
-  tituloComanda: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-  },
-  badgeMesa: {
-    backgroundColor: '#F4F4F4',
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: tokens.radii.full,
-  },
-  textoBadgeMesa: {
-    color: tokens.colors.textSecondary,
-    fontSize: tokens.typography.fontXs,
-    fontWeight: '500',
-  },
-  botaoFechar: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radii.full,
-    backgroundColor: '#F4F4F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textoFechar: {
-    color: tokens.colors.textSecondary,
-    fontSize: tokens.typography.fontMd,
-    fontWeight: '700',
-  },
-  botaoConfirmar: {
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: tokens.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: tokens.spacing.sm,
-  },
-  botaoConfirmarDesabilitado: {
-    opacity: 0.5,
-    backgroundColor: tokens.colors.textMuted,
-  },
-  botaoConfirmarPressionado: {
-    opacity: 0.88,
-    backgroundColor: tokens.colors.primaryDark,
-  },
-  botaoConfirmarConteudo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  iconeImpressora: {
-    fontSize: tokens.typography.fontLg,
-  },
-  textoConfirmar: {
-    fontSize: tokens.typography.fontMd,
-    fontWeight: '700',
-  },
-  microcopiaRodape: {
-    textAlign: 'center',
-    color: tokens.colors.textMuted,
-    fontSize: tokens.typography.fontXs,
-    marginTop: tokens.spacing.xs,
-  },
-});

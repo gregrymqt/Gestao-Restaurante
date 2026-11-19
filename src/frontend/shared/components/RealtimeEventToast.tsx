@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows } from '@/shared/utils/shadows';
+import { ChefHat, X } from 'lucide-react-native';
 import { useSseStatus } from '../hooks/useSseStatus';
 
 export function RealtimeEventToast() {
@@ -111,7 +112,11 @@ export function RealtimeEventToast() {
     >
       <View style={styles.contentRow}>
         <View style={styles.iconContainer}>
-          <ThemedText style={styles.iconText}>{activeToast.icone || '🔔'}</ThemedText>
+          {activeToast.icone === 'chef' ? (
+            <ChefHat size={20} color={titleColor} />
+          ) : (
+            <ThemedText style={styles.iconText}>{activeToast.icone || '🔔'}</ThemedText>
+          )}
         </View>
 
         <View style={styles.textContent}>
@@ -129,7 +134,7 @@ export function RealtimeEventToast() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="Fechar notificação"
         >
-          <ThemedText style={styles.closeIcon}>✕</ThemedText>
+          <X size={16} color={tokens.colors.textMuted} />
         </TouchableOpacity>
       </View>
     </Animated.View>

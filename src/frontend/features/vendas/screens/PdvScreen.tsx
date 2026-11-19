@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { CategoriaProduto, CriarProdutoInput, Produto, ModificadorSelecionado } from '../types';
 import { vendasService } from '../services/vendasService';
 import { useCarrinho } from '../hooks/useCarrinho';
@@ -21,13 +22,16 @@ import { CheckoutBottomSheet } from '../components/CheckoutBottomSheet';
 import { ModalNovoProduto } from '../components/ModalNovoProduto';
 import { ModalHistoricoVendas } from '../components/ModalHistoricoVendas';
 import { ModalModificadoresProduto } from '../components/ModalModificadoresProduto';
+import { RevisaoComandaSheet } from '../components/RevisaoComandaSheet';
 
 export function PdvScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
   const [categoria, setCategoria] = useState<CategoriaProduto>('Todos');
   const [termoBusca, setTermoBusca] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isRevisaoOpen, setIsRevisaoOpen] = useState(false);
   const [isNovoProdutoOpen, setIsNovoProdutoOpen] = useState(false);
   const [isHistoricoOpen, setIsHistoricoOpen] = useState(false);
   const [produtoModificadores, setProdutoModificadores] = useState<Produto | null>(null);
@@ -48,7 +52,7 @@ export function PdvScreen() {
   const handleConfirmarNovoProduto = async (dados: CriarProdutoInput) => {
     await criarProdutoMutation.mutateAsync(dados);
     setIsNovoProdutoOpen(false);
-    AppDialog.success('Produto Cadastrado! 🍔', `O produto "${dados.nome}" já está disponível para vendas.`);
+    AppDialog.success('Produto Cadastrado!', `O produto "${dados.nome}" já está disponível para vendas.`);
   };
 
   const handleTocarProduto = useCallback(
@@ -93,6 +97,7 @@ export function PdvScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <HeaderOperacional
+          isOffline={!isApiOnline}
           onPressVoltar={() => router.push('/(tabs)')}
           onPressNovoProduto={() => setIsNovoProdutoOpen(true)}
           onPressHistorico={() => setIsHistoricoOpen(true)}
@@ -131,12 +136,20 @@ export function PdvScreen() {
           totalItens={totalItens}
           subtotalFormatado={subtotalFormatado}
           aoCobrar={handleCobrar}
+          aoRevisar={() => setIsRevisaoOpen(true)}
+        />
+
+        {/* Modal Deslizante de Revisão da Comanda */}
+        <RevisaoComandaSheet
+          visible={isRevisaoOpen}
+          onClose={() => setIsRevisaoOpen(false)}
         />
 
         {/* Modal Deslizante de Cobrança e Checkout */}
         <CheckoutBottomSheet
           visible={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
+          onRedirecionarKds={() => router.push('/kds')}
         />
 
         {/* Modal para Cadastro de Novo Produto e Ficha Técnica */}

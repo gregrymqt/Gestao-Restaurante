@@ -21,7 +21,7 @@ export const INSUMOS_MOCK_INICIAL: InsumoEstoque[] = [
     unidadeMedida: 'un',
     statusNivel: 'normal',
     percentualCapacidade: 100.0,
-    custoUnitarioMedio: 2.5,
+    custoUnitarioMedio: 1.8,
   },
   {
     id: '33333333-3333-3333-3333-333333333333',

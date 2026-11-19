@@ -251,6 +251,7 @@ export function ModalModificadoresProduto({
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                             style={({ pressed }) => [
                               styles.chip,
+                              temPreco && styles.chipLargo,
                               isSelecionada && styles.chipSelecionado,
                               pressed && styles.chipPressionado,
                             ]}
@@ -278,7 +279,7 @@ export function ModalModificadoresProduto({
                                     isSelecionada && styles.chipPrecoSelecionado,
                                   ]}
                                 >
-                                  + R$ {Number(opcao.precoAdicional).toFixed(2).replace('.', ',')}
+                                  +R$ {Number(opcao.precoAdicional).toFixed(2).replace('.', ',')}
                                 </ThemedText>
                               )}
                             </View>
@@ -454,6 +455,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     justifyContent: 'center',
   },
+  chipLargo: {
+    width: '100%',
+  },
   chipSelecionado: {
     backgroundColor: '#FFF7ED',
     borderColor: tokens.colors.primary,
@@ -464,11 +468,13 @@ const styles = StyleSheet.create({
   chipConteudo: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: tokens.spacing.xs,
   },
   chipTexto: {
     color: tokens.colors.textSecondary,
     fontSize: 13,
+    flexShrink: 1,
   },
   chipTextoSelecionado: {
     color: tokens.colors.primary,
@@ -476,6 +482,7 @@ const styles = StyleSheet.create({
   chipPreco: {
     color: tokens.colors.textMuted,
     fontSize: 12,
+    marginLeft: tokens.spacing.sm,
   },
   chipPrecoSelecionado: {
     color: tokens.colors.primary,

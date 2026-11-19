@@ -54,7 +54,7 @@ VALUES
     'UN',
     18.0000, -- Crítico: Mínimo é 30
     30.0000,
-    2.50,
+    1.80,
     TRUE,
     CURRENT_TIMESTAMP
 ),

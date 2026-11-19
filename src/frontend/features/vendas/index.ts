@@ -5,6 +5,7 @@ export { ModalHistoricoVendas } from './components/ModalHistoricoVendas';
 export { CardVendaHistorico } from './components/CardVendaHistorico';
 export { ModalDetalheVenda } from './components/ModalDetalheVenda';
 export { ModalModificadoresProduto } from './components/ModalModificadoresProduto';
+export { RevisaoComandaSheet } from './components/RevisaoComandaSheet';
 export { useCarrinho } from './hooks/useCarrinho';
 export { useCatalogoProdutos } from './hooks/useCatalogoProdutos';
 export { useRegistrarVenda } from './hooks/useRegistrarVenda';
