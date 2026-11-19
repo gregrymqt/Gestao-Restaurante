@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { Banknote, QrCode, CreditCard } from 'lucide-react-native';
 import { FormaPagamento } from '../types';
 
 interface GradeFormasPagamentoProps {
@@ -32,7 +33,7 @@ export function GradeFormasPagamento({
         >
           <View style={styles.cardHeader}>
             <View style={styles.iconeWrapper}>
-              <ThemedText variant="title">💵</ThemedText>
+              <Banknote size={24} color="#16A34A" />
             </View>
             {formaPagamento === 'Dinheiro' && <View style={styles.dotAtivo} />}
           </View>
@@ -62,7 +63,7 @@ export function GradeFormasPagamento({
         >
           <View style={styles.cardHeader}>
             <View style={styles.iconeWrapper}>
-              <ThemedText variant="title">💠</ThemedText>
+              <QrCode size={24} color="#0D9488" />
             </View>
             <View style={styles.badgePix}>
               <ThemedText variant="caption" style={styles.textoBadgePix}>
@@ -96,7 +97,7 @@ export function GradeFormasPagamento({
         >
           <View style={styles.cardHeader}>
             <View style={styles.iconeWrapper}>
-              <ThemedText variant="title">📟</ThemedText>
+              <CreditCard size={24} color="#2563EB" />
             </View>
             {formaPagamento === 'Debito' && <View style={styles.dotAtivo} />}
           </View>
@@ -126,7 +127,7 @@ export function GradeFormasPagamento({
         >
           <View style={styles.cardHeader}>
             <View style={styles.iconeWrapper}>
-              <ThemedText variant="title">💳</ThemedText>
+              <CreditCard size={24} color="#7C3AED" />
             </View>
             {formaPagamento === 'Credito' && <View style={styles.dotAtivo} />}
           </View>

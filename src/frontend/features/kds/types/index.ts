@@ -29,4 +29,5 @@ export interface PedidoKds {
   readonly preparoIniciadoEm?: string | null;
   readonly prontoEm?: string | null;
   readonly itens: readonly ItemPedidoKds[];
+  readonly origem?: string | null;
 }

@@ -122,10 +122,10 @@ export function useRealtimeEvents() {
           try {
             const payload: NovoPedidoCozinhaPayload = JSON.parse(event.payloadJson);
             showToast({
-              tipo: 'info',
+              tipo: 'sucesso',
               titulo: `Novo Pedido ${payload.codigoCurto} na Cozinha`,
               mensagem: `${payload.quantidadeItens} ${payload.quantidadeItens === 1 ? 'item enviado' : 'itens enviados'} para a chapa em tempo real.`,
-              icone: '👨‍🍳',
+              icone: 'chef',
             });
           } catch {
             // Ignora parse caso venha payload mínimo

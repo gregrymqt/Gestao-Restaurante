@@ -31,15 +31,20 @@ export function DashboardScreen() {
   const sseStatus = useSseStatus((state) => state.status);
   const isOffline = sseStatus !== 'CONNECTED';
 
-  const sugestoesCompra = dashboard.insumosCriticos.map((i) => ({
-    insumoId: i.id,
-    nomeInsumo: i.nome,
-    unidadeMedida: i.unidadeMedida,
-    stockAtual: i.quantidadeAtual,
-    stockNecessario: i.quantidadeMinima * 2,
-    quantidadeComprar: Math.max(i.quantidadeMinima * 2 - i.quantidadeAtual, i.quantidadeMinima),
-    precoEstimadoUnitario: 25.0,
-  }));
+  const sugestoesCompra = dashboard.insumosCriticos.map((i) => {
+    const isPao = i.nome.toLowerCase().includes('pão') || i.nome.toLowerCase().includes('pao');
+    const precoEstimado = isPao ? 1.80 : (i.unidadeMedida?.toLowerCase() === 'un' ? 3.50 : 25.0);
+
+    return {
+      insumoId: i.id,
+      nomeInsumo: i.nome,
+      unidadeMedida: i.unidadeMedida,
+      stockAtual: i.quantidadeAtual,
+      stockNecessario: i.quantidadeMinima * 2,
+      quantidadeComprar: Math.max(i.quantidadeMinima * 2 - i.quantidadeAtual, i.quantidadeMinima),
+      precoEstimadoUnitario: precoEstimado,
+    };
+  });
 
   const handleNavegarEstoque = () => router.push('/(tabs)/estoque');
   const handleNavegarCaixa = () => router.push('/(tabs)/caixa');

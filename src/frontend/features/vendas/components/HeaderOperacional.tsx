@@ -2,11 +2,13 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { ChefHat, ReceiptText, ArrowLeft } from 'lucide-react-native';
 
 interface HeaderOperacionalProps {
   terminal?: string;
   comanda?: string;
   statusCaixa?: 'Aberto' | 'Fechado';
+  isOffline?: boolean;
   onPressVoltar?: () => void;
   onPressPerfil?: () => void;
   onPressNovoProduto?: () => void;
@@ -18,12 +20,20 @@ export function HeaderOperacional({
   terminal = 'PDV 01',
   comanda = '#042',
   statusCaixa = 'Aberto',
+  isOffline = false,
   onPressVoltar,
   onPressPerfil,
   onPressHistorico,
   onPressKds,
 }: HeaderOperacionalProps) {
-  const isAberto = statusCaixa === 'Aberto';
+  const isAberto = statusCaixa === 'Aberto' && !isOffline;
+
+  const statusLabel = isOffline ? 'Sem Conexão' : isAberto ? 'Aberto' : 'Fechado';
+  const statusTextColor = isOffline
+    ? '#B45309'
+    : isAberto
+    ? tokens.colors.status.greenText
+    : tokens.colors.status.redText;
 
   return (
     <View style={styles.container}>
@@ -37,14 +47,12 @@ export function HeaderOperacional({
             onPress={onPressVoltar}
             style={({ pressed }) => [styles.btnVoltar, pressed && styles.pressed]}
           >
-            <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-              ←
-            </ThemedText>
+            <ArrowLeft size={16} color={tokens.colors.primary} />
           </Pressable>
         )}
 
         <View style={styles.terminalWrapper}>
-          <ThemedText variant="subtitle" weight="bold" style={styles.terminalText}>
+          <ThemedText variant="subtitle" weight="bold" numberOfLines={1} style={styles.terminalText}>
             {terminal}
           </ThemedText>
         </View>
@@ -69,9 +77,7 @@ export function HeaderOperacional({
             style={({ pressed }) => [styles.btnHistoricoHeader, pressed && styles.pressed]}
             onPress={onPressKds}
           >
-            <ThemedText variant="caption" style={styles.iconeHistorico}>
-              👨‍🍳
-            </ThemedText>
+            <ChefHat size={16} color={tokens.colors.textSecondary} />
           </Pressable>
         )}
 
@@ -83,35 +89,37 @@ export function HeaderOperacional({
             style={({ pressed }) => [styles.btnHistoricoHeader, pressed && styles.pressed]}
             onPress={onPressHistorico}
           >
-            <ThemedText variant="caption" style={styles.iconeHistorico}>
-              🧾
-            </ThemedText>
+            <ReceiptText size={16} color={tokens.colors.textSecondary} />
           </Pressable>
         )}
 
         <View
           style={[
             styles.statusBadge,
-            isAberto ? styles.statusBadgeAberto : styles.statusBadgeFechado,
+            isOffline
+              ? styles.statusBadgeOffline
+              : isAberto
+              ? styles.statusBadgeAberto
+              : styles.statusBadgeFechado,
           ]}
         >
           <View
             style={[
               styles.statusDot,
-              isAberto ? styles.statusDotAberto : styles.statusDotFechado,
+              isOffline
+                ? styles.statusDotOffline
+                : isAberto
+                ? styles.statusDotAberto
+                : styles.statusDotFechado,
             ]}
           />
           <ThemedText
             variant="caption"
             weight="semibold"
-            color={
-              isAberto
-                ? tokens.colors.status.greenText
-                : tokens.colors.status.redText
-            }
+            color={statusTextColor}
             style={styles.statusTexto}
           >
-            {isAberto ? 'Aberto' : 'Fechado'}
+            {statusLabel}
           </ThemedText>
         </View>
 
@@ -145,7 +153,9 @@ const styles = StyleSheet.create({
   leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    flex: 1,
+    minWidth: 0,
   },
   btnVoltar: {
     width: 30,
@@ -156,12 +166,14 @@ const styles = StyleSheet.create({
     borderColor: '#FFCDD2',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   terminalWrapper: {
-    paddingRight: 4,
+    paddingRight: 2,
+    flexShrink: 1,
   },
   terminalText: {
-    fontSize: 15,
+    fontSize: 14,
     color: tokens.colors.textPrimary,
   },
   comandaBadge: {
@@ -172,6 +184,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: tokens.radii.full,
+    flexShrink: 0,
   },
   comandaLabel: {
     fontSize: 10,
@@ -184,7 +197,8 @@ const styles = StyleSheet.create({
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    flexShrink: 0,
   },
   btnHistoricoHeader: {
     width: 30,
@@ -213,6 +227,9 @@ const styles = StyleSheet.create({
   statusBadgeFechado: {
     backgroundColor: tokens.colors.status.redBg,
   },
+  statusBadgeOffline: {
+    backgroundColor: '#FEF3C7',
+  },
   statusDot: {
     width: 6,
     height: 6,
@@ -223,6 +240,9 @@ const styles = StyleSheet.create({
   },
   statusDotFechado: {
     backgroundColor: tokens.colors.status.redText,
+  },
+  statusDotOffline: {
+    backgroundColor: '#D97706',
   },
   statusTexto: {
     fontSize: 11,

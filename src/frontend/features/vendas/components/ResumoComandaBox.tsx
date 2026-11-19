@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { ItemComanda } from '../types';
@@ -9,6 +10,7 @@ interface ResumoComandaBoxProps {
   subtotal: number;
   nomesResumo?: string;
   itens?: readonly ItemComanda[];
+  onRemoverItem?: (itemId: string) => void;
 }
 
 export function ResumoComandaBox({
@@ -16,6 +18,7 @@ export function ResumoComandaBox({
   subtotal,
   nomesResumo,
   itens = [],
+  onRemoverItem,
 }: ResumoComandaBoxProps) {
   return (
     <View style={styles.resumoBox}>
@@ -76,9 +79,22 @@ export function ResumoComandaBox({
                   </View>
                 )}
               </View>
-              <ThemedText variant="body" weight="bold" style={styles.itemSubtotal}>
-                R$ {item.subtotal.toFixed(2).replace('.', ',')}
-              </ThemedText>
+              <View style={styles.itemPrecoAcoes}>
+                <ThemedText variant="body" weight="bold" style={styles.itemSubtotal}>
+                  R$ {item.subtotal.toFixed(2).replace('.', ',')}
+                </ThemedText>
+                {onRemoverItem && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remover ${item.produto.nome}`}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={styles.btnRemoverItem}
+                    onPress={() => onRemoverItem(item.id)}
+                  >
+                    <Trash2 size={15} color={tokens.colors.status.redText} />
+                  </Pressable>
+                )}
+              </View>
             </View>
           ))}
         </View>
@@ -144,6 +160,14 @@ const styles = StyleSheet.create({
   itemSubtotal: {
     color: tokens.colors.textPrimary,
     fontSize: 13,
+  },
+  itemPrecoAcoes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+  },
+  btnRemoverItem: {
+    padding: 2,
   },
   tagsContainer: {
     flexDirection: 'row',

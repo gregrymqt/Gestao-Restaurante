@@ -35,10 +35,10 @@ console.log('[OK] 3. SLA Vermelho (>= 15 min) e flag de atraso validados');
 const estRemocao = obterEstiloModificadorKds('Remocao');
 const estCulinario = obterEstiloModificadorKds('Culinario');
 const estAdicional = obterEstiloModificadorKds('Adicional');
-assert.strictEqual(estRemocao.icone.includes('🟥'), true);
-assert.strictEqual(estCulinario.icone.includes('🟩'), true);
-assert.strictEqual(estAdicional.icone.includes('🟦'), true);
-console.log('[OK] 4. Código de cores dos modificadores KDS validado');
+assert.strictEqual(estRemocao.icone, 'X');
+assert.strictEqual(estCulinario.icone, 'Flame');
+assert.strictEqual(estAdicional.icone, 'Plus');
+console.log('[OK] 4. Código de cores e ícones dos modificadores KDS validado');
 
 // 5. Pipeline de Transição de 3 Estágios (RECEBIDO -> EM_PREPARO -> PRONTO -> ENTREGUE)
 const acao1 = obterProximaAcaoKds('RECEBIDO');

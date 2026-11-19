@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { useKdsPedidos } from '../hooks/useKdsPedidos';
 import { useAgoraTick } from '../hooks/useAgoraTick';
 import { KdsHeader } from '../components/KdsHeader';
@@ -23,8 +25,10 @@ export function KdsScreen() {
   const { width } = useWindowDimensions();
   const isModoKanban = width >= 768;
 
+  const [abaInicializada, setAbaInicializada] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<AbaKdsAtiva>('RECEBIDO');
   const agoraMs = useAgoraTick(1000);
+  const sseStatus = useSseStatus((s) => s.status);
 
   const {
     pedidos,
@@ -37,6 +41,17 @@ export function KdsScreen() {
     refetch,
     avancarStatus,
   } = useKdsPedidos();
+
+  useEffect(() => {
+    if (!abaInicializada && !isLoading) {
+      if (recebidos.length === 0 && emPreparo.length > 0) {
+        setAbaAtiva('EM_PREPARO');
+      } else if (recebidos.length === 0 && emPreparo.length === 0 && prontos.length > 0) {
+        setAbaAtiva('PRONTO');
+      }
+      setAbaInicializada(true);
+    }
+  }, [isLoading, abaInicializada, recebidos.length, emPreparo.length, prontos.length]);
 
   const listaAbaAtual =
     abaAtiva === 'RECEBIDO' ? recebidos : abaAtiva === 'EM_PREPARO' ? emPreparo : prontos;
@@ -54,6 +69,7 @@ export function KdsScreen() {
       <KdsHeader
         totalAtivos={pedidos.length}
         isAtualizando={isFetching}
+        sseStatus={sseStatus}
         onVoltar={handleVoltar}
         onRecarregar={() => refetch()}
       />
@@ -118,7 +134,9 @@ export function KdsScreen() {
           >
             {listaAbaAtual.length === 0 ? (
               <View style={styles.emptyBox}>
-                <ThemedText style={styles.emptyEmoji}>👨‍🍳</ThemedText>
+                <View style={styles.emptyIconContainer}>
+                  <MaterialCommunityIcons name="chef-hat" size={36} color={tokens.colors.textSecondary} />
+                </View>
                 <ThemedText variant="subtitle" weight="bold" style={styles.emptyTitle}>
                   Nenhum pedido nesta etapa
                 </ThemedText>
@@ -177,8 +195,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.xl,
     gap: tokens.spacing.xs,
   },
-  emptyEmoji: {
-    fontSize: 42,
+  emptyIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: tokens.spacing.xs,
   },
   emptyTitle: {

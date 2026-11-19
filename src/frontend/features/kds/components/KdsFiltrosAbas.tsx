@@ -43,6 +43,7 @@ export function KdsFiltrosAbas({ abaAtiva, onChangeAba, contadores }: KdsFiltros
             <ThemedText
               variant="caption"
               weight={ativa ? 'bold' : 'medium'}
+              numberOfLines={1}
               style={[styles.label, ativa && { color: aba.cor }]}
             >
               {aba.label}
@@ -66,8 +67,8 @@ export function KdsFiltrosAbas({ abaAtiva, onChangeAba, contadores }: KdsFiltros
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: tokens.spacing.xs + 2,
-    paddingHorizontal: tokens.spacing.md,
+    gap: 5,
+    paddingHorizontal: 8,
     paddingVertical: tokens.spacing.sm,
     backgroundColor: tokens.colors.card,
     borderBottomWidth: 1,
@@ -78,33 +79,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    minHeight: 42,
+    gap: 4,
+    minHeight: 44,
     borderRadius: tokens.radii.md,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.background,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
   dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11.5,
+    letterSpacing: -0.2,
     color: tokens.colors.textPrimary,
   },
   badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: 3,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '700',
     color: '#374151',
   },
 });

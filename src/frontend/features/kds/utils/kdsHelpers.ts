@@ -11,11 +11,13 @@ export interface SlaCalculadoKds {
   readonly corBorda: string;
 }
 
+export type TipoIconeModificador = 'X' | 'Flame' | 'Plus' | 'Dot';
+
 export interface EstiloModificadorKds {
   readonly bg: string;
   readonly border: string;
   readonly text: string;
-  readonly icone: string;
+  readonly icone: TipoIconeModificador;
 }
 
 export interface ProximaAcaoKds {
@@ -24,12 +26,56 @@ export interface ProximaAcaoKds {
   readonly cor: string;
 }
 
+export interface CoresHeaderKds {
+  readonly corFundo: string;
+  readonly corBorda: string;
+  readonly corTexto: string;
+}
+
+export function sanitizarNomeModificador(nome: string): string {
+  return nome.replace(/^[+\-•\s]+/, '').trim();
+}
+
+export function obterCoresHeaderKds(status: StatusPreparoKds, sla: SlaCalculadoKds): CoresHeaderKds {
+  // 1. Pronto (concluído): Verde exclusivo (#DCFCE7 / #22C55E / #15803D)
+  if (status === 'PRONTO') {
+    return { corFundo: '#DCFCE7', corBorda: '#22C55E', corTexto: '#15803D' };
+  }
+
+  // 2. Atrasado (não concluído): Alerta vermelho
+  if (sla.atrasado) {
+    return { corFundo: '#FEE2E2', corBorda: '#EF4444', corTexto: '#B91C1C' };
+  }
+
+  // 3. Novo na cozinha (RECEBIDO): Âmbar / Laranja de Ação Pendente
+  if (status === 'RECEBIDO') {
+    return { corFundo: '#FFFBEB', corBorda: '#F59E0B', corTexto: '#B45309' };
+  }
+
+  // 4. Em preparo amarelo
+  if (sla.nivel === 'AMARELO') {
+    return { corFundo: '#FEF3C7', corBorda: '#F59E0B', corTexto: '#B45309' };
+  }
+
+  // 5. Em preparo no prazo inicial: Slate neutro (reserva verde exclusivamente para concluídos)
+  return { corFundo: '#F8FAFC', corBorda: '#CBD5E1', corTexto: '#334155' };
+}
+
+export function formatarTempoSla(minutos: number, segundos: number): string {
+  if (minutos >= 60) {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    return mins > 0 ? `${horas}h ${mins}m` : `${horas}h`;
+  }
+  return `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+}
+
 export function calcularSlaTicket(dataHoraIso: string, agoraMs: number = Date.now()): SlaCalculadoKds {
   const inicioMs = new Date(dataHoraIso).getTime();
   const diffSec = Math.max(0, Math.floor((agoraMs - (Number.isNaN(inicioMs) ? agoraMs : inicioMs)) / 1000));
   const minutos = Math.floor(diffSec / 60);
   const segundos = diffSec % 60;
-  const formatado = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  const formatado = formatarTempoSla(minutos, segundos);
 
   if (minutos >= 15) {
     return {
@@ -77,7 +123,7 @@ export function obterEstiloModificadorKds(tipoAcao: string): EstiloModificadorKd
       bg: '#FEE2E2',
       border: '#EF4444',
       text: '#991B1B',
-      icone: '🟥 ',
+      icone: 'X',
     };
   }
 
@@ -86,7 +132,7 @@ export function obterEstiloModificadorKds(tipoAcao: string): EstiloModificadorKd
       bg: '#DCFCE7',
       border: '#22C55E',
       text: '#166534',
-      icone: '🟩 ',
+      icone: 'Flame',
     };
   }
 
@@ -95,7 +141,7 @@ export function obterEstiloModificadorKds(tipoAcao: string): EstiloModificadorKd
       bg: '#DBEAFE',
       border: '#3B82F6',
       text: '#1E40AF',
-      icone: '🟦 ',
+      icone: 'Plus',
     };
   }
 
@@ -103,7 +149,7 @@ export function obterEstiloModificadorKds(tipoAcao: string): EstiloModificadorKd
     bg: '#F3F4F6',
     border: '#D1D5DB',
     text: '#374151',
-    icone: '• ',
+    icone: 'Dot',
   };
 }
 
@@ -112,20 +158,20 @@ export function obterProximaAcaoKds(status: StatusPreparoKds): ProximaAcaoKds | 
     case 'RECEBIDO':
       return {
         proximoStatus: 'EM_PREPARO',
-        label: '🔥 Iniciar Preparo',
+        label: 'Iniciar Preparo',
         cor: '#D97706',
       };
     case 'EM_PREPARO':
       return {
         proximoStatus: 'PRONTO',
-        label: '✅ Marcar Pronto',
+        label: 'Marcar Pronto',
         cor: '#16A34A',
       };
     case 'PRONTO':
       return {
         proximoStatus: 'ENTREGUE',
-        label: '🛎️ Entregar Pedido',
-        cor: '#2563EB',
+        label: 'Entregar Pedido',
+        cor: '#EA580C',
       };
     default:
       return null;
@@ -136,15 +182,15 @@ export function obterBadgeStatusPreparo(status?: string): { label: string; bg: s
   const s = (status || 'RECEBIDO').toUpperCase();
   switch (s) {
     case 'RECEBIDO':
-      return { label: '⏳ Novo na Cozinha', bg: '#F3F4F6', text: '#374151' };
+      return { label: 'Novo na Cozinha', bg: '#F3F4F6', text: '#374151' };
     case 'EM_PREPARO':
-      return { label: '🔥 Em Preparo', bg: '#FEF3C7', text: '#B45309' };
+      return { label: 'Em Preparo', bg: '#FEF3C7', text: '#B45309' };
     case 'PRONTO':
-      return { label: '✅ Pronto p/ Entrega', bg: '#DCFCE7', text: '#15803D' };
+      return { label: 'Pronto p/ Entrega', bg: '#DCFCE7', text: '#15803D' };
     case 'ENTREGUE':
-      return { label: '🛎️ Entregue', bg: '#DBEAFE', text: '#1E40AF' };
+      return { label: 'Entregue', bg: '#DBEAFE', text: '#1E40AF' };
     case 'CANCELADO':
-      return { label: '✖ Cancelado', bg: '#FEE2E2', text: '#991B1B' };
+      return { label: 'Cancelado', bg: '#FEE2E2', text: '#991B1B' };
     default:
       return { label: s, bg: '#F3F4F6', text: '#374151' };
   }

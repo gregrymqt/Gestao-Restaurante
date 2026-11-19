@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { PedidoKds, StatusPreparoKds } from '../types';
@@ -41,6 +42,7 @@ export function ColunaKdsKanban({
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.lista}>
         {pedidos.length === 0 ? (
           <View style={styles.vazioBox}>
+            <MaterialCommunityIcons name="chef-hat" size={24} color={tokens.colors.textSecondary} />
             <ThemedText variant="caption" style={styles.vazioTexto}>
               Nenhum pedido nesta etapa
             </ThemedText>
@@ -111,6 +113,7 @@ const styles = StyleSheet.create({
   vazioBox: {
     paddingVertical: 40,
     alignItems: 'center',
+    gap: tokens.spacing.xs,
   },
   vazioTexto: {
     color: tokens.colors.textSecondary,

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TextInput, StyleSheet, Pressable } from 'react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
+import { Search, X } from 'lucide-react-native';
 
 interface BarraPesquisaPdvProps {
   valor: string;
@@ -17,9 +18,7 @@ export function BarraPesquisaPdv({
   return (
     <View style={styles.container}>
       <View style={styles.inputWrapper}>
-        <ThemedText variant="body" style={styles.searchIcon}>
-          🔍
-        </ThemedText>
+        <Search size={18} color={tokens.colors.textMuted} style={styles.searchIcon} />
         <TextInput
           accessibilityRole="search"
           accessibilityLabel="Campo de busca de produtos"
@@ -39,9 +38,7 @@ export function BarraPesquisaPdv({
             style={styles.clearButton}
             onPress={aoLimpar ?? (() => aoMudarTexto(''))}
           >
-            <ThemedText variant="body" style={styles.clearText}>
-              ✕
-            </ThemedText>
+            <X size={16} color={tokens.colors.textMuted} />
           </Pressable>
         )}
       </View>
@@ -66,7 +63,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.md,
   },
   searchIcon: {
-    fontSize: tokens.typography.fontMd,
     marginRight: tokens.spacing.sm,
   },
   input: {
@@ -80,10 +76,5 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  clearText: {
-    fontSize: tokens.typography.fontMd,
-    color: tokens.colors.textMuted,
-    fontWeight: '700',
   },
 });

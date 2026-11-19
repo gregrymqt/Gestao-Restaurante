@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { ChevronUp } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { shadows } from '@/shared/utils/shadows';
@@ -8,19 +9,31 @@ interface BarraFlutuanteCheckoutProps {
   totalItens: number;
   subtotalFormatado: string;
   aoCobrar: () => void;
+  aoRevisar?: () => void;
 }
 
 export function BarraFlutuanteCheckout({
   totalItens,
   subtotalFormatado,
   aoCobrar,
+  aoRevisar,
 }: BarraFlutuanteCheckoutProps) {
   const isVazio = totalItens === 0;
 
   return (
     <View style={styles.floatingWrapper}>
       <View style={styles.bar}>
-        <View style={styles.infoSection}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Revisar itens da comanda"
+          disabled={isVazio}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => [
+            styles.infoSection,
+            pressed && !isVazio && styles.infoSectionPressionado,
+          ]}
+          onPress={aoRevisar}
+        >
           <View style={styles.badgeItens}>
             <ThemedText
               variant="caption"
@@ -32,14 +45,17 @@ export function BarraFlutuanteCheckout({
           </View>
 
           <View style={styles.valoresCol}>
-            <ThemedText variant="caption" style={styles.labelSubtotal}>
-              Subtotal da Comanda
-            </ThemedText>
+            <View style={styles.subtotalHeaderRow}>
+              <ThemedText variant="caption" style={styles.labelSubtotal}>
+                Subtotal da Comanda
+              </ThemedText>
+              {!isVazio && <ChevronUp size={13} color="#CAC4D0" />}
+            </View>
             <ThemedText variant="subtitle" style={styles.valorSubtotal}>
               {subtotalFormatado}
             </ThemedText>
           </View>
-        </View>
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"
@@ -89,6 +105,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.spacing.md,
   },
+  infoSectionPressionado: {
+    opacity: 0.75,
+  },
   badgeItens: {
     width: 32,
     height: 32,
@@ -99,6 +118,11 @@ const styles = StyleSheet.create({
   },
   valoresCol: {
     flexDirection: 'column',
+  },
+  subtotalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   labelSubtotal: {
     color: '#CAC4D0',

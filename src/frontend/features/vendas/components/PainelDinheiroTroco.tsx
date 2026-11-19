@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, Pressable } from 'react-native';
+import { Check, AlertCircle } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 
@@ -13,6 +14,7 @@ interface PainelDinheiroTrocoProps {
   subtotal: number;
   valorRecebidoInput: string;
   aoMudarValorRecebido: (valor: string) => void;
+  aoLimpar?: () => void;
   pilulasCalculadas: PilulaValor[];
   pilulaSelecionada: string;
   aoSelecionarPilula: (id: string, valor: number) => void;
@@ -25,6 +27,7 @@ export function PainelDinheiroTroco({
   subtotal,
   valorRecebidoInput,
   aoMudarValorRecebido,
+  aoLimpar,
   pilulasCalculadas,
   pilulaSelecionada,
   aoSelecionarPilula,
@@ -38,9 +41,22 @@ export function PainelDinheiroTroco({
         <ThemedText variant="subtitle" style={styles.labelDinheiro}>
           Valor Recebido em Espécie
         </ThemedText>
-        <ThemedText variant="caption" style={styles.labelTeclado}>
-          Teclado numérico
-        </ThemedText>
+        {aoLimpar && valorRecebidoInput.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Limpar valor recebido"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={aoLimpar}
+          >
+            <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+              Limpar
+            </ThemedText>
+          </Pressable>
+        ) : (
+          <ThemedText variant="caption" style={styles.labelTeclado}>
+            Teclado numérico
+          </ThemedText>
+        )}
       </View>
 
       {/* Input de Valor Recebido */}
@@ -54,7 +70,7 @@ export function PainelDinheiroTroco({
           style={styles.inputDinheiro}
           keyboardType="decimal-pad"
           value={valorRecebidoInput}
-          onChangeText={aoMudarValorRecebido}
+          onChangeText={(v) => aoMudarValorRecebido(v.replace('.', ','))}
         />
       </View>
 
@@ -92,12 +108,13 @@ export function PainelDinheiroTroco({
       {/* Box de Troco / Aviso de Insuficiência */}
       {isValorInsuficiente ? (
         <View style={styles.avisoInsuficienteBox}>
+          <AlertCircle size={15} color={tokens.colors.status.redText} />
           <ThemedText
             variant="caption"
             weight="bold"
             color={tokens.colors.status.redText}
           >
-            ⚠️ Valor insuficiente. Faltam R${' '}
+            Valor insuficiente. Faltam R${' '}
             {(subtotal - valorRecebidoNumerico).toFixed(2).replace('.', ',')}
           </ThemedText>
         </View>
@@ -105,9 +122,7 @@ export function PainelDinheiroTroco({
         <View style={styles.trocoBox}>
           <View style={styles.trocoEsquerda}>
             <View style={styles.checkCirculo}>
-              <ThemedText variant="caption" style={styles.checkIcon}>
-                ✓
-              </ThemedText>
+              <Check size={13} color={tokens.colors.white} strokeWidth={3} />
             </View>
             <ThemedText variant="subtitle" style={styles.textoTrocoLabel}>
               Troco a Devolver:
@@ -240,6 +255,9 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.status.redBg,
     borderRadius: tokens.radii.md,
     padding: tokens.spacing.sm,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing.xs,
   },
 });
