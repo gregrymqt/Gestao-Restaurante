@@ -127,3 +127,5 @@ infra/terraform/.env.deployed.local
 # Machine-specific agent MCP configuration
 .agents/mcp_config.json
 
+# Graft context graph cache
+graft/
