@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
@@ -31,7 +31,7 @@ export function ModalNovoInsumoPills({
     <>
       <View style={styles.inputGroup}>
         <ThemedText style={styles.label}>Categoria</ThemedText>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillsScroll}>
+        <View style={styles.pillsWrap}>
           {CATEGORIAS_PADRAO.map((cat) => {
             const isSelected = categoria === cat;
             return (
@@ -49,7 +49,7 @@ export function ModalNovoInsumoPills({
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </View>
       </View>
 
       <View style={styles.inputGroup}>
@@ -88,17 +88,21 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     marginBottom: 6,
   },
-  pillsScroll: {
+  pillsWrap: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   pill: {
     backgroundColor: tokens.colors.background,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
+    minHeight: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pillSelected: {
     backgroundColor: tokens.colors.primary,
@@ -122,11 +126,13 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.background,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
-    minWidth: 48,
+    borderRadius: 20,
+    minWidth: 54,
+    minHeight: 38,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   unPillSelected: {
     backgroundColor: tokens.colors.primary,
@@ -134,10 +140,11 @@ const styles = StyleSheet.create({
   },
   unPillText: {
     fontSize: 13,
-    fontWeight: '600',
     color: tokens.colors.textSecondary,
+    fontWeight: '600',
   },
   unPillTextSelected: {
     color: tokens.colors.white,
+    fontWeight: '700',
   },
 });

@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { Lock } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
 export function ModalAuditCallout() {
   return (
     <View style={styles.auditCallout}>
-      <ThemedText style={styles.auditIcon}>🔒</ThemedText>
+      <Lock size={16} color="#4B5563" style={styles.auditIcon} />
       <ThemedText variant="caption" style={styles.auditText}>
         Registro imutável: a movimentação será atualizada no estoque e auditada no histórico.
       </ThemedText>
@@ -17,6 +18,7 @@ export function ModalAuditCallout() {
 const styles = StyleSheet.create({
   auditCallout: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F0F4F8',
     borderRadius: tokens.radii.md,
     padding: tokens.spacing.sm,
@@ -25,7 +27,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.md,
   },
   auditIcon: {
-    fontSize: 16,
+    marginTop: 1,
   },
   auditText: {
     flex: 1,

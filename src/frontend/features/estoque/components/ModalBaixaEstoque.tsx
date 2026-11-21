@@ -8,12 +8,16 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PackageX, CalendarX, ClipboardCheck, X, AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { formatarQuantidade } from '@/shared/utils/formatters';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { InsumoEstoque, BaixaEstoqueInput, MotivoBaixaEstoque } from '../types';
 import { ModalAuditCallout } from './ModalAuditCallout';
+import { modalBottomSheetStyles as sheetStyles } from './modalBottomSheetStyles';
 
 interface ModalBaixaEstoqueProps {
   visible: boolean;
@@ -23,10 +27,10 @@ interface ModalBaixaEstoqueProps {
   isEnviando?: boolean;
 }
 
-const MOTIVOS_BAIXA: Array<{ id: MotivoBaixaEstoque; label: string; icone: string }> = [
-  { id: 'Avaria', label: 'Avaria / Quebra', icone: '💔' },
-  { id: 'Validade', label: 'Validade Vencida', icone: '⏰' },
-  { id: 'Inventario', label: 'Ajuste Inventário', icone: '📋' },
+const MOTIVOS = [
+  { id: 'Avaria' as const, label: 'Avaria / Quebra', Icon: PackageX },
+  { id: 'Validade' as const, label: 'Validade Vencida', Icon: CalendarX },
+  { id: 'Inventario' as const, label: 'Ajuste Inventário', Icon: ClipboardCheck },
 ];
 
 export function ModalBaixaEstoque({
@@ -36,13 +40,16 @@ export function ModalBaixaEstoque({
   onConfirmar,
   isEnviando = false,
 }: ModalBaixaEstoqueProps) {
-  const [motivoSelecionado, setMotivoSelecionado] = useState<MotivoBaixaEstoque>('Avaria');
+  const insets = useSafeAreaInsets();
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+
+  const [motivo, setMotivo] = useState<MotivoBaixaEstoque>('Avaria');
   const [quantidadeTexto, setQuantidadeTexto] = useState('');
   const [observacao, setObservacao] = useState('');
 
   useEffect(() => {
     if (visible) {
-      setMotivoSelecionado('Avaria');
+      setMotivo('Avaria');
       setQuantidadeTexto('');
       setObservacao('');
     }
@@ -50,47 +57,56 @@ export function ModalBaixaEstoque({
 
   if (!insumo) return null;
 
+  const qtd = parseFloat(quantidadeTexto.replace(',', '.'));
+  const isQtdValida = !isNaN(qtd) && qtd > 0;
+  const isExcedente = isQtdValida && qtd > insumo.saldoAtual;
+  const saldoProjetado = isQtdValida ? Math.max(0, insumo.saldoAtual - qtd) : null;
+  const isFormValido = isQtdValida && !isExcedente && isApiOnline && !isEnviando;
+
   const handleConfirmar = async () => {
-    const qtd = parseFloat(quantidadeTexto.replace(',', '.'));
-    if (isNaN(qtd) || qtd <= 0) {
-      AppDialog.warning('Quantidade Inválida', 'Informe uma quantidade válida e maior que zero para baixa.');
+    if (!isQtdValida) {
+      AppDialog.warning('Quantidade Inválida', 'Informe uma quantidade válida e maior que zero.');
       return;
     }
-
-    if (qtd > insumo.saldoAtual) {
-      AppDialog.warning(
-        'Saldo Insuficiente',
-        `A baixa de ${formatarQuantidade(qtd, insumo.unidadeMedida)} não pode superar o saldo atual em estoque (${formatarQuantidade(insumo.saldoAtual, insumo.unidadeMedida)}).`
-      );
+    if (isExcedente) {
+      AppDialog.warning('Saldo Insuficiente', 'A baixa não pode superar o saldo atual.');
       return;
     }
-
     await onConfirmar({
       insumoId: insumo.id,
       quantidade: qtd,
-      motivo: motivoSelecionado,
+      motivo,
       observacao: observacao.trim() || undefined,
     });
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.sheetContainer}>
-          <View style={styles.dragIndicator} />
+      <View style={sheetStyles.overlay}>
+        <View style={sheetStyles.sheetContainer}>
+          <View style={sheetStyles.dragIndicator} />
 
-          <View style={styles.header}>
-            <ThemedText variant="title" style={styles.title}>
-              Registrar Baixa / Ajuste
-            </ThemedText>
-            <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Descarte por perda, quebra ou acerto de contagem física
-            </ThemedText>
+          <View style={sheetStyles.header}>
+            <View style={sheetStyles.headerTitleWrap}>
+              <ThemedText variant="title" style={sheetStyles.title}>
+                Registrar Baixa / Ajuste
+              </ThemedText>
+              <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                Descarte por perda, quebra ou acerto de contagem física
+              </ThemedText>
+            </View>
+            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+              <X size={20} color={tokens.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
-            {/* Insumo Selecionado Fixo (Padrão Imagem 4) */}
-            <ThemedText variant="caption" style={styles.label}>
+          <ScrollView
+            style={sheetStyles.formScroll}
+            contentContainerStyle={sheetStyles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Insumo Selecionado
             </ThemedText>
             <View style={styles.insumoFixoBox}>
@@ -102,25 +118,22 @@ export function ModalBaixaEstoque({
               </ThemedText>
             </View>
 
-            {/* Motivo da Baixa */}
-            <ThemedText variant="caption" style={styles.label}>
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Motivo do Ajuste / Baixa
             </ThemedText>
             <View style={styles.motivosGrid}>
-              {MOTIVOS_BAIXA.map((m) => {
-                const isSelected = m.id === motivoSelecionado;
+              {MOTIVOS.map((m) => {
+                const isSelected = m.id === motivo;
+                const IconComponent = m.Icon;
                 return (
                   <TouchableOpacity
                     key={m.id}
-                    activeOpacity={0.8}
-                    onPress={() => setMotivoSelecionado(m.id)}
+                    onPress={() => setMotivo(m.id)}
                     style={[styles.motivoPill, isSelected && styles.motivoPillActive]}
+                    accessibilityRole="button"
                   >
-                    <ThemedText style={styles.motivoIcon}>{m.icone}</ThemedText>
-                    <ThemedText
-                      variant="caption"
-                      style={[styles.motivoPillText, isSelected && styles.motivoPillTextActive]}
-                    >
+                    <IconComponent size={15} color={isSelected ? tokens.colors.status.redText : tokens.colors.textMuted} />
+                    <ThemedText variant="caption" style={[styles.motivoPillText, isSelected && styles.motivoPillTextActive]}>
                       {m.label}
                     </ThemedText>
                   </TouchableOpacity>
@@ -128,14 +141,13 @@ export function ModalBaixaEstoque({
               })}
             </View>
 
-            {/* Quantidade a Baixar */}
-            <ThemedText variant="caption" style={styles.label}>
-              Quantidade a Baixar ({insumo.unidadeMedida})
+            <ThemedText variant="caption" style={sheetStyles.label}>
+              Quantidade a Baixar ({insumo.unidadeMedida}) *
             </ThemedText>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, isExcedente && styles.inputContainerError]}>
               <TextInput
-                style={styles.input}
-                placeholder={insumo.unidadeMedida === 'un' ? 'Ex: 2' : 'Ex: 0,50'}
+                style={styles.inputFlex}
+                placeholder={insumo.unidadeMedida.toLowerCase() === 'un' ? 'Ex: 2' : 'Ex: 0,50'}
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 value={quantidadeTexto}
@@ -146,13 +158,30 @@ export function ModalBaixaEstoque({
               </ThemedText>
             </View>
 
-            {/* Justificativa / Observação */}
-            <ThemedText variant="caption" style={styles.label}>
+            {isExcedente ? (
+              <View style={styles.feedbackAlerta}>
+                <AlertTriangle size={14} color={tokens.colors.status.redText} />
+                <ThemedText variant="caption" style={styles.feedbackAlertaTexto}>
+                  Quantidade excede o saldo atual ({formatarQuantidade(insumo.saldoAtual, insumo.unidadeMedida)})
+                </ThemedText>
+              </View>
+            ) : isQtdValida && saldoProjetado !== null ? (
+              <View style={styles.feedbackProjecao}>
+                <ThemedText variant="caption" style={styles.feedbackProjecaoTexto}>
+                  Saldo projetado:{' '}
+                  <ThemedText variant="caption" style={styles.destaqueAmbar}>
+                    {formatarQuantidade(insumo.saldoAtual, insumo.unidadeMedida)} → {formatarQuantidade(saldoProjetado, insumo.unidadeMedida)}
+                  </ThemedText>
+                </ThemedText>
+              </View>
+            ) : null}
+
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Justificativa / Observação (Opcional)
             </ThemedText>
             <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              placeholder="Ex: Embalagem danificada no transporte ou lote vencido"
+              style={[sheetStyles.input, styles.inputMultiline]}
+              placeholder="Ex: Embalagem danificada ou validade"
               placeholderTextColor={tokens.colors.textMuted}
               value={observacao}
               onChangeText={setObservacao}
@@ -160,34 +189,30 @@ export function ModalBaixaEstoque({
               numberOfLines={3}
             />
 
-            {/* Aviso de Auditoria e Reconciliação */}
             <ModalAuditCallout />
           </ScrollView>
 
-          {/* Rodapé com Ações */}
-          <View style={styles.footerActions}>
-            <TouchableOpacity
-              style={styles.btnCancelar}
-              onPress={onClose}
-              disabled={isEnviando}
-              activeOpacity={0.8}
-            >
-              <ThemedText variant="body" color={tokens.colors.textMuted}>
+          <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <TouchableOpacity style={sheetStyles.cancelarButton} onPress={onClose} disabled={isEnviando}>
+              <ThemedText variant="body" style={sheetStyles.cancelarText}>
                 Cancelar
               </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.btnConfirmar, isEnviando && styles.btnConfirmarDisabled]}
+              style={[
+                sheetStyles.confirmarButton,
+                { backgroundColor: tokens.colors.status.redText },
+                !isFormValido && sheetStyles.buttonDisabled,
+              ]}
               onPress={handleConfirmar}
-              disabled={isEnviando}
-              activeOpacity={0.8}
+              disabled={!isFormValido}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
-                <ThemedText variant="body" style={styles.btnConfirmarText}>
-                  Confirmar Baixa
+                <ThemedText variant="body" style={sheetStyles.confirmarText}>
+                  {!isApiOnline ? 'Conexão necessária' : 'Confirmar Baixa'}
                 </ThemedText>
               )}
             </TouchableOpacity>
@@ -199,48 +224,9 @@ export function ModalBaixaEstoque({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: tokens.colors.card,
-    borderTopLeftRadius: tokens.radii.lg,
-    borderTopRightRadius: tokens.radii.lg,
-    maxHeight: '85%',
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.sm,
-    paddingBottom: tokens.spacing.xl,
-  },
-  dragIndicator: {
-    width: 40,
-    height: 4,
-    borderRadius: tokens.radii.full,
-    backgroundColor: tokens.colors.border,
-    alignSelf: 'center',
-    marginBottom: tokens.spacing.sm,
-  },
-  header: {
-    marginBottom: tokens.spacing.md,
-  },
-  title: {
-    fontSize: tokens.typography.fontLg,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  formScroll: {
-    marginBottom: tokens.spacing.md,
-  },
-  label: {
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginBottom: 6,
-    marginTop: tokens.spacing.sm,
-  },
   insumoFixoBox: {
     backgroundColor: '#F8F9FA',
-    padding: tokens.spacing.sm + 2,
+    padding: tokens.spacing.sm,
     borderRadius: tokens.radii.md,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -248,7 +234,6 @@ const styles = StyleSheet.create({
   insumoFixoNome: {
     fontWeight: '700',
     color: tokens.colors.textPrimary,
-    marginBottom: 2,
   },
   motivosGrid: {
     flexDirection: 'row',
@@ -260,23 +245,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: tokens.radii.full,
     backgroundColor: '#F1F3F4',
     borderWidth: 1,
     borderColor: 'transparent',
+    minHeight: 36,
   },
   motivoPillActive: {
     backgroundColor: '#FDE8E8',
     borderColor: tokens.colors.status.redText,
   },
-  motivoIcon: {
-    fontSize: 14,
-  },
   motivoPillText: {
     color: tokens.colors.textMuted,
     fontWeight: '600',
-    fontSize: tokens.typography.fontXs,
+    fontSize: 11,
   },
   motivoPillTextActive: {
     color: tokens.colors.status.redText,
@@ -290,55 +273,23 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.md,
     backgroundColor: tokens.colors.background,
     paddingHorizontal: tokens.spacing.sm,
+    height: 46,
   },
-  input: {
-    flex: 1,
-    height: 48,
-    fontSize: tokens.typography.fontMd,
-    color: tokens.colors.textPrimary,
-  },
-  inputMultiline: {
-    height: 72,
+  inputContainerError: { borderColor: tokens.colors.status.redText, backgroundColor: '#FEF2F2' },
+  inputFlex: { flex: 1, height: 46, fontSize: tokens.typography.fontMd, color: tokens.colors.textPrimary },
+  inputMultiline: { height: 64, paddingVertical: tokens.spacing.xs, textAlignVertical: 'top' },
+  inputAdornment: { color: tokens.colors.textMuted, fontWeight: '600', paddingLeft: tokens.spacing.xs },
+  feedbackProjecao: {
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#FEF3C7',
+    borderRadius: tokens.radii.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.background,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: tokens.spacing.xs,
-    textAlignVertical: 'top',
+    borderColor: '#FDE68A',
   },
-  inputAdornment: {
-    color: tokens.colors.textMuted,
-    fontWeight: '600',
-    paddingLeft: tokens.spacing.xs,
-  },
-  footerActions: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    paddingTop: tokens.spacing.xs,
-  },
-  btnCancelar: {
-    flex: 1,
-    height: 48,
-    borderRadius: tokens.radii.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnConfirmar: {
-    flex: 1.5,
-    height: 48,
-    borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.status.redText,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnConfirmarDisabled: {
-    opacity: 0.6,
-  },
-  btnConfirmarText: {
-    color: tokens.colors.white,
-    fontWeight: '700',
-  },
+  feedbackProjecaoTexto: { color: '#92400E', fontWeight: '600' },
+  destaqueAmbar: { color: '#B45309', fontWeight: '800' },
+  feedbackAlerta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingHorizontal: 2 },
+  feedbackAlertaTexto: { color: tokens.colors.status.redText, fontWeight: '600', flex: 1 },
 });

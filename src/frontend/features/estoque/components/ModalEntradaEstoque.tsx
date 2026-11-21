@@ -8,14 +8,17 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { AppDialog } from '@/shared/components/AppDialog';
-import { formatarMoedaInput } from '@/shared/utils/formatters';
+import { formatarMoedaInput, formatarQuantidade, formatarMoeda } from '@/shared/utils/formatters';
 import { InsumoEstoque, EntradaEstoqueInput } from '../types';
 import { InsumoSelectorScroll } from './InsumoSelectorScroll';
 import { ModalAuditCallout } from './ModalAuditCallout';
+import { modalBottomSheetStyles as sheetStyles } from './modalBottomSheetStyles';
 
 interface ModalEntradaEstoqueProps {
   visible: boolean;
@@ -34,8 +37,10 @@ export function ModalEntradaEstoque({
   onConfirmar,
   isEnviando = false,
 }: ModalEntradaEstoqueProps) {
+  const insets = useSafeAreaInsets();
   const isApiOnline = useConnectionStore((state) => state.isApiOnline);
-  const [insumoSelecionadoId, setInsumoSelecionadoId] = useState<string>('');
+
+  const [insumoId, setInsumoId] = useState<string>('');
   const [quantidadeTexto, setQuantidadeTexto] = useState<string>('');
   const [custoTexto, setCustoTexto] = useState<string>('');
   const [observacao, setObservacao] = useState<string>('');
@@ -43,14 +48,14 @@ export function ModalEntradaEstoque({
   useEffect(() => {
     if (visible) {
       if (insumoInicial) {
-        setInsumoSelecionadoId(insumoInicial.id);
+        setInsumoId(insumoInicial.id);
         setCustoTexto(
           insumoInicial.custoUnitarioMedio
             ? formatarMoedaInput(String(Math.round(insumoInicial.custoUnitarioMedio * 100)))
             : ''
         );
       } else if (todosInsumos.length > 0) {
-        setInsumoSelecionadoId(todosInsumos[0].id);
+        setInsumoId(todosInsumos[0].id);
         setCustoTexto(
           todosInsumos[0].custoUnitarioMedio
             ? formatarMoedaInput(String(Math.round(todosInsumos[0].custoUnitarioMedio * 100)))
@@ -62,85 +67,112 @@ export function ModalEntradaEstoque({
     }
   }, [visible, insumoInicial, todosInsumos]);
 
-  const insumoAtual = todosInsumos.find((i) => i.id === insumoSelecionadoId) || insumoInicial;
+  const insumoAtual = todosInsumos.find((i) => i.id === insumoId) || insumoInicial;
 
   const handleInsumoChange = (id: string) => {
-    setInsumoSelecionadoId(id);
+    setInsumoId(id);
     const item = todosInsumos.find((i) => i.id === id);
     if (item && item.custoUnitarioMedio) {
       setCustoTexto(formatarMoedaInput(String(Math.round(item.custoUnitarioMedio * 100))));
     }
   };
 
+  const qtd = parseFloat(quantidadeTexto.replace(',', '.'));
+  const isQtdValida = !isNaN(qtd) && qtd > 0;
+  const saldoAtual = insumoAtual?.saldoAtual ?? 0;
+  const unidade = insumoAtual?.unidadeMedida || 'un';
+  const novoSaldo = isQtdValida ? saldoAtual + qtd : null;
+
+  const custoNum = custoTexto
+    ? parseFloat(custoTexto.replace(/\./g, '').replace(',', '.'))
+    : undefined;
+  const totalEntrada =
+    isQtdValida && custoNum && !isNaN(custoNum) && custoNum > 0 ? qtd * custoNum : null;
+
+  const isFormValido = isQtdValida && Boolean(insumoId) && isApiOnline && !isEnviando;
+
   const handleConfirmar = async () => {
-    const qtd = parseFloat(quantidadeTexto.replace(',', '.'));
-    if (isNaN(qtd) || qtd <= 0) {
+    if (!isQtdValida) {
       AppDialog.warning('Valor Inválido', 'Informe uma quantidade válida e positiva.');
       return;
     }
-
-    if (!insumoSelecionadoId) {
+    if (!insumoId) {
       AppDialog.warning('Seleção Obrigatória', 'Selecione o insumo para registro de entrada.');
       return;
     }
-
-    const custo = custoTexto ? parseFloat(custoTexto.replace(/\./g, '').replace(',', '.')) : undefined;
-
     await onConfirmar({
-      insumoId: insumoSelecionadoId,
+      insumoId,
       quantidade: qtd,
-      custoUnitario: !isNaN(custo || NaN) ? custo : undefined,
+      custoUnitario: custoNum && !isNaN(custoNum) ? custoNum : undefined,
       observacao: observacao.trim() || undefined,
     });
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.sheetContainer}>
-          <View style={styles.dragIndicator} />
+      <View style={sheetStyles.overlay}>
+        <View style={sheetStyles.sheetContainer}>
+          <View style={sheetStyles.dragIndicator} />
 
-          <View style={styles.header}>
-            <ThemedText variant="title" style={styles.title}>
-              Registrar Entrada de Mercadoria
-            </ThemedText>
-            <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Lançamento de mercadoria com auditoria de saldo
-            </ThemedText>
+          <View style={sheetStyles.header}>
+            <View style={sheetStyles.headerTitleWrap}>
+              <ThemedText variant="title" style={sheetStyles.title}>
+                Registrar Entrada de Mercadoria
+              </ThemedText>
+              <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                Lançamento de mercadoria com auditoria de saldo
+              </ThemedText>
+            </View>
+            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+              <X size={20} color={tokens.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
-            {/* Seletor Modular de Insumo */}
-            <ThemedText variant="caption" style={styles.label}>
+          <ScrollView
+            style={sheetStyles.formScroll}
+            contentContainerStyle={sheetStyles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Insumo de Destino
             </ThemedText>
             <InsumoSelectorScroll
               insumoInicial={insumoInicial}
               todosInsumos={todosInsumos}
-              insumoSelecionadoId={insumoSelecionadoId}
+              insumoSelecionadoId={insumoId}
               onSelectInsumo={handleInsumoChange}
             />
 
-            {/* Quantidade Recebida */}
-            <ThemedText variant="caption" style={styles.label}>
-              Quantidade Recebida ({insumoAtual?.unidadeMedida || 'unid/kg'})
+            <ThemedText variant="caption" style={sheetStyles.label}>
+              Quantidade Recebida ({unidade}) *
             </ThemedText>
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.input}
-                placeholder={insumoAtual?.unidadeMedida === 'un' ? 'Ex: 10' : 'Ex: 10,50'}
+                style={styles.inputFlex}
+                placeholder={unidade.toLowerCase() === 'un' ? 'Ex: 10' : 'Ex: 10,50'}
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 value={quantidadeTexto}
                 onChangeText={setQuantidadeTexto}
               />
               <ThemedText variant="body" style={styles.inputAdornment}>
-                {insumoAtual?.unidadeMedida || ''}
+                {unidade}
               </ThemedText>
             </View>
 
-            {/* Custo Unitário */}
-            <ThemedText variant="caption" style={styles.label}>
+            {isQtdValida && novoSaldo !== null && (
+              <View style={styles.feedbackProjecao}>
+                <ThemedText variant="caption" style={styles.feedbackProjecaoTexto}>
+                  Novo saldo:{' '}
+                  <ThemedText variant="caption" style={styles.destaqueVerde}>
+                    {formatarQuantidade(saldoAtual, unidade)} → {formatarQuantidade(novoSaldo, unidade)}
+                  </ThemedText>
+                </ThemedText>
+              </View>
+            )}
+
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Custo Unitário de Aquisição (Opcional - R$)
             </ThemedText>
             <View style={styles.inputContainer}>
@@ -148,7 +180,7 @@ export function ModalEntradaEstoque({
                 R$
               </ThemedText>
               <TextInput
-                style={styles.input}
+                style={styles.inputFlex}
                 placeholder="0,00"
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
@@ -157,12 +189,22 @@ export function ModalEntradaEstoque({
               />
             </View>
 
-            {/* Observação / NFe */}
-            <ThemedText variant="caption" style={styles.label}>
+            {totalEntrada !== null && (
+              <View style={styles.feedbackCustoTotal}>
+                <ThemedText variant="caption" style={styles.feedbackCustoTotalTexto}>
+                  Total da Entrada:{' '}
+                  <ThemedText variant="caption" style={styles.destaqueCustoTotal}>
+                    {formatarMoeda(totalEntrada)}
+                  </ThemedText>
+                </ThemedText>
+              </View>
+            )}
+
+            <ThemedText variant="caption" style={sheetStyles.label}>
               Observação / NFe / Fornecedor (Opcional)
             </ThemedText>
             <TextInput
-              style={[styles.input, styles.inputTextArea]}
+              style={[sheetStyles.input, styles.inputTextArea]}
               placeholder="Ex: NF-e 45892 - Fornecedor Frigorífico Sul"
               placeholderTextColor={tokens.colors.textMuted}
               value={observacao}
@@ -171,34 +213,26 @@ export function ModalEntradaEstoque({
               numberOfLines={2}
             />
 
-            {/* Callout de Auditoria Modular */}
             <ModalAuditCallout />
           </ScrollView>
 
-          {/* Footer de Ações */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={onClose}
-              disabled={isEnviando}
-              style={styles.cancelarButton}
-            >
-              <ThemedText variant="body" style={styles.cancelarText}>
+          <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <TouchableOpacity onPress={onClose} disabled={isEnviando} style={sheetStyles.cancelarButton}>
+              <ThemedText variant="body" style={sheetStyles.cancelarText}>
                 Cancelar
               </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.85}
               onPress={handleConfirmar}
-              disabled={isEnviando || !isApiOnline}
-              style={[styles.confirmarButton, (isEnviando || !isApiOnline) && styles.buttonDisabled]}
+              disabled={!isFormValido}
+              style={[sheetStyles.confirmarButton, !isFormValido && sheetStyles.buttonDisabled]}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
-                <ThemedText variant="body" style={styles.confirmarText}>
-                  {!isApiOnline ? 'Servidor Offline' : 'Confirmar Entrada'}
+                <ThemedText variant="body" style={sheetStyles.confirmarText}>
+                  {!isApiOnline ? 'Conexão necessária' : 'Confirmar Entrada'}
                 </ThemedText>
               )}
             </TouchableOpacity>
@@ -210,49 +244,6 @@ export function ModalEntradaEstoque({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: tokens.colors.white,
-    borderTopLeftRadius: tokens.radii.lg,
-    borderTopRightRadius: tokens.radii.lg,
-    maxHeight: '90%',
-    paddingBottom: tokens.spacing.lg,
-  },
-  dragIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: tokens.colors.border,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: tokens.spacing.sm,
-    marginBottom: tokens.spacing.xs,
-  },
-  header: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.xs,
-    paddingBottom: tokens.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-  },
-  title: {
-    fontSize: tokens.typography.fontLg,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  formScroll: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.md,
-  },
-  label: {
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginBottom: 4,
-    marginTop: tokens.spacing.xs,
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -261,71 +252,33 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
     borderRadius: tokens.radii.md,
     paddingHorizontal: tokens.spacing.sm,
-    height: 48,
-    marginBottom: tokens.spacing.sm,
+    height: 46,
+    marginBottom: 4,
   },
-  inputPrefix: {
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-    marginRight: 6,
-  },
-  input: {
-    flex: 1,
-    fontSize: tokens.typography.fontMd,
-    color: tokens.colors.textPrimary,
-  },
-  inputAdornment: {
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-    marginLeft: 6,
-  },
-  inputTextArea: {
-    height: 60,
-    backgroundColor: '#FAFAFA',
+  inputPrefix: { fontWeight: '700', color: tokens.colors.textMuted, marginRight: 6 },
+  inputFlex: { flex: 1, fontSize: tokens.typography.fontMd, color: tokens.colors.textPrimary },
+  inputAdornment: { fontWeight: '700', color: tokens.colors.textMuted, marginLeft: 6 },
+  feedbackProjecao: {
+    marginBottom: tokens.spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#ECFDF5',
+    borderRadius: tokens.radii.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: tokens.spacing.xs,
-    marginBottom: tokens.spacing.sm,
-    textAlignVertical: 'top',
+    borderColor: '#A7F3D0',
   },
-  footer: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
-  },
-  cancelarButton: {
-    flex: 1,
-    paddingVertical: tokens.spacing.sm + 2,
-    borderRadius: tokens.radii.md,
+  feedbackProjecaoTexto: { color: '#047857', fontWeight: '600' },
+  destaqueVerde: { color: '#065F46', fontWeight: '800' },
+  feedbackCustoTotal: {
+    marginBottom: tokens.spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#F3F4F6',
+    borderRadius: tokens.radii.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
+    borderColor: '#E5E7EB',
   },
-  cancelarText: {
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-  },
-  confirmarButton: {
-    flex: 2,
-    backgroundColor: tokens.colors.primary,
-    paddingVertical: tokens.spacing.sm + 2,
-    borderRadius: tokens.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  confirmarText: {
-    color: tokens.colors.white,
-    fontWeight: '800',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  feedbackCustoTotalTexto: { color: tokens.colors.textPrimary, fontWeight: '600' },
+  destaqueCustoTotal: { color: tokens.colors.primary, fontWeight: '800' },
+  inputTextArea: { height: 56, paddingVertical: tokens.spacing.xs, marginBottom: tokens.spacing.sm, textAlignVertical: 'top' },
 });

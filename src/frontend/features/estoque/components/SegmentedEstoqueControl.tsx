@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Package, UtensilsCrossed } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { createShadow } from '@/shared/utils/shadows';
@@ -23,8 +24,15 @@ export function SegmentedEstoqueControl({
         activeOpacity={0.8}
         onPress={() => onSelectAba('insumos')}
         style={[styles.tabButton, isInsumos && styles.tabButtonActive]}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isInsumos }}
+        accessibilityLabel="Aba Insumos e Saldos"
       >
-        <ThemedText style={styles.tabIcon}>📦</ThemedText>
+        <Package
+          size={16}
+          color={isInsumos ? tokens.colors.white : tokens.colors.textSecondary}
+          style={styles.tabIcon}
+        />
         <ThemedText
           variant="body"
           style={[styles.tabText, isInsumos && styles.tabTextActive]}
@@ -37,8 +45,15 @@ export function SegmentedEstoqueControl({
         activeOpacity={0.8}
         onPress={() => onSelectAba('fichas')}
         style={[styles.tabButton, isFichas && styles.tabButtonActive]}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isFichas }}
+        accessibilityLabel="Aba Fichas Técnicas"
       >
-        <ThemedText style={styles.tabIcon}>🥗</ThemedText>
+        <UtensilsCrossed
+          size={16}
+          color={isFichas ? tokens.colors.white : tokens.colors.textSecondary}
+          style={styles.tabIcon}
+        />
         <ThemedText
           variant="body"
           style={[styles.tabText, isFichas && styles.tabTextActive]}
@@ -81,7 +96,7 @@ const styles = StyleSheet.create({
     }),
   },
   tabIcon: {
-    fontSize: 16,
+    marginRight: 2,
   },
   tabText: {
     fontWeight: '700',
