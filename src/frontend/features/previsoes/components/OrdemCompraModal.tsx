@@ -44,37 +44,23 @@ export function OrdemCompraModal({
 
   useEffect(() => {
     if (!visible) return;
-
     const initialSel: Record<string, boolean> = {};
     const initialQtd: Record<string, number> = {};
-    if (insumoFocoId) {
-      const focoExiste = itensParaComprar.some((i) => i.insumoId === insumoFocoId);
-      itensParaComprar.forEach((i) => {
-        initialSel[i.insumoId] = focoExiste ? i.insumoId === insumoFocoId : true;
-        initialQtd[i.insumoId] = i.quantidadeComprar;
-      });
-    } else {
-      itensParaComprar.forEach((i) => {
-        initialSel[i.insumoId] = true;
-        initialQtd[i.insumoId] = i.quantidadeComprar;
-      });
-    }
+    const focoExiste = insumoFocoId ? itensParaComprar.some((i) => i.insumoId === insumoFocoId) : false;
+    itensParaComprar.forEach((i) => {
+      initialSel[i.insumoId] = focoExiste ? i.insumoId === insumoFocoId : true;
+      initialQtd[i.insumoId] = i.quantidadeComprar;
+    });
     setItensSelecionados(initialSel);
     setQtdOverrides(initialQtd);
   }, [visible, sugestoes, insumoFocoId]);
 
   const toggleItem = (insumoId: string) => {
-    setItensSelecionados((prev) => ({
-      ...prev,
-      [insumoId]: !prev[insumoId],
-    }));
+    setItensSelecionados((prev) => ({ ...prev, [insumoId]: !prev[insumoId] }));
   };
 
   const handleQtdChange = (insumoId: string, novaQtd: number) => {
-    setQtdOverrides((prev) => ({
-      ...prev,
-      [insumoId]: novaQtd,
-    }));
+    setQtdOverrides((prev) => ({ ...prev, [insumoId]: novaQtd }));
   };
 
   const valorTotal = itensParaComprar
@@ -131,16 +117,24 @@ export function OrdemCompraModal({
               Insumos Deficitários
             </ThemedText>
 
-            {itensParaComprar.map((item) => (
-              <OrdemCompraItemRow
-                key={item.insumoId}
-                item={item}
-                isChecked={!!itensSelecionados[item.insumoId]}
-                qtdOverride={qtdOverrides[item.insumoId]}
-                onToggle={toggleItem}
-                onChangeQtd={handleQtdChange}
-              />
-            ))}
+            {itensParaComprar.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <ThemedText variant="body" color={tokens.colors.textMuted} style={styles.emptyText}>
+                  Nenhum insumo deficitário identificado para reposição.
+                </ThemedText>
+              </View>
+            ) : (
+              itensParaComprar.map((item) => (
+                <OrdemCompraItemRow
+                  key={item.insumoId}
+                  item={item}
+                  isChecked={!!itensSelecionados[item.insumoId]}
+                  qtdOverride={qtdOverrides[item.insumoId]}
+                  onToggle={toggleItem}
+                  onChangeQtd={handleQtdChange}
+                />
+              ))
+            )}
 
             <View style={styles.fornecedorBox}>
               <ThemedText variant="caption" color={tokens.colors.textMuted}>
@@ -174,24 +168,17 @@ export function OrdemCompraModal({
                 accessibilityRole="button"
                 accessibilityLabel="Voltar"
               >
-                <ThemedText variant="body" style={styles.cancelarText}>
-                  Voltar
-                </ThemedText>
+                <ThemedText variant="body" style={styles.cancelarText}>Voltar</ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={handleConfirmar}
                 disabled={isBotaoConfirmarDesabilitado}
-                style={[
-                  styles.confirmarButton,
-                  isBotaoConfirmarDesabilitado && styles.buttonDisabled,
-                ]}
+                style={[styles.confirmarButton, isBotaoConfirmarDesabilitado && styles.buttonDisabled]}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  !isApiOnline
-                    ? 'Sem conexão com a internet'
-                    : `Confirmar Envio com ${countSelecionados} itens selecionados`
+                  !isApiOnline ? 'Sem conexão com a internet' : `Confirmar Envio com ${countSelecionados} itens selecionados`
                 }
               >
                 {isEnviando ? (
@@ -199,9 +186,7 @@ export function OrdemCompraModal({
                 ) : !isApiOnline ? (
                   <View style={styles.offlineRow}>
                     <Ionicons name="cloud-offline-outline" size={16} color={tokens.colors.white} />
-                    <ThemedText variant="body" style={styles.confirmarText}>
-                      Sem Conexão
-                    </ThemedText>
+                    <ThemedText variant="body" style={styles.confirmarText}>Sem Conexão</ThemedText>
                   </View>
                 ) : (
                   <ThemedText variant="body" style={styles.confirmarText}>
@@ -218,11 +203,7 @@ export function OrdemCompraModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheetContainer: {
     backgroundColor: tokens.colors.white,
     borderTopLeftRadius: tokens.radii.lg,
@@ -244,23 +225,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  title: {
-    fontSize: tokens.typography.fontLg,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
+  title: { fontSize: tokens.typography.fontLg, fontWeight: '800', color: tokens.colors.textPrimary },
+  subtitle: { marginTop: 2 },
+  scrollList: { paddingHorizontal: tokens.spacing.md, paddingTop: tokens.spacing.md },
+  sectionTitle: { fontWeight: '700', color: tokens.colors.textPrimary, marginBottom: tokens.spacing.xs },
+  emptyContainer: {
+    paddingVertical: tokens.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    marginVertical: tokens.spacing.sm,
   },
-  subtitle: {
-    marginTop: 2,
-  },
-  scrollList: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.md,
-  },
-  sectionTitle: {
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginBottom: tokens.spacing.xs,
-  },
+  emptyText: { fontStyle: 'italic' },
   fornecedorBox: {
     backgroundColor: '#F8F9FA',
     padding: tokens.spacing.sm,
@@ -270,11 +249,7 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.sm,
     marginBottom: tokens.spacing.md,
   },
-  fornecedorNome: {
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginTop: 2,
-  },
+  fornecedorNome: { fontWeight: '700', color: tokens.colors.textPrimary, marginTop: 2 },
   footer: {
     paddingHorizontal: tokens.spacing.md,
     paddingTop: tokens.spacing.sm,
@@ -287,15 +262,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: tokens.spacing.sm,
   },
-  totalValor: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '800',
-    color: tokens.colors.primary,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-  },
+  totalValor: { fontSize: tokens.typography.fontXl, fontWeight: '800', color: '#111827' },
+  buttonRow: { flexDirection: 'row', gap: tokens.spacing.sm },
   cancelarButton: {
     flex: 1,
     paddingVertical: tokens.spacing.sm + 2,
@@ -306,10 +274,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  cancelarText: {
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-  },
+  cancelarText: { fontWeight: '700', color: tokens.colors.textMuted },
   confirmarButton: {
     flex: 3,
     backgroundColor: tokens.colors.primary,
@@ -319,16 +284,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  confirmarText: {
-    color: tokens.colors.white,
-    fontWeight: '800',
-  },
-  offlineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  confirmarText: { color: tokens.colors.white, fontWeight: '800' },
+  offlineRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  buttonDisabled: { opacity: 0.6 },
 });

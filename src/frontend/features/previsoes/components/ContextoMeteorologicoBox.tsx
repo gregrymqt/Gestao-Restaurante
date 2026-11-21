@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { CloudSun, Sparkles } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
@@ -20,7 +21,7 @@ export function ContextoMeteorologicoBox({
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.titleWithIcon}>
-          <ThemedText style={styles.weatherIcon}>⛅</ThemedText>
+          <CloudSun size={20} color="#D97706" />
           <ThemedText variant="title" style={styles.title}>
             Contexto Meteorológico
           </ThemedText>
@@ -44,7 +45,7 @@ export function ContextoMeteorologicoBox({
       </View>
 
       <View style={styles.impactBox}>
-        <ThemedText style={styles.bulbIcon}>💡</ThemedText>
+        <Sparkles size={16} color="#D97706" style={styles.sparklesIcon} />
         <ThemedText variant="caption" style={styles.impactText}>
           {impactoDescricao}
         </ThemedText>
@@ -57,10 +58,10 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: tokens.spacing.md,
     marginBottom: tokens.spacing.xl,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F9FAFB',
     borderRadius: tokens.radii.lg,
     borderWidth: 1,
-    borderColor: '#D2E3FC',
+    borderColor: tokens.colors.border,
     padding: tokens.spacing.md,
   },
   headerRow: {
@@ -72,26 +73,23 @@ const styles = StyleSheet.create({
   titleWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  weatherIcon: {
-    fontSize: 18,
+    gap: 8,
   },
   title: {
     fontSize: tokens.typography.fontMd,
     fontWeight: '800',
-    color: '#1A73E8',
+    color: '#111827',
   },
   iaBadge: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: '#FEF3C7',
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 2,
     borderRadius: tokens.radii.full,
     borderWidth: 1,
-    borderColor: '#AECBFA',
+    borderColor: '#FDE68A',
   },
   iaBadgeText: {
-    color: '#1967D2',
+    color: '#92400E',
     fontWeight: '700',
     fontSize: tokens.typography.fontXs,
     letterSpacing: 0.3,
@@ -114,15 +112,16 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.sm,
     gap: tokens.spacing.xs,
     borderWidth: 1,
-    borderColor: '#E8EAED',
+    borderColor: tokens.colors.border,
+    alignItems: 'flex-start',
   },
-  bulbIcon: {
-    fontSize: 14,
-    marginTop: 1,
+  sparklesIcon: {
+    marginTop: 2,
+    flexShrink: 0,
   },
   impactText: {
     flex: 1,
-    color: '#3C4043',
+    color: '#374151',
     lineHeight: 18,
     fontWeight: '500',
     fontSize: tokens.typography.fontXs,

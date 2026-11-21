@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { previsoesService } from '../services/previsoesService';
+import { calcularPerdaEstimada } from '../utils/previsoesHelpers';
 import {
   ItemCapacidadeProducao,
   FichaTecnicaIngrediente,
@@ -10,7 +11,7 @@ import {
 export function gerarDatasFiltroDinamicas(): DataOpcaoFiltro[] {
   const opcoes: DataOpcaoFiltro[] = [];
   const hoje = new Date();
-  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   for (let i = 1; i <= 4; i++) {
     const d = new Date(hoje);
@@ -66,9 +67,9 @@ export function useCapacidadeProducao() {
 
   const abrirFichaTecnica = async (produto: ItemCapacidadeProducao) => {
     setProdutoFicha(produto);
-    const ingredientes = await previsoesService.obterFichaTecnica(produto.produtoId);
-    setFichaIngredientes(ingredientes);
     setIsFichaModalOpen(true);
+    const ingredientes = await previsoesService.obterFichaTecnica(produto.produtoId, produto.nomeProduto);
+    setFichaIngredientes(ingredientes);
   };
 
   const fecharFichaTecnica = () => {
@@ -98,7 +99,7 @@ export function useCapacidadeProducao() {
       .sort((a, b) => b.deficitUnidades - a.deficitUnidades)[0] || null;
 
     const perdaTotal = relatorio.itensCapacidade.reduce(
-      (acc, item) => acc + (item.perdaEstimadaReceita || 0),
+      (acc, item) => acc + calcularPerdaEstimada(item),
       0
     );
 

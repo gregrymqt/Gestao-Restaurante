@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { X, ShoppingCart, AlertCircle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { formatarQuantidade } from '@/shared/utils/formatters';
@@ -18,6 +19,7 @@ interface FichaTecnicaModalProps {
   ingredientes: FichaTecnicaIngrediente[];
   onClose: () => void;
   onReporInsumo?: (insumoId?: string) => void;
+  onCadastrarFichaTecnica?: () => void;
 }
 
 export function FichaTecnicaModal({
@@ -26,6 +28,7 @@ export function FichaTecnicaModal({
   ingredientes,
   onClose,
   onReporInsumo,
+  onCadastrarFichaTecnica,
 }: FichaTecnicaModalProps) {
   if (!produto) return null;
 
@@ -46,18 +49,31 @@ export function FichaTecnicaModal({
           <View style={styles.dragIndicator} />
 
           <View style={styles.header}>
-            <ThemedText variant="caption" style={styles.title}>
-              Ficha Técnica do Prato
-            </ThemedText>
-            <ThemedText variant="body" style={styles.produtoNome}>
-              {produto.nomeProduto}
-            </ThemedText>
-
-            <View style={styles.statusRow}>
-              <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                Demanda Prevista: {Math.round(produto.demandaPrevista)} un | Capacidade Máxima: {Math.round(produto.capacidadeMaximaProducao)} un
+            <View style={styles.headerTextCol}>
+              <ThemedText variant="caption" style={styles.title}>
+                Ficha Técnica do Prato
               </ThemedText>
+              <ThemedText variant="body" style={styles.produtoNome} numberOfLines={1}>
+                {produto.nomeProduto}
+              </ThemedText>
+
+              <View style={styles.statusRow}>
+                <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                  Demanda Prevista: {Math.round(produto.demandaPrevista)} un | Capacidade Máxima: {Math.round(produto.capacidadeMaximaProducao)} un
+                </ThemedText>
+              </View>
             </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar modal de ficha técnica"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={20} color={tokens.colors.textPrimary} />
+            </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.scrollList} showsVerticalScrollIndicator={false}>
@@ -67,9 +83,30 @@ export function FichaTecnicaModal({
 
             {ingredientes.length === 0 ? (
               <View style={styles.emptyBox}>
-                <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                  Carregando especificações de engenharia de cardápio...
+                <AlertCircle size={28} color={tokens.colors.status.redText} />
+                <ThemedText variant="body" style={styles.emptyTitle}>
+                  Produto sem Ficha Técnica cadastrada
                 </ThemedText>
+                <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.emptySub}>
+                  Cadastre os ingredientes e a composição deste item para calcular a capacidade de estoque.
+                </ThemedText>
+
+                {onCadastrarFichaTecnica && (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      onClose();
+                      onCadastrarFichaTecnica();
+                    }}
+                    style={styles.cadastrarBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cadastrar Ficha Técnica"
+                  >
+                    <ThemedText variant="body" style={styles.cadastrarBtnText}>
+                      Cadastrar Ficha Técnica →
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               ingredientes.map((ing) => (
@@ -87,10 +124,15 @@ export function FichaTecnicaModal({
                   onReporInsumo(ingredienteGargalo.insumoId);
                 }}
                 style={styles.reporButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Repor ${ingredienteGargalo.nomeInsumo}`}
               >
-                <ThemedText variant="body" style={styles.reporButtonText}>
-                  🛒 Repor {ingredienteGargalo.nomeInsumo} (+{formatarQuantidade(deficitQtd, ingredienteGargalo.unidadeMedida)})
-                </ThemedText>
+                <View style={styles.buttonInnerRow}>
+                  <ShoppingCart size={16} color={tokens.colors.white} />
+                  <ThemedText variant="body" style={styles.reporButtonText}>
+                    Repor {ingredienteGargalo.nomeInsumo} (+{formatarQuantidade(deficitQtd, ingredienteGargalo.unidadeMedida)})
+                  </ThemedText>
+                </View>
               </TouchableOpacity>
             ) : null}
 
@@ -98,6 +140,8 @@ export function FichaTecnicaModal({
               activeOpacity={0.85}
               onPress={onClose}
               style={styles.fecharButton}
+              accessibilityRole="button"
+              accessibilityLabel="Entendido / Fechar"
             >
               <ThemedText variant="body" style={styles.fecharButtonText}>
                 Entendido / Fechar
@@ -133,11 +177,26 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xs,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: tokens.spacing.md,
     paddingTop: tokens.spacing.xs,
     paddingBottom: tokens.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
+  },
+  headerTextCol: {
+    flex: 1,
+    marginRight: tokens.spacing.sm,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: tokens.typography.fontXs,
@@ -167,12 +226,47 @@ const styles = StyleSheet.create({
   emptyBox: {
     padding: tokens.spacing.lg,
     alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    marginVertical: tokens.spacing.md,
+  },
+  emptyTitle: {
+    fontWeight: '700',
+    color: tokens.colors.textPrimary,
+    marginTop: tokens.spacing.sm,
+    fontSize: tokens.typography.fontMd,
+  },
+  emptySub: {
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: tokens.spacing.md,
+  },
+  cadastrarBtn: {
+    backgroundColor: '#111827',
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    borderRadius: tokens.radii.md,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cadastrarBtnText: {
+    color: tokens.colors.white,
+    fontWeight: '700',
   },
   footer: {
     paddingHorizontal: tokens.spacing.md,
     paddingTop: tokens.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
+  },
+  buttonInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   reporButton: {
     backgroundColor: tokens.colors.primary,

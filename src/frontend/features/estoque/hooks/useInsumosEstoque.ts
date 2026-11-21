@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   estoqueService,
@@ -15,7 +16,16 @@ import {
 
 export function useInsumosEstoque() {
   const queryClient = useQueryClient();
-  const [abaAtiva, setAbaAtiva] = useState<AbaEstoqueAtiva>('insumos');
+  const { aba } = useLocalSearchParams<{ aba?: string }>();
+  const [abaAtiva, setAbaAtiva] = useState<AbaEstoqueAtiva>(() =>
+    aba === 'fichas' ? 'fichas' : 'insumos'
+  );
+
+  useEffect(() => {
+    if (aba === 'fichas') {
+      setAbaAtiva('fichas');
+    }
+  }, [aba]);
   const [filtroRapido, setFiltroRapido] = useState<FiltroRapidoEstoque>('todos');
   const [busca, setBusca] = useState<string>('');
 
