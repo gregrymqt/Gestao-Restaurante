@@ -3,6 +3,7 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  Pressable,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,12 +15,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { authService } from '../services/authService';
 import { styles } from './EsqueciSenhaScreen.styles';
 
 export function EsqueciSenhaScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+  const isOffline = !isApiOnline;
 
   const [etapa, setEtapa] = useState<'EMAIL' | 'REDEFINIR'>('EMAIL');
   const [email, setEmail] = useState('');
@@ -30,52 +35,56 @@ export function EsqueciSenhaScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSolicitarCodigo = async () => {
+    if (isOffline) {
+      AppDialog.warning('Sem Conexão', 'A recuperação de senha via OTP requer conexão com a internet.');
+      return;
+    }
     if (!email.trim() || !email.includes('@')) {
       AppDialog.warning('E-mail Inválido', 'Informe um e-mail corporativo válido.');
       return;
     }
-
     try {
       setIsLoading(true);
       const res = await authService.solicitarRecuperacaoSenha(email);
       AppDialog.success('Código Gerado', res.message || 'Código enviado com sucesso!');
       setEtapa('REDEFINIR');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Não foi possível gerar o código.';
-      AppDialog.error('Erro na Solicitação', msg);
+      AppDialog.error('Erro na Solicitação', err instanceof Error ? err.message : 'Não foi possível gerar o código.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRedefinirSenha = async () => {
+    if (isOffline) {
+      AppDialog.warning('Sem Conexão', 'A redefinição de senha requer conexão com a internet.');
+      return;
+    }
     if (codigoOtp.trim().length !== 6) {
       AppDialog.warning('Código Incompleto', 'Digite o código de 6 dígitos recebido.');
       return;
     }
-
     if (novaSenha.length < 6) {
       AppDialog.warning('Senha Curta', 'A nova senha deve ter no mínimo 6 caracteres.');
       return;
     }
-
     if (novaSenha !== confirmarSenha) {
       AppDialog.warning('Senhas Divergentes', 'A confirmação de senha não confere com a nova senha.');
       return;
     }
-
     try {
       setIsLoading(true);
       const res = await authService.redefinirSenha(email, codigoOtp, novaSenha);
       AppDialog.success('Sucesso!', res.message || 'Senha redefinida com sucesso.');
       router.replace('/(auth)/login');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Código inválido ou expirado.';
-      AppDialog.error('Falha na Redefinição', msg);
+      AppDialog.error('Falha na Redefinição', err instanceof Error ? err.message : 'Código inválido ou expirado.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isBotaoDesabilitado = isLoading || (etapa === 'EMAIL' && isOffline);
 
   return (
     <KeyboardAvoidingView
@@ -84,7 +93,14 @@ export function EsqueciSenhaScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + tokens.spacing.md }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS !== 'web' && {
+            paddingTop: Math.max(24, insets.top + tokens.spacing.md),
+            paddingBottom: Math.max(24, insets.bottom + 24),
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.topBar}>
           <TouchableOpacity
@@ -115,25 +131,42 @@ export function EsqueciSenhaScreen() {
 
         <View style={styles.card}>
           {etapa === 'EMAIL' ? (
-            <View style={styles.fieldGroup}>
-              <ThemedText variant="caption" style={styles.inputLabel}>
-                E-mail Corporativo
-              </ThemedText>
-              <View style={styles.inputBox}>
-                <Ionicons name="mail-outline" size={18} color={tokens.colors.textMuted} />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="gestor@restaurante.com"
-                  placeholderTextColor={tokens.colors.textMuted}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  editable={!isLoading}
-                />
+            <>
+              <View style={styles.fieldGroup}>
+                <ThemedText variant="caption" style={styles.inputLabel}>
+                  E-mail Corporativo
+                </ThemedText>
+                <View style={styles.inputBox}>
+                  <Ionicons name="mail-outline" size={18} color={tokens.colors.textMuted} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="gestor@restaurante.com"
+                    placeholderTextColor={tokens.colors.textMuted}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    editable={!isLoading && !isOffline}
+                  />
+                </View>
               </View>
-            </View>
+
+              {/* Aviso Discreto de Modo Offline */}
+              {isOffline && (
+                <View
+                  style={styles.offlineNotice}
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                  {...(Platform.OS === 'web' ? { role: 'alert', 'aria-live': 'polite' } : {})}
+                >
+                  <Ionicons name="cloud-offline-outline" size={16} color="#B45309" />
+                  <ThemedText variant="caption" style={styles.offlineNoticeText}>
+                    A recuperação de senha via OTP requer conexão ativa com a internet.
+                  </ThemedText>
+                </View>
+              )}
+            </>
           ) : (
             <>
               <View style={styles.fieldGroup}>
@@ -206,31 +239,56 @@ export function EsqueciSenhaScreen() {
             </>
           )}
 
+          {/* Botão Primário com Coerência Offline */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={[styles.actionButton, isLoading && styles.buttonDisabled]}
+            style={[
+              styles.actionButton,
+              isBotaoDesabilitado && styles.buttonDisabled,
+              etapa === 'EMAIL' && isOffline && styles.buttonOffline,
+            ]}
             onPress={etapa === 'EMAIL' ? handleSolicitarCodigo : handleRedefinirSenha}
-            disabled={isLoading}
+            disabled={isBotaoDesabilitado}
+            accessibilityRole="button"
+            accessibilityLabel={
+              etapa === 'EMAIL' && isOffline
+                ? 'Sem Conexão para Enviar'
+                : etapa === 'EMAIL'
+                  ? 'Enviar Código de Recuperação'
+                  : 'Redefinir Senha'
+            }
           >
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <ThemedText variant="body" weight="bold" color="#FFFFFF">
-                {etapa === 'EMAIL' ? 'Enviar Código de Recuperação' : 'Redefinir Senha'}
+                {etapa === 'EMAIL'
+                  ? isOffline
+                    ? 'Sem Conexão para Enviar'
+                    : 'Enviar Código de Recuperação'
+                  : 'Redefinir Senha'}
               </ThemedText>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
+          {/* Ação Secundária com Área de Toque >= 44px e Destaque Semântico */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Lembrou sua senha? Voltar ao login"
             onPress={() => router.replace('/(auth)/login')}
-            style={styles.cancelButton}
+            style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+              styles.voltarLoginButton,
+              (pressed || hovered) && styles.voltarLoginButtonPressed,
+            ]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ThemedText variant="caption" color={tokens.colors.primaryDark}>
-              Lembrou sua senha? Voltar ao login
+            <ThemedText variant="caption" style={styles.voltarLoginTextoNeutro}>
+              Lembrou sua senha?{' '}
             </ThemedText>
-          </TouchableOpacity>
+            <ThemedText variant="caption" style={styles.voltarLoginTextoDestaque}>
+              Voltar ao login
+            </ThemedText>
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

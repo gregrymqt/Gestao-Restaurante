@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -15,7 +15,7 @@ import { AppDialog } from '@/shared/components/AppDialog';
 import { shadows } from '@/shared/utils/shadows';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useLoginMutation } from '../hooks/useLoginMutation';
-import { TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
+import { authService, TENANTS_PADRAO, OPERADORES_RECENTES_PADRAO } from '../services/authService';
 import { AuthHeader } from '../components/AuthHeader';
 import { TenantSelectorCard } from '../components/TenantSelectorCard';
 import { TenantSelectorModal } from '../components/TenantSelectorModal';
@@ -24,6 +24,7 @@ import { RecentOperatorsGrid } from '../components/RecentOperatorsGrid';
 import { OperadorModeToggle } from '../components/OperadorModeToggle';
 import { LoginCtaSection } from '../components/LoginCtaSection';
 import { ModalCadastroRestaurante } from '../components/ModalCadastroRestaurante';
+import { PinLoginModal } from '../components/PinLoginModal';
 import { RestauranteTenant, OperadorRecente } from '../types';
 
 export function LoginScreen() {
@@ -37,14 +38,29 @@ export function LoginScreen() {
   const [isOperadorMode, setIsOperadorMode] = useState(false);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(false);
+  const [operadorParaPin, setOperadorParaPin] = useState<OperadorRecente | null>(null);
   const [tenants] = useState<RestauranteTenant[]>(TENANTS_PADRAO);
-  const [operadores] = useState<OperadorRecente[]>(OPERADORES_RECENTES_PADRAO);
+  const [operadores, setOperadores] = useState<OperadorRecente[]>(OPERADORES_RECENTES_PADRAO);
   const [operadorAtivoId, setOperadorAtivoId] = useState<string>('99999999-9999-9999-9999-999999999999');
+
+  useEffect(() => {
+    let isMounted = true;
+    if (currentTenant?.id) {
+      authService.obterOperadoresRecentes(currentTenant.id).then((ops) => {
+        if (isMounted && ops && ops.length > 0) {
+          setOperadores(ops);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [currentTenant?.id]);
 
   const handleSelectOperador = (op: OperadorRecente) => {
     setOperadorAtivoId(op.id);
-    setIdentificador(op.email);
-    setPalavraPasse('123456');
+    setIdentificador(op.email || 'operador@restaurante.com');
+    setOperadorParaPin(op);
   };
 
   const handleToggleOperadorMode = () => {
@@ -169,6 +185,14 @@ export function LoginScreen() {
       <ModalCadastroRestaurante
         visible={isCadastroModalOpen}
         onClose={() => setIsCadastroModalOpen(false)}
+      />
+
+      {/* Modal de Autenticação Rápida de Balcão por PIN */}
+      <PinLoginModal
+        visible={!!operadorParaPin}
+        operador={operadorParaPin}
+        tenantId={currentTenant?.id || tenants[0]?.id || ''}
+        onClose={() => setOperadorParaPin(null)}
       />
     </KeyboardAvoidingView>
   );

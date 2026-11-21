@@ -1,0 +1,177 @@
+import { StyleSheet } from 'react-native';
+import { tokens } from '@/components/primitives/tokens';
+
+export const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  keyboardContainer: {
+    width: '100%',
+    maxHeight: '90%',
+  },
+  modalContainer: {
+    backgroundColor: tokens.colors.background,
+    borderTopLeftRadius: tokens.radii.lg,
+    borderTopRightRadius: tokens.radii.lg,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xl,
+    maxHeight: '100%',
+  },
+  dragHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: tokens.colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: tokens.spacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: tokens.spacing.md,
+  },
+  headerTitles: {
+    flex: 1,
+  },
+  closeButton: {
+    padding: tokens.spacing.xs,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTabs: {
+    flexDirection: 'row',
+    backgroundColor: tokens.colors.card,
+    borderRadius: tokens.radii.md,
+    padding: 3,
+    marginBottom: tokens.spacing.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: tokens.spacing.sm,
+    alignItems: 'center',
+    borderRadius: tokens.radii.sm,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: tokens.colors.primary,
+  },
+  colaboradorCard: {
+    backgroundColor: tokens.colors.card,
+    borderRadius: tokens.radii.md,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  avatarBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: tokens.spacing.md,
+  },
+  avatarInativo: {
+    backgroundColor: tokens.colors.textMuted,
+  },
+  colaboradorInfo: {
+    flex: 1,
+  },
+  nomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.xs,
+  },
+  roleBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+  },
+  roleBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: tokens.colors.primaryDark,
+  },
+  statusActionBtn: {
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xs,
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  btnDesativar: {
+    borderColor: tokens.colors.status.redText,
+  },
+  btnAtivar: {
+    borderColor: tokens.colors.status.greenText,
+  },
+  formContainer: {
+    gap: tokens.spacing.md,
+    paddingBottom: tokens.spacing.lg,
+  },
+  inputGroup: {
+    gap: tokens.spacing.xs,
+  },
+  input: {
+    height: 46,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.spacing.md,
+    backgroundColor: tokens.colors.card,
+    fontSize: 15,
+    color: tokens.colors.textPrimary,
+  },
+  pinInput: {
+    textAlign: 'center',
+    letterSpacing: 10,
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  roleSelectorRow: {
+    flexDirection: 'row',
+    gap: tokens.spacing.sm,
+  },
+  roleOptionBtn: {
+    flex: 1,
+    height: 42,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.card,
+  },
+  roleOptionActive: {
+    borderColor: tokens.colors.primary,
+    backgroundColor: '#FFF7ED',
+  },
+  submitButton: {
+    height: 48,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacing.sm,
+  },
+  emptyContainer: {
+    paddingVertical: tokens.spacing.xl,
+    alignItems: 'center',
+  },
+});

@@ -41,6 +41,9 @@ public static class DependencyInjection
         services.AddScoped<ListarTenantsAdminUseCase>();
         services.AddScoped<EstenderTrialTenantUseCase>();
         services.AddScoped<AlterarStatusAssinaturaAdminUseCase>();
+        services.AddScoped<CriarOperadorUseCase>();
+        services.AddScoped<ListarOperadoresRestauranteUseCase>();
+        services.AddScoped<LoginOperadorPinUseCase>();
         return services;
     }
 }

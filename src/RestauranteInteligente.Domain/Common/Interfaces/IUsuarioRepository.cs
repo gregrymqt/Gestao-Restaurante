@@ -13,4 +13,5 @@ public interface IUsuarioRepository
     Task AdicionarAsync(Usuario usuario, CancellationToken ct = default);
     Task AtualizarAsync(Usuario usuario, CancellationToken ct = default);
     Task<IReadOnlyList<Usuario>> ObterTodosAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Usuario>> ListarPorRestauranteAsync(Guid restauranteId, CancellationToken ct = default);
 }

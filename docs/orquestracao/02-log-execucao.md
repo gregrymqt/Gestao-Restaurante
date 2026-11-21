@@ -70,3 +70,42 @@
 - Validada rejeição e propagação de mensagens amigáveis em todas as services via mocks de `apiClient`.
 - Compilação TypeScript aprovada com 0 erros (`tsc --noEmit`) e suíte de testes unitários executada com 100% de sucesso (7 testes).
 - Grafo estrutural sincronizado via `graft build` (2465 nós, 2314 arestas).
+
+## [2026-11-21] Refinamento UI/UX: Terminal Bloqueado e Recuperação de Senha (Mobile & A11y)
+- Foco do PIN refinado com `border-gray-300`, `focus:border-orange-600 focus:ring-2 focus:ring-orange-600/20`, teclado numérico estrito (4 dígitos) e reserva fixa de erro sem salto (`min-h-[20px]`).
+- Ações secundárias transformadas em alvos de toque ergonômicos (`min-h-[44px]`), com texto neutro em `text-gray-500` e destaque acionável em `text-orange-600 font-semibold`.
+- Conexão reativa ao estado `isOffline` desabilitando o envio OTP com aviso contextual e coerência de estado.
+- Viewports fluidos com `min-h-[100dvh]`, scroll seguro com `env(safe-area-inset-bottom)` e conformidade de linhas (< 300) sem `any`.
+- Validados compilação (`tsc --noEmit`), testes unitários (`node:test` 5/5 aprovados) e sincronização do grafo via `graft build`.
+
+## [2026-11-21] Gestão de Equipe & PIN de PDV - Lote 1: Domínio, Repositório e DTOs (.NET 9)
+- Adicionado contrato `ListarPorRestauranteAsync(Guid restauranteId)` em `IUsuarioRepository`.
+- Implementado `ListarPorRestauranteAsync` em `UsuarioRepository` com filtro `RestauranteId`, `Ativo == true` e bypass de query filters.
+- Criados DTOs tipados `CriarOperadorInputDto`, `OperadorResumoDto`, `LoginOperadorPinRequestDto` e `LoginOperadorPinResponseDto` em `OperadorDtos.cs`.
+- Compilação validada com sucesso e 234 testes unitários executados com 100% de aprovação (0 falhas).
+
+## [2026-11-21] Gestão de Equipe & PIN de PDV - Lote 2: Use Cases de Equipe e PIN (.NET 9)
+- Criado `CriarOperadorUseCase` com validação de PIN de 4 dígitos, e-mail interno para balcão, hash seguro e persistência via `IUnitOfWork`.
+- Criado `ListarOperadoresRestauranteUseCase` com projeção em `OperadorResumoDto` e extração dinâmica de iniciais para avatar.
+- Criado `LoginOperadorPinUseCase` validando inquilino, hash de PIN e emissão de JWT/Refresh Token específicos de PDV.
+- Registrados os três novos Use Cases no container IoC (`DependencyInjection.cs`).
+- Compilação limpa e suíte completa de 234 testes unitários aprovada com 100% de sucesso.
+
+## [2026-11-21] Gestão de Equipe & PIN de PDV - Lote 3: Endpoints da API (.NET 9)
+- Adicionados endpoints públicos para terminal PDV em `AuthController`: `POST /api/v1/auth/login-pin` e `GET /api/v1/auth/operadores`.
+- Criado `EquipeController` (`/api/v1/equipe`) restrito a `Manager,Owner,SuperAdmin` com listagem, cadastro e ativação/desativação.
+- Segregação estrita multi-tenant garantida via `ITenantContext` e validação de vínculo do colaborador.
+- Compilação do projeto `Api` validada com 0 erros/avisos e 234 testes unitários aprovados com 100% de sucesso.
+
+## [2026-11-21] Gestão de Equipe & PIN de PDV - Lote 4: Frontend React Native & Expo
+- Criado `equipeService.ts` com tipagem 100% estrita sem `any` e tratamento de erros via `extractErrorMessage`.
+- Criados `ModalGestaoEquipe.tsx`, `.styles.ts` e `ColaboradorItemCard.tsx` com teto < 300 linhas para gestão de operadores e PINs.
+- Conectados `authService.obterOperadoresRecentes` e `loginComPin` com `PinLoginModal.tsx` para login ágil e redirecionamento ao PDV.
+- Adaptado `TabLayout` em `_layout.tsx` para segregar visualmente `role === 'Operator'` (PDV/Caixa) de abas administrativas.
+- Validação TypeScript (`tsc --noEmit`) aprovada com 0 erros e conformidade estrita de linhas no `graft-lint`.
+
+## [2026-11-21] Gestão de Equipe & PIN de PDV - Lote 5: Testes Unitários e Grafo
+- Criados testes unitários em C# (`CriarOperadorUseCaseTests.cs` e `LoginOperadorPinUseCaseTests.cs`) com 12 novos cenários.
+- Criada suíte de testes unitários frontend `equipeAndPinLogin.test.ts` cobrindo extração de erros e fluxos de PIN.
+- Suíte completa de 246 testes backend executada com 100% de sucesso (0 falhas) e testes frontend 100% aprovados.
+- Compilação limpa (`dotnet build` e `tsc --noEmit`) e grafo estrutural sincronizado via `graft build` (2530 nós, 2381 arestas).

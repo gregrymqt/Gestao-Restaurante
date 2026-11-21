@@ -25,14 +25,17 @@
       "lang": "pt-BR"
     },
     "plugins": [
-      "expo-router"
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": true,
+            "default": "development"
+          }
+        }
+      ]
     ],
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "abb973ee-ef9e-4de8-b27c-27d08f83d81b"
       }

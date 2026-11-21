@@ -25,6 +25,8 @@ export function useLoginMutation() {
           id: data.operador.id,
           nome: data.operador.nome,
           email: data.operador.email,
+          role: data.operador.role,
+          cargo: data.operador.cargo,
           matricula: variables.identificador.replace(/\D/g, '') || '05829',
           iniciais: data.operador.nome
             .split(' ')

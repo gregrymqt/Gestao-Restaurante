@@ -8,7 +8,8 @@ import { tokens } from '@/components/primitives/tokens';
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 12);
-  const { isAuthenticated, isInitialized, initSessionFromStorage } = useAuthStore();
+  const { isAuthenticated, isInitialized, initSessionFromStorage, operador } = useAuthStore();
+  const isOperator = operador?.role === 'Operator';
 
   useEffect(() => {
     if (!isInitialized) {
@@ -51,6 +52,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Painel',
+          tabBarButton: isOperator ? () => null : undefined,
+          tabBarItemStyle: isOperator ? { display: 'none' } : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'stats-chart' : 'stats-chart-outline'}
@@ -64,6 +67,8 @@ export default function TabLayout() {
         name="estoque"
         options={{
           title: 'Estoque',
+          tabBarButton: isOperator ? () => null : undefined,
+          tabBarItemStyle: isOperator ? { display: 'none' } : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'cube' : 'cube-outline'}
@@ -77,9 +82,41 @@ export default function TabLayout() {
         name="previsoes"
         options={{
           title: 'Previsões',
+          tabBarButton: isOperator ? () => null : undefined,
+          tabBarItemStyle: isOperator ? { display: 'none' } : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'sparkles' : 'sparkles-outline'}
+              size={20}
+              color={color as string}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="pdv"
+        options={{
+          title: 'Frente PDV',
+          tabBarButton: isOperator ? undefined : () => null,
+          tabBarItemStyle: isOperator ? undefined : { display: 'none' },
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'calculator' : 'calculator-outline'}
+              size={20}
+              color={color as string}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="caixa"
+        options={{
+          title: 'Caixa',
+          tabBarButton: isOperator ? undefined : () => null,
+          tabBarItemStyle: isOperator ? undefined : { display: 'none' },
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'cash' : 'cash-outline'}
               size={20}
               color={color as string}
             />
@@ -97,22 +134,6 @@ export default function TabLayout() {
               color={color as string}
             />
           ),
-        }}
-      />
-
-      {/* Rotas operacionais ocultas da barra mantendo deep linking */}
-      <Tabs.Screen
-        name="pdv"
-        options={{
-          tabBarButton: () => null,
-          tabBarItemStyle: { display: 'none' },
-        }}
-      />
-      <Tabs.Screen
-        name="caixa"
-        options={{
-          tabBarButton: () => null,
-          tabBarItemStyle: { display: 'none' },
         }}
       />
     </Tabs>
