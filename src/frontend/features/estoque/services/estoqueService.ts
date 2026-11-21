@@ -1,4 +1,4 @@
-import { apiClient } from '@/services/api';
+import { apiClient, extractErrorMessage } from '@/services/api';
 import {
   InsumoEstoque,
   FichaTecnicaItem,
@@ -117,23 +117,35 @@ export const estoqueService = {
   },
 
   async registrarEntradaEstoque(entrada: EntradaEstoqueInput): Promise<EntradaEstoqueResponse> {
-    const response = await apiClient.post<EntradaEstoqueResponse>('/estoque/entrada', entrada);
-    return response.data;
+    try {
+      const response = await apiClient.post<EntradaEstoqueResponse>('/estoque/entrada', entrada);
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível registrar entrada no estoque.'));
+    }
   },
 
   async cadastrarInsumo(dados: CadastrarInsumoInput): Promise<InsumoEstoque> {
-    const response = await apiClient.post<InsumoEstoque>('/estoque/insumos', dados);
-    return response.data;
+    try {
+      const response = await apiClient.post<InsumoEstoque>('/estoque/insumos', dados);
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível cadastrar o insumo.'));
+    }
   },
 
   async registrarBaixaEstoque(dados: BaixaEstoqueInput): Promise<{ status: string }> {
     const origemMap: Record<string, number> = { Avaria: 3, Validade: 3, Inventario: 2 };
-    const response = await apiClient.post<{ status: string }>('/estoque/baixa', {
-      itens: [{ insumoId: dados.insumoId, quantidade: dados.quantidade }],
-      origem: origemMap[dados.motivo] ?? 3,
-      observacao: `[${dados.motivo}] ${dados.observacao || 'Baixa manual registrada pelo gestor'}`.trim(),
-    });
-    return response.data;
+    try {
+      const response = await apiClient.post<{ status: string }>('/estoque/baixa', {
+        itens: [{ insumoId: dados.insumoId, quantidade: dados.quantidade }],
+        origem: origemMap[dados.motivo] ?? 3,
+        observacao: `[${dados.motivo}] ${dados.observacao || 'Baixa manual registrada pelo gestor'}`.trim(),
+      });
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível registrar a baixa de estoque.'));
+    }
   },
 
   async salvarFichaTecnica(dados: FichaTecnicaInput): Promise<FichaTecnicaItem> {

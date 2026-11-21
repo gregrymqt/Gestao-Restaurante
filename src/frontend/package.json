@@ -35,7 +35,6 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "node ../../scripts/graft-lint.mjs --scope src/frontend",
-    "lint:estoque": "node ../../scripts/graft-lint.mjs --scope src/frontend/features/estoque",
     "lint:all": "node ../../scripts/graft-lint.mjs --scope src"
   },
   "private": true

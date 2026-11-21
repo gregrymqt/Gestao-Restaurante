@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/services/api';
+import { apiClient, extractErrorMessage } from '@/shared/services/api';
 import { AssinaturaStatus } from '../types';
 
 export const ASSINATURA_PADRAO: AssinaturaStatus = {
@@ -43,9 +43,8 @@ export const assinaturaService = {
         mesesVigencia,
       });
       return response.data;
-    } catch (err: any) {
-      const msg = err.response?.data?.error || 'Não foi possível contratar o plano. Tente novamente.';
-      throw new Error(msg);
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível contratar o plano. Tente novamente.'));
     }
   },
 };
