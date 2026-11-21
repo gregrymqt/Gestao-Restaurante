@@ -15,6 +15,9 @@ permissions:
   contents: read
   packages: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ============================================================================
   # 1. PostgreSQL 16 Native Layer (Schema, RLS Forçado & Testes Discriminatórios)
@@ -41,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install PostgreSQL Client
         run: |
@@ -90,18 +93,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Environment File (.env)
         run: cp .env.example .env
 
       - name: Setup .NET 9 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '9.0.x'
 
       - name: Cache NuGet Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'RestauranteInteligente.sln') }}
@@ -124,7 +127,7 @@ jobs:
 
       - name: Upload Backend Test Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-test-results
           path: '**/TestResults/*.trx'
@@ -138,10 +141,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -179,10 +182,10 @@ jobs:
         working-directory: src/frontend
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20.x'
           cache: 'npm'
@@ -208,7 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate production deployment files
         run: |
@@ -234,7 +237,7 @@ jobs:
           }
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
 
@@ -245,10 +248,10 @@ jobs:
           terraform -chdir=infra/terraform validate
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build WebApi Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: src/RestauranteInteligente.Api/Dockerfile
@@ -256,7 +259,7 @@ jobs:
           tags: restaurante-webapi:ci-test
 
       - name: Build ML Worker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ml/RestauranteInteligente.ML
           file: ./ml/RestauranteInteligente.ML/Dockerfile
@@ -264,7 +267,7 @@ jobs:
           tags: restaurante-ml-worker:ci-test
 
       - name: Build Frontend Nginx Gateway Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: infra/nginx/Dockerfile
@@ -302,13 +305,13 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -316,7 +319,7 @@ jobs:
 
       - name: Extract Metadata (WebApi)
         id: meta-webapi
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}/webapi
           tags: |
@@ -325,7 +328,7 @@ jobs:
             type=raw,value=${{ github.sha }}
 
       - name: Build & Push WebApi Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: src/RestauranteInteligente.Api/Dockerfile
@@ -335,7 +338,7 @@ jobs:
 
       - name: Extract Metadata (ML Worker)
         id: meta-ml
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}/ml-worker
           tags: |
@@ -344,7 +347,7 @@ jobs:
             type=raw,value=${{ github.sha }}
 
       - name: Build & Push ML Worker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ml/RestauranteInteligente.ML
           file: ./ml/RestauranteInteligente.ML/Dockerfile
@@ -363,7 +366,7 @@ jobs:
       contents: read
       packages: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 

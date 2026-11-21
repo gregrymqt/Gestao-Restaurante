@@ -79,13 +79,19 @@ public sealed class RateLimitingMiddleware
             return ($"tenant:{{{tenantId}}}:user:{userId}", 120, window);
         }
 
-        // Cliente anônimo: proteção reforçada em endpoints de autenticação
+        // Cliente anônimo: proteção reforçada em endpoints de autenticação e recuperação de credenciais
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown_ip";
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
 
         if (path.Contains("/api/v1/auth/login"))
         {
             return ($"anon:login:ip:{ip}", 10, window); // Limite estrito contra força bruta
+        }
+
+        if (path.Contains("/api/v1/auth/solicitar-recuperacao") ||
+            path.Contains("/api/v1/auth/redefinir-senha"))
+        {
+            return ($"anon:recovery:ip:{ip}", 10, window); // Limite estrito para recuperação de senha
         }
 
         return ($"anon:general:ip:{ip}", 60, window);
