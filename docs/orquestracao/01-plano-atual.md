@@ -1,47 +1,80 @@
-# Plano Atual: Transacionalidade Real (Caixa, Perfil e Previsões)
+# Plano Atual: PIN de Terminal e Recuperação de Senha (Esqueceu a Senha)
 
 Status: Concluído
 Data: 2026-11-21
 
 ## 1. Contexto e Invariantes
-- Substituição integral de dados e transações mockadas nos fluxos de Caixa, Perfil e Previsões.
-- Obediência estrita às Cláusulas de AGENTS.md:
-  - Multi-tenant com `RestauranteId` e RLS no PostgreSQL.
-  - Tipos `numeric(18,2)` para moeda, `numeric(18,4)` para insumos e `timestamptz` para datas em UTC.
-  - Controllers chamam Use Cases/Handlers; Controllers nunca injetam `DbContext`.
-  - Frontend desacoplado via Feature-First e `apiClient`.
+- Autenticação e bloqueio de terminal via PIN de 4 a 6 dígitos com persistência segura (`PinHash`) no PostgreSQL.
+- Tratamento do fluxo de troca de operador ou saída mantendo o caixa fiscal aberto no restaurante.
+- Recuperação de senha completa com OTP de 6 dígitos temporário (15 min) persistido no Redis e nova tela progressiva no app mobile.
+- Obediência estrita às Cláusulas de `AGENTS.md`:
+  - Multi-tenant e RLS com isolamento por `RestauranteId`.
+  - Hashing seguro PBKDF2 via `IPasswordHasher` para senhas e PINs.
+  - Revogação de sessão via Blacklist de tokens no Redis no logout.
+  - Feature-First no frontend (`features/auth`, `features/perfil`), sem chamadas diretas ou lógica espalhada.
 
 ---
 
 ## 2. Tarefas Atômicas de Execução
 
 ### Lote 1: Domínio e Persistência Backend C# (.NET 9)
-- [x] Criar entidade `MovimentacaoCaixa.cs` em `src/RestauranteInteligente.Domain/Entities/MovimentacaoCaixa.cs` (IRestauranteEntity, Tipo: SUPRIMENTO/SANGRIA, Valor, Motivo, DataHora).
-- [x] Criar entidades `OrdemCompra.cs` e `ItemOrdemCompra.cs` em `src/RestauranteInteligente.Domain/Entities/OrdemCompra.cs` (IRestauranteEntity, Protocolo, Status: PENDENTE, Itens, ValorTotal).
-- [x] Atualizar interface `IFechamentoCaixaRepository.cs` em `src/RestauranteInteligente.Domain/Common/Interfaces/IFechamentoCaixaRepository.cs:L8-L13` adicionando métodos para movimentações.
-- [x] Criar interface `IOrdemCompraRepository.cs` em `src/RestauranteInteligente.Domain/Common/Interfaces/IOrdemCompraRepository.cs`.
-- [x] Atualizar `AppDbContext.cs` em `src/RestauranteInteligente.Infrastructure/Persistence/AppDbContext.cs:L40-L48` adicionando `DbSet<MovimentacaoCaixa>` e `DbSet<OrdemCompra>`.
-- [x] Criar mapeamentos EF Core `MovimentacaoCaixaConfiguration.cs` e `OrdemCompraConfiguration.cs` em `src/RestauranteInteligente.Infrastructure/Persistence/Configurations/`.
-- [x] Implementar repositórios `FechamentoCaixaRepository.cs` (`src/RestauranteInteligente.Infrastructure/Persistence/Repositories/FechamentoCaixaRepository.cs`) e `OrdemCompraRepository.cs`.
+- [x] Atualizar entidade `Usuario.cs` em `src/RestauranteInteligente.Domain/Entities/Usuario.cs:L10-L51`:
+  - Adicionar propriedade `public string? PinHash { get; private set; }`.
+  - Atualizar construtor para receber `string? pinHash = null`.
+  - Adicionar método `public void DefinirPin(string novoPinHash)`.
+- [x] Atualizar mapeamento EF Core em `src/RestauranteInteligente.Infrastructure/Persistence/Configurations/UsuarioConfiguration.cs:L25-L40`:
+  - Configurar `builder.Property(u => u.PinHash).HasMaxLength(255).IsRequired(false);`.
+- [x] Atualizar contrato `IUsuarioRepository.cs` em `src/RestauranteInteligente.Domain/Common/Interfaces/IUsuarioRepository.cs:L8-L14`:
+  - Adicionar `Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct = default);`.
+  - Adicionar `Task AtualizarAsync(Usuario usuario, CancellationToken ct = default);`.
+- [x] Implementar métodos em `src/RestauranteInteligente.Infrastructure/Persistence/Repositories/UsuarioRepository.cs:L10-L60`:
+  - Implementar `ObterPorIdAsync` com `.IgnoreQueryFilters()`.
+  - Implementar `AtualizarAsync` chamando `_context.Usuarios.Update` e `SaveChangesAsync`.
+- [x] Adicionar gerador de chave Redis em `src/RestauranteInteligente.Infrastructure/Redis/RedisKeyHelper.cs:L25-L32`:
+  - Adicionar método `BuildPasswordResetKey(string email) => $"auth:password_reset:{email.Trim().ToLowerInvariant()}";`.
 
-### Lote 2: Use Cases e Endpoints Backend C# (.NET 9)
-- [x] Criar DTOs de movimentação e resumo em `src/RestauranteInteligente.Application/Caixa/DTOs/MovimentacaoCaixaDtos.cs`.
-- [x] Implementar `RegistrarMovimentacaoCaixaUseCase.cs` em `src/RestauranteInteligente.Application/Caixa/UseCases/RegistrarMovimentacaoCaixaUseCase.cs` (validação de caixa aberto e saldo de gaveta para sangria).
-- [x] Implementar `ObterResumoTurnoUseCase.cs` em `src/RestauranteInteligente.Application/Caixa/UseCases/ObterResumoTurnoUseCase.cs` (cálculo de faturamento, ticket médio, pagamentos e saldo em dinheiro).
-- [x] Criar DTOs e implementar `RegistrarOrdemCompraUseCase.cs` em `src/RestauranteInteligente.Application/Previsoes/UseCases/RegistrarOrdemCompraUseCase.cs`.
-- [x] Adicionar endpoints `POST /caixa/suprimento`, `POST /caixa/sangria` e `GET /caixa/resumo-turno` em `src/RestauranteInteligente.Api/Controllers/FechamentosController.cs`.
-- [x] Adicionar endpoint `POST /previsoes/ordens-compra` em `src/RestauranteInteligente.Api/Controllers/PrevisoesController.cs`.
-- [x] Registrar use cases na injeção de dependência em `src/RestauranteInteligente.Application/DependencyInjection.cs`.
-- [x] Validar compilação e testes unitários do backend (`dotnet test --verbosity minimal`).
+### Lote 2: Endpoints e Casos de Uso Backend C# (.NET 9)
+- [x] Adicionar DTOs de autenticação em `src/RestauranteInteligente.Api/DTOs/Auth/TerminalPinAndPasswordResetDtos.cs`:
+  - `ValidarPinRequest(string Pin);`
+  - `DefinirPinRequest(string NovoPin);`
+  - `EsqueciSenhaRequest(string Email);`
+  - `RedefinirSenhaRequest(string Email, string CodigoOtp, string NovaSenha);`
+- [x] Criar interface `IPasswordResetTokenService.cs` no domínio e implementação `RedisPasswordResetTokenService.cs` na infraestrutura.
+- [x] Implementar Use Cases em `src/RestauranteInteligente.Application/Auth/UseCases/`:
+  - `ValidarPinTerminalUseCase.cs`
+  - `DefinirPinTerminalUseCase.cs`
+  - `SolicitarRecuperacaoSenhaUseCase.cs`
+  - `RedefinirSenhaUseCase.cs`
+- [x] Implementar endpoints limpos em `src/RestauranteInteligente.Api/Controllers/AuthController.cs`:
+  - `POST /api/v1/auth/validar-pin`: invoca `ValidarPinTerminalUseCase`.
+  - `POST /api/v1/auth/definir-pin`: invoca `DefinirPinTerminalUseCase`.
+  - `POST /api/v1/auth/esqueci-senha`: invoca `SolicitarRecuperacaoSenhaUseCase`.
+  - `POST /api/v1/auth/redefinir-senha`: invoca `RedefinirSenhaUseCase`.
+- [x] Criar testes unitários em `tests/RestauranteInteligente.UnitTests/AuthControllerTests.cs` e `AuthUseCasesTests.cs`.
+- [x] Executar validação silenciosa de compilação e testes (234 testes aprovados com 100% de sucesso).
 
-### Lote 3: Frontend Services, Hooks e Componentes (React Native)
-- [x] Remover simulação de erro/fallback fictício em `src/frontend/features/caixa/services/caixaService.ts:L93-L114` no método `fecharCaixa()`.
-- [x] Conectar `perfilService.ts` (`src/frontend/features/perfil/services/perfilService.ts:L8-L55`) aos endpoints reais via `apiClient`: `obterMetricasTurno()` -> `GET /caixa/resumo-turno`, `registrarMovimentacao()` -> `POST /caixa/suprimento` ou `POST /caixa/sangria`.
-- [x] Atualizar `usePerfil.ts` (`src/frontend/features/perfil/hooks/usePerfil.ts:L118-L129`) substituindo o `setTimeout(600)` pela chamada real `caixaService.fecharCaixa()`.
-- [x] Conectar `previsoesService.enviarOrdemCompra()` (`src/frontend/features/previsoes/services/previsoesService.ts:L78-L86`) ao endpoint real `POST /previsoes/ordens-compra`.
-- [x] Conectar `previsoesService.obterFichaTecnica()` (`src/frontend/features/previsoes/services/previsoesService.ts:L55-L76`) ao endpoint real `GET /estoque/fichas-tecnicas`, eliminando o arquivo `previsoesFichasMock.ts`.
-- [x] Validar compilação e tipagem do frontend (`npx tsc --noEmit`).
+### Lote 3: Serviços e Componentes Frontend (React Native / Expo SDK 58)
+- [x] Adicionar métodos em `src/frontend/features/auth/services/authService.ts`:
+  - `validarPin(pin: string): Promise<boolean>` conectando a `POST /auth/validar-pin`.
+  - `definirPin(novoPin: string): Promise<void>` conectando a `POST /auth/definir-pin`.
+  - `solicitarRecuperacaoSenha(email: string): Promise<{ message: string }>` conectando a `POST /auth/esqueci-senha`.
+  - `redefinirSenha(email: string, codigoOtp: string, novaSenha: string): Promise<{ message: string }>` conectando a `POST /auth/redefinir-senha`.
+  - `logout(): Promise<void>` conectando a `POST /auth/logout`.
+- [x] Atualizar `ModalBloqueioTerminal.tsx` em `src/frontend/features/perfil/components/ModalBloqueioTerminal.tsx`:
+  - Adicionado suporte a validação assíncrona com estado de carregamento e mensagem de erro específica.
+  - Mantido o botão "Trocar de Operador ou Sair" disparando `onLogout`.
+- [x] Atualizar `usePerfil.ts` em `src/frontend/features/perfil/hooks/usePerfil.ts`:
+  - Conectado `handleDesbloquearTerminal` à chamada `authService.validarPin(pin)`.
+  - Atualizado `handleLogout` para invocar `await authService.logout()`, limpar o storage com `logout()` e navegar para `/(auth)/login`.
+- [x] Atualizar `CredentialsCard.tsx` em `src/frontend/features/auth/components/CredentialsCard.tsx`:
+  - Conectado link "Esqueceu a senha?" para executar `router.push('/(auth)/esqueci-senha')`.
+- [x] Criar tela `EsqueciSenhaScreen.tsx` em `src/frontend/features/auth/screens/EsqueciSenhaScreen.tsx`:
+  - Etapa 1: Inserção de e-mail e envio de código OTP.
+  - Etapa 2: Inserção de OTP (6 dígitos), nova senha com confirmação e chamada de redefinição.
+- [x] Criar rota wrapper em `src/frontend/app/(auth)/esqueci-senha.tsx` e registrar em `src/frontend/app/(auth)/_layout.tsx`.
+- [x] Exportar `EsqueciSenhaScreen` em `src/frontend/features/auth/index.ts`.
+- [x] Validar compilação e tipagem do frontend (`npx tsc --noEmit`) e teste unitário em `authTerminalAndReset.test.ts`.
 
-### Lote 4: Validação Cruzada e Graft
-- [x] Atualizar grafo estrutural do repositório (`graft build`).
-- [x] Executar suíte de testes cruzada e registrar log final em `docs/orquestracao/02-log-execucao.md`.
+### Lote 4: Validação Cruzada e Atualização do Grafo
+- [x] Executar `graft build` para sincronizar os novos símbolos e chamadas na árvore (2460 nós, 2280 arestas).
+- [x] Registrar evidências e logs em `docs/orquestracao/02-log-execucao.md`.

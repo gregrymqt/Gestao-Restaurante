@@ -44,16 +44,14 @@ public sealed class AssinaturaRepository : IAssinaturaRepository
 
     public async Task AdicionarAsync(Assinatura assinatura, CancellationToken ct = default)
     {
-        if (assinatura == null)
-            throw new ArgumentNullException(nameof(assinatura));
+        ArgumentNullException.ThrowIfNull(assinatura);
 
         await _context.Assinaturas.AddAsync(assinatura, ct);
     }
 
     public Task AtualizarAsync(Assinatura assinatura, CancellationToken ct = default)
     {
-        if (assinatura == null)
-            throw new ArgumentNullException(nameof(assinatura));
+        ArgumentNullException.ThrowIfNull(assinatura);
 
         _context.Assinaturas.Update(assinatura);
         return Task.CompletedTask;

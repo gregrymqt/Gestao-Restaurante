@@ -33,6 +33,10 @@ public sealed class DomainEntitiesTests
         usuario.AtualizarSenha("novo_hash_456");
         usuario.SenhaHash.Should().Be("novo_hash_456");
 
+        usuario.PinHash.Should().BeNull();
+        usuario.DefinirPin("pin_hash_789");
+        usuario.PinHash.Should().Be("pin_hash_789");
+
         usuario.Desativar();
         usuario.Ativo.Should().BeFalse();
 

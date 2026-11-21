@@ -29,6 +29,16 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.Ativo, ct);
     }
 
+    public async Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct = default)
+    {
+        if (id == Guid.Empty)
+            return null;
+
+        return await _context.Usuarios
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id && u.Ativo, ct);
+    }
+
     public async Task<bool> ExisteEmailAsync(string email, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -44,10 +54,17 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
     public async Task AdicionarAsync(Usuario usuario, CancellationToken ct = default)
     {
-        if (usuario == null)
-            throw new ArgumentNullException(nameof(usuario));
+        ArgumentNullException.ThrowIfNull(usuario);
 
         await _context.Usuarios.AddAsync(usuario, ct);
+    }
+
+    public async Task AtualizarAsync(Usuario usuario, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(usuario);
+
+        _context.Usuarios.Update(usuario);
+        await _context.SaveChangesAsync(ct);
     }
 
     public async Task<IReadOnlyList<Usuario>> ObterTodosAsync(CancellationToken ct = default)

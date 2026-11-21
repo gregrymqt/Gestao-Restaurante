@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/services/api';
+import { apiClient, extractErrorMessage } from '@/shared/services/api';
 import {
   RestauranteTenant,
   OperadorRecente,
@@ -30,6 +30,27 @@ export const OPERADORES_RECENTES_PADRAO: OperadorRecente[] = [
   },
 ];
 
+interface LoginApiResponse {
+  token: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  restauranteId?: string;
+  userId?: string;
+  nome?: string;
+  email?: string;
+  role?: string;
+}
+
+interface CadastrarApiResponse {
+  token: string;
+  refreshToken?: string;
+  restauranteId: string;
+  nomeRestaurante: string;
+  usuarioId: string;
+  nomeGestor: string;
+  email: string;
+}
+
 export const authService = {
   async obterOperadoresRecentes(): Promise<OperadorRecente[]> {
     return OPERADORES_RECENTES_PADRAO;
@@ -41,7 +62,7 @@ export const authService = {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
     try {
-      const response = await apiClient.post<any>('/auth/login', {
+      const response = await apiClient.post<LoginApiResponse>('/auth/login', {
         email: input.identificador.includes('@')
           ? input.identificador.trim().toLowerCase()
           : 'operador@restaurante.com',
@@ -63,7 +84,7 @@ export const authService = {
 
       return {
         token: backendData.token,
-        refreshToken: backendData.refreshToken,
+        refreshToken: backendData.refreshToken || '',
         expiracao: backendData.expiresAt || new Date(Date.now() + 1000 * 60 * 15).toISOString(),
         operador: {
           id: backendData.userId || '99999999-9999-9999-9999-999999999999',
@@ -79,20 +100,14 @@ export const authService = {
           restaurantesVinculados: [tenant],
         },
       };
-    } catch (err: any) {
-      const serverMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        err.response?.data?.title ||
-        err.message ||
-        'Não foi possível autenticar junto ao servidor.';
-      throw new Error(serverMessage);
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível autenticar junto ao servidor.'));
     }
   },
 
   async cadastrarRestaurante(input: CadastrarRestauranteInput): Promise<LoginResponse> {
     try {
-      const response = await apiClient.post<any>('/auth/cadastrar-restaurante', {
+      const response = await apiClient.post<CadastrarApiResponse>('/auth/cadastrar-restaurante', {
         nomeRestaurante: input.nomeRestaurante.trim(),
         cnpj: input.cnpj.trim(),
         cidade: input.cidade?.trim() || 'São Paulo',
@@ -115,7 +130,7 @@ export const authService = {
 
       return {
         token: backendData.token,
-        refreshToken: backendData.refreshToken,
+        refreshToken: backendData.refreshToken || '',
         expiracao: new Date(Date.now() + 1000 * 60 * 15).toISOString(),
         operador: {
           id: backendData.usuarioId,
@@ -125,13 +140,66 @@ export const authService = {
           restaurantesVinculados: [tenant],
         },
       };
-    } catch (err: any) {
-      const serverMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        err.message ||
-        'Não foi possível cadastrar o restaurante. Tente novamente.';
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível cadastrar o restaurante. Tente novamente.'));
+    }
+  },
+
+  async validarPin(pin: string): Promise<boolean> {
+    try {
+      const response = await apiClient.post<{ valido: boolean }>('/auth/validar-pin', {
+        pin: pin.trim(),
+      });
+      return response.data?.valido === true;
+    } catch (err: unknown) {
+      const serverMessage = extractErrorMessage(err, 'PIN de terminal incorreto.');
       throw new Error(serverMessage);
+    }
+  },
+
+  async definirPin(novoPin: string): Promise<{ message: string }> {
+    try {
+      const response = await apiClient.post<{ message: string }>('/auth/definir-pin', {
+        novoPin: novoPin.trim(),
+      });
+      return response.data;
+    } catch (err: unknown) {
+      const serverMessage = extractErrorMessage(err, 'Não foi possível atualizar o PIN.');
+      throw new Error(serverMessage);
+    }
+  },
+
+  async solicitarRecuperacaoSenha(email: string): Promise<{ message: string; expiracaoMinutos: number }> {
+    try {
+      const response = await apiClient.post<{ message: string; expiracaoMinutos: number }>('/auth/esqueci-senha', {
+        email: email.trim().toLowerCase(),
+      });
+      return response.data;
+    } catch (err: unknown) {
+      const serverMessage = extractErrorMessage(err, 'Não foi possível solicitar a recuperação de senha.');
+      throw new Error(serverMessage);
+    }
+  },
+
+  async redefinirSenha(email: string, codigoOtp: string, novaSenha: string): Promise<{ message: string }> {
+    try {
+      const response = await apiClient.post<{ message: string }>('/auth/redefinir-senha', {
+        email: email.trim().toLowerCase(),
+        codigoOtp: codigoOtp.trim(),
+        novaSenha,
+      });
+      return response.data;
+    } catch (err: unknown) {
+      const serverMessage = extractErrorMessage(err, 'Não foi possível redefinir a senha.');
+      throw new Error(serverMessage);
+    }
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await apiClient.post('/auth/logout', {});
+    } catch {
+      // Ignora erro de rede em logout silencioso
     }
   },
 };

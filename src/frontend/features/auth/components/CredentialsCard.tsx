@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
@@ -19,6 +20,7 @@ export function CredentialsCard({
   palavraPasse,
   onPalavraPasseChange,
 }: CredentialsCardProps) {
+  const router = useRouter();
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const isIdentificadorPreenchido = identificador.trim().length > 0;
@@ -109,12 +111,7 @@ export function CredentialsCard({
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() =>
-              AppDialog.info(
-                'Recuperação de Acesso',
-                'Para redefinir sua senha de gestor, entre em contato com o administrador da conta ou o suporte.'
-              )
-            }
+            onPress={() => router.push('/(auth)/esqueci-senha')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <ThemedText variant="caption" style={styles.esqueceuLink}>

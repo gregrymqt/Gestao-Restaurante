@@ -93,3 +93,18 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Extrai de forma segura mensagens de erro vindas de respostas HTTP da API
+ * ou exceções de rede/runtime, fornecendo uma mensagem amigável de fallback.
+ */
+export function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { data?: { error?: string; detail?: string; title?: string } } }).response;
+    if (res?.data?.error) return res.data.error;
+    if (res?.data?.detail) return res.data.detail;
+    if (res?.data?.title) return res.data.title;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}

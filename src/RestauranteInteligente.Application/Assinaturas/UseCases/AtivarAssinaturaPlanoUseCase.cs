@@ -30,8 +30,7 @@ public sealed class AtivarAssinaturaPlanoUseCase
 
     public async Task<AssinaturaStatusOutputDto> ExecutarAsync(AtivarPlanoInputDto input, CancellationToken ct = default)
     {
-        if (input == null)
-            throw new ArgumentNullException(nameof(input));
+        ArgumentNullException.ThrowIfNull(input);
 
         if (!_tenantContext.HasTenant)
             throw new InvalidOperationException("Operação cancelada: Contexto de restaurante (Tenant) não inicializado.");

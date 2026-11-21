@@ -32,6 +32,10 @@ public static class DependencyInjection
         services.AddScoped<SolicitarPrevisaoDemandaUseCase>();
         services.AddScoped<RegistrarOrdemCompraUseCase>();
         services.AddScoped<CadastrarRestauranteUseCase>();
+        services.AddScoped<ValidarPinTerminalUseCase>();
+        services.AddScoped<DefinirPinTerminalUseCase>();
+        services.AddScoped<SolicitarRecuperacaoSenhaUseCase>();
+        services.AddScoped<RedefinirSenhaUseCase>();
         services.AddScoped<ObterStatusAssinaturaUseCase>();
         services.AddScoped<AtivarAssinaturaPlanoUseCase>();
         services.AddScoped<ListarTenantsAdminUseCase>();

@@ -36,8 +36,7 @@ public sealed class RestauranteRepository : IRestauranteRepository
 
     public async Task AdicionarAsync(Restaurante restaurante, CancellationToken ct = default)
     {
-        if (restaurante == null)
-            throw new ArgumentNullException(nameof(restaurante));
+        ArgumentNullException.ThrowIfNull(restaurante);
 
         await _context.Restaurantes.AddAsync(restaurante, ct);
     }

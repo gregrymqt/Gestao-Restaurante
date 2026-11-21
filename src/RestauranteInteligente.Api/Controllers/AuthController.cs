@@ -241,4 +241,126 @@ public sealed class AuthController : ControllerBase
             return Conflict(new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Valida o PIN numérico de 4 a 6 dígitos do operador logado para desbloqueio ágil do terminal.
+    /// Utiliza fallback padrão '1234' para operadores sem PIN explicitamente configurado.
+    /// </summary>
+    [HttpPost("validar-pin")]
+    [Authorize]
+    public async Task<IActionResult> ValidarPin(
+        [FromBody] ValidarPinRequest request,
+        [FromServices] ValidarPinTerminalUseCase useCase,
+        CancellationToken ct)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized(new { error = "Sessão inválida ou identificador de usuário ausente." });
+        }
+
+        try
+        {
+            var isValido = await useCase.ExecutarAsync(userId, request?.Pin, ct);
+            if (!isValido)
+            {
+                return Unauthorized(new { error = "PIN inválido." });
+            }
+
+            return Ok(new { valido = true, message = "PIN validado com sucesso." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Cadastra ou atualiza o PIN de terminal (4 a 6 dígitos numéricos) do operador autenticado.
+    /// </summary>
+    [HttpPost("definir-pin")]
+    [Authorize]
+    public async Task<IActionResult> DefinirPin(
+        [FromBody] DefinirPinRequest request,
+        [FromServices] DefinirPinTerminalUseCase useCase,
+        CancellationToken ct)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized(new { error = "Sessão inválida ou identificador de usuário ausente." });
+        }
+
+        try
+        {
+            await useCase.ExecutarAsync(userId, request?.NovoPin, ct);
+            return Ok(new { message = "PIN de terminal atualizado com sucesso." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Gera um código OTP de 6 dígitos para recuperação de senha com validade de 15 minutos no storage volátil.
+    /// </summary>
+    [HttpPost("esqueci-senha")]
+    [AllowAnonymous]
+    public async Task<IActionResult> EsqueciSenha(
+        [FromBody] EsqueciSenhaRequest request,
+        [FromServices] SolicitarRecuperacaoSenhaUseCase useCase,
+        CancellationToken ct)
+    {
+        try
+        {
+            var resultado = await useCase.ExecutarAsync(request?.Email, ct);
+            return Ok(new
+            {
+                message = resultado.Mensagem,
+                expiracaoMinutos = resultado.ExpiracaoMinutos
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Valida o código OTP e redefine a senha do usuário com hash criptográfico PBKDF2.
+    /// </summary>
+    [HttpPost("redefinir-senha")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RedefinirSenha(
+        [FromBody] RedefinirSenhaRequest request,
+        [FromServices] RedefinirSenhaUseCase useCase,
+        CancellationToken ct)
+    {
+        try
+        {
+            await useCase.ExecutarAsync(request?.Email, request?.CodigoOtp, request?.NovaSenha, ct);
+            return Ok(new { message = "Senha redefinida com sucesso. Faça login com suas novas credenciais." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 }

@@ -27,6 +27,10 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(u => u.PinHash)
+            .HasMaxLength(255)
+            .IsRequired(false);
+
         builder.Property(u => u.Role)
             .HasColumnName("Perfil")
             .HasMaxLength(50)

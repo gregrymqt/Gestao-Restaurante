@@ -29,4 +29,7 @@ public static class RedisKeyHelper
 
     public static string BuildTokenFamilyKey(string familyId)
         => $"tokenfamily:{familyId.Trim()}";
+
+    public static string BuildPasswordResetKey(string email)
+        => $"auth:password_reset:{email.Trim().ToLowerInvariant()}";
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuthStore, RestauranteTenant, TENANTS_PADRAO } from '@/features/auth';
+import { useAuthStore, RestauranteTenant, TENANTS_PADRAO, authService } from '@/features/auth';
 import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { AppDialog } from '@/shared/components/AppDialog';
@@ -98,13 +98,18 @@ export function usePerfil() {
     setIsBloqueado(true);
   };
 
-  const handleDesbloquearTerminal = () => {
+  const handleDesbloquearTerminal = async (pin: string) => {
+    await authService.validarPin(pin);
     setIsBloqueado(false);
   };
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/(auth)/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      router.replace('/(auth)/login');
+    }
   };
 
   // Fechamento de Caixa com Conferência de Gaveta
