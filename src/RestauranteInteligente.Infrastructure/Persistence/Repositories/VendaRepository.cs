@@ -49,6 +49,15 @@ public sealed class VendaRepository : IVendaRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Venda>> ObterVendasPorFechamentoCaixaIdAsync(Guid fechamentoCaixaId, CancellationToken ct = default)
+    {
+        return await _context.Vendas
+            .AsNoTracking()
+            .Where(v => v.FechamentoCaixaId == fechamentoCaixaId && v.Status == "CONCLUIDA")
+            .OrderBy(v => v.DataHora)
+            .ToListAsync(ct);
+    }
+
     public async Task<Venda?> ObterPorIdParaAtualizacaoAsync(Guid id, CancellationToken ct = default)
     {
         return await _context.Vendas

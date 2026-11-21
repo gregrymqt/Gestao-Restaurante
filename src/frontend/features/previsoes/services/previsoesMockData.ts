@@ -1,9 +1,6 @@
 import {
   RelatorioCapacidadeProducao,
 } from '../types';
-import { FICHAS_TECNICAS_MOCK } from './previsoesFichasMock';
-
-export { FICHAS_TECNICAS_MOCK };
 
 export const DADOS_PREVISAO_PADRAO: RelatorioCapacidadeProducao = {
   dataReferencia: '2026-09-28',

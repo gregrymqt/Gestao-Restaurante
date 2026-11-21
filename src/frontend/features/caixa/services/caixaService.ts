@@ -91,25 +91,7 @@ export const caixaService = {
   },
 
   async fecharCaixa(): Promise<FecharCaixaResponseDto> {
-    try {
-      const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar');
-      return response.data;
-    } catch (error) {
-      console.warn(
-        'Backend offline ou inacessível. Executando simulação resiliente de fechamento de caixa para teste UI:',
-        error
-      );
-
-      return {
-        fechamentoCaixaId: `fc-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-        restauranteId: 'restaurante-demo-01',
-        dataAbertura: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-        dataFechamento: new Date().toISOString(),
-        valorTotalVendas: 2480.50,
-        quantidadeVendas: 38,
-        status: 'Fechado',
-        correlationId: `corr-${Date.now()}`,
-      };
-    }
+    const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar');
+    return response.data;
   },
 };

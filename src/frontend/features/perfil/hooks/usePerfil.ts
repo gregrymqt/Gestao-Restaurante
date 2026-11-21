@@ -5,6 +5,7 @@ import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { SessaoCaixaResumo } from '@/features/caixa/types';
+import { caixaService } from '@/features/caixa/services/caixaService';
 import { perfilService } from '../services/perfilService';
 import { ShiftMetrics, TerminalStatus, TipoMovimentacaoCaixa } from '../types';
 
@@ -118,11 +119,21 @@ export function usePerfil() {
   const handleConfirmarFechamentoTurno = async () => {
     try {
       setIsFechandoCaixa(true);
-      // Simula sincronização final de lote fiscal e fechamento da gaveta
-      await new Promise((r) => setTimeout(r, 600));
+      const resultado = await caixaService.fecharCaixa();
       setIsConfirmarFechamentoOpen(false);
+      AppDialog.success(
+        'Caixa Encerrado com Sucesso! 🔒',
+        `Fechamento ID: #${resultado.fechamentoCaixaId}\nTotal Consolidado: R$ ${resultado.valorTotalVendas.toFixed(2).replace('.', ',')}\nVendas: ${resultado.quantidadeVendas} transações`
+      );
       logout();
       router.replace('/(auth)/login');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const serverMessage =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Não foi possível encerrar a sessão do caixa. Verifique a conexão com o servidor.';
+      AppDialog.error('Erro ao Encerrar Caixa', String(serverMessage));
     } finally {
       setIsFechandoCaixa(false);
     }

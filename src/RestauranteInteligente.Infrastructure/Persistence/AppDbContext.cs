@@ -38,6 +38,9 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     public DbSet<Venda> Vendas => Set<Venda>();
     public DbSet<ItemVenda> ItensVenda => Set<ItemVenda>();
     public DbSet<FechamentoCaixa> FechamentosCaixa => Set<FechamentoCaixa>();
+    public DbSet<MovimentacaoCaixa> MovimentacoesCaixa => Set<MovimentacaoCaixa>();
+    public DbSet<OrdemCompra> OrdensCompra => Set<OrdemCompra>();
+    public DbSet<ItemOrdemCompra> ItensOrdemCompra => Set<ItemOrdemCompra>();
     public DbSet<DadosClimaticos> DadosClimaticos => Set<DadosClimaticos>();
     public DbSet<Previsao> Previsoes => Set<Previsao>();
     public DbSet<Assinatura> Assinaturas => Set<Assinatura>();

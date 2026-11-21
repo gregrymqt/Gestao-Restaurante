@@ -226,4 +226,79 @@ public sealed class DomainEntitiesTests
         produto.FichaTecnica.Should().Contain(pi => pi.InsumoId == insumoFarinha && pi.QuantidadeInsumo == 0.3500m);
         produto.FichaTecnica.Should().Contain(pi => pi.InsumoId == insumoQueijo && pi.QuantidadeInsumo == 0.2000m);
     }
+
+    [Fact]
+    public void MovimentacaoCaixa_QuandoSuprimentoValido_DeveInstanciarComSucesso()
+    {
+        var caixaId = Guid.NewGuid();
+        var usuarioId = Guid.NewGuid();
+        var mov = new MovimentacaoCaixa(
+            id: Guid.NewGuid(),
+            restauranteId: _tenantId,
+            fechamentoCaixaId: caixaId,
+            usuarioId: usuarioId,
+            tipo: "suprimento",
+            valor: 150.00m,
+            motivo: "Fundo de troco inicial"
+        );
+
+        mov.Tipo.Should().Be("SUPRIMENTO");
+        mov.Valor.Should().Be(150.00m);
+        mov.Motivo.Should().Be("Fundo de troco inicial");
+        mov.FechamentoCaixaId.Should().Be(caixaId);
+        mov.UsuarioId.Should().Be(usuarioId);
+        mov.RestauranteId.Should().Be(_tenantId);
+    }
+
+    [Fact]
+    public void MovimentacaoCaixa_QuandoDadosInvalidos_DeveLancarExcecao()
+    {
+        var caixaId = Guid.NewGuid();
+        var usuarioId = Guid.NewGuid();
+
+        var actTipoInvalido = () => new MovimentacaoCaixa(
+            Guid.NewGuid(), _tenantId, caixaId, usuarioId, "INVALIDO", 50m, "Motivo"
+        );
+        actTipoInvalido.Should().Throw<ArgumentException>();
+
+        var actValorZero = () => new MovimentacaoCaixa(
+            Guid.NewGuid(), _tenantId, caixaId, usuarioId, "SANGRIA", 0m, "Motivo"
+        );
+        actValorZero.Should().Throw<ArgumentException>();
+
+        var actMotivoVazio = () => new MovimentacaoCaixa(
+            Guid.NewGuid(), _tenantId, caixaId, usuarioId, "SANGRIA", 50m, " "
+        );
+        actMotivoVazio.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void OrdemCompra_QuandoItensAdicionados_DeveCalcularValorTotalEstimadoComSucesso()
+    {
+        var usuarioId = Guid.NewGuid();
+        var ordem = new OrdemCompra(
+            id: Guid.NewGuid(),
+            restauranteId: _tenantId,
+            protocolo: "OC-20261121-001",
+            usuarioId: usuarioId
+        );
+
+        ordem.Status.Should().Be(OrdemCompra.StatusPendente);
+        ordem.ValorTotalEstimado.Should().Be(0m);
+
+        var insumo1 = Guid.NewGuid();
+        var insumo2 = Guid.NewGuid();
+
+        ordem.AdicionarItem(insumo1, 10.5000m, 5.00m); // 52.50
+        ordem.AdicionarItem(insumo2, 2.0000m, 30.25m); // 60.50
+
+        ordem.Itens.Should().HaveCount(2);
+        ordem.ValorTotalEstimado.Should().Be(113.00m);
+
+        ordem.AtualizarStatus(OrdemCompra.StatusAprovada);
+        ordem.Status.Should().Be("APROVADA");
+
+        var actAdicionarEmAprovada = () => ordem.AdicionarItem(Guid.NewGuid(), 1m, 10m);
+        actAdicionarEmAprovada.Should().Throw<InvalidOperationException>();
+    }
 }
