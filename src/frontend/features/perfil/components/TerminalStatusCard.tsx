@@ -1,5 +1,11 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import {
+  RefreshCw,
+  Printer,
+  CheckCircle2,
+  MonitorSmartphone,
+} from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows } from '@/shared/utils/shadows';
@@ -8,16 +14,20 @@ import { TerminalStatus } from '../types';
 interface TerminalStatusCardProps {
   status: TerminalStatus | null;
   isSseConnected: boolean;
+  isOffline?: boolean;
 }
 
 export function TerminalStatusCard({
   status,
   isSseConnected,
+  isOffline = false,
 }: TerminalStatusCardProps) {
   const impressoraNome = status?.impressoraNome || 'Bluetooth 80mm • Bobina 75%';
   const impressoraStatus = status?.impressoraStatus || 'Pronta';
   const versaoApp = status?.versaoApp?.replace(/Expo SDK \d+ •\s*/i, '') || 'Versão 1.0.0';
   const buildNumero = status?.buildNumero || 'Build 104';
+
+  const isOnline = isSseConnected && !isOffline;
 
   return (
     <View style={styles.container}>
@@ -30,7 +40,7 @@ export function TerminalStatusCard({
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <View style={styles.iconBox}>
-              <ThemedText style={styles.rowIcon}>🔄</ThemedText>
+              <RefreshCw size={18} color={tokens.colors.primary} />
             </View>
             <View style={styles.rowText}>
               <ThemedText style={styles.rowTitle}>Sincronização SSE</ThemedText>
@@ -43,14 +53,14 @@ export function TerminalStatusCard({
           <View
             style={[
               styles.statusPill,
-              isSseConnected ? styles.pillOnline : styles.pillOffline,
+              isOnline ? styles.pillOnline : styles.pillOffline,
             ]}
           >
             <View
               style={[
                 styles.statusDot,
                 {
-                  backgroundColor: isSseConnected
+                  backgroundColor: isOnline
                     ? tokens.colors.status.greenText
                     : tokens.colors.status.redText,
                 },
@@ -60,13 +70,13 @@ export function TerminalStatusCard({
               style={[
                 styles.statusPillText,
                 {
-                  color: isSseConnected
+                  color: isOnline
                     ? tokens.colors.status.greenText
                     : tokens.colors.status.redText,
                 },
               ]}
             >
-              {isSseConnected ? 'Online' : 'Offline'}
+              {isOnline ? 'Online' : 'Offline (Cache Local)'}
             </ThemedText>
           </View>
         </View>
@@ -77,7 +87,7 @@ export function TerminalStatusCard({
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <View style={styles.iconBox}>
-              <ThemedText style={styles.rowIcon}>🖨️</ThemedText>
+              <Printer size={18} color={tokens.colors.primary} />
             </View>
             <View style={styles.rowText}>
               <ThemedText style={styles.rowTitle}>Impressora Térmica</ThemedText>
@@ -86,7 +96,7 @@ export function TerminalStatusCard({
           </View>
 
           <View style={styles.printerStatusBox}>
-            <ThemedText style={styles.printerStatusIcon}>⚡</ThemedText>
+            <CheckCircle2 size={13} color={tokens.colors.status.greenText} />
             <ThemedText style={styles.printerStatusText}>{impressoraStatus}</ThemedText>
           </View>
         </View>
@@ -97,7 +107,7 @@ export function TerminalStatusCard({
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <View style={styles.iconBox}>
-              <ThemedText style={styles.rowIcon}>💻</ThemedText>
+              <MonitorSmartphone size={18} color={tokens.colors.primary} />
             </View>
             <View style={styles.rowText}>
               <ThemedText style={styles.rowTitle}>Versão do Sistema</ThemedText>

@@ -6,12 +6,15 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
+import { X, Lock, WifiOff } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { SessaoCaixaResumo } from '../types';
 import { ConferenciaGavetaBox } from './ConferenciaGavetaBox';
+import { ResumoTurnoConsolidado } from './ResumoTurnoConsolidado';
 
 interface ModalConfirmarFechamentoProps {
   visible: boolean;
@@ -32,12 +35,17 @@ export function ModalConfirmarFechamento({
   // Localiza o valor apurado em dinheiro na gaveta
   const valorDinheiro =
     sessao.pagamentos.find((p) => p.tipo === 'Dinheiro')?.valor || 0;
+  const totalApuradoFormatado = sessao.totalApurado.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 
   return (
     <Modal
       transparent
       animationType="slide"
       visible={visible}
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
@@ -73,34 +81,15 @@ export function ModalConfirmarFechamento({
                 style={styles.botaoFechar}
                 onPress={onClose}
               >
-                <ThemedText variant="subtitle" style={styles.textoFechar}>
-                  ✕
-                </ThemedText>
+                <X size={18} color={tokens.colors.textMuted} />
               </Pressable>
             </View>
 
             {/* Resumo Consolidado do Turno */}
-            <View style={styles.resumoBox}>
-              <View style={styles.resumoItem}>
-                <ThemedText variant="caption" style={styles.labelResumo}>
-                  TOTAL APURADO
-                </ThemedText>
-                <ThemedText variant="title" style={styles.valorResumoDestaque}>
-                  R$ {sessao.totalApurado.toFixed(2).replace('.', ',')}
-                </ThemedText>
-              </View>
-
-              <View style={styles.resumoDivisor} />
-
-              <View style={styles.resumoItem}>
-                <ThemedText variant="caption" style={styles.labelResumo}>
-                  VENDAS CONSOLIDADAS
-                </ThemedText>
-                <ThemedText variant="subtitle" style={styles.valorResumo}>
-                  {sessao.totalVendas} transações
-                </ThemedText>
-              </View>
-            </View>
+            <ResumoTurnoConsolidado
+              totalApuradoFormatado={totalApuradoFormatado}
+              totalVendas={sessao.totalVendas}
+            />
 
             {/* Subcomponente de Conferência de Gaveta e Aviso RabbitMQ */}
             <ConferenciaGavetaBox valorDinheiro={valorDinheiro} />
@@ -109,7 +98,7 @@ export function ModalConfirmarFechamento({
             <View style={styles.acoesContainer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={!isApiOnline ? 'Servidor offline - fechamento suspenso' : 'Confirmar e fechar caixa'}
+                accessibilityLabel={!isApiOnline ? 'Conexão necessária para encerrar' : 'Confirmar encerramento do turno'}
                 accessibilityState={{ disabled: isPending || !isApiOnline }}
                 disabled={isPending || !isApiOnline}
                 style={({ pressed }) => [
@@ -123,16 +112,18 @@ export function ModalConfirmarFechamento({
                   <ActivityIndicator color={tokens.colors.white} />
                 ) : (
                   <View style={styles.conteudoBotao}>
-                    <ThemedText variant="title" style={styles.iconeBotao}>
-                      {!isApiOnline ? '📡' : '🔒'}
-                    </ThemedText>
+                    {!isApiOnline ? (
+                      <WifiOff size={18} color={tokens.colors.white} />
+                    ) : (
+                      <Lock size={18} color={tokens.colors.white} />
+                    )}
                     <ThemedText
                       variant="subtitle"
                       weight="bold"
                       color={tokens.colors.white}
                       style={styles.textoBotao}
                     >
-                      {!isApiOnline ? 'Servidor Offline - Fechamento Suspenso' : 'Confirmar Fechamento e Enviar para IA'}
+                      {!isApiOnline ? 'Conexão necessária para encerrar' : 'Confirmar Encerramento do Turno'}
                     </ThemedText>
                   </View>
                 )}
@@ -140,12 +131,15 @@ export function ModalConfirmarFechamento({
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Cancelar e voltar"
+                accessibilityLabel="Voltar e manter caixa aberto"
                 disabled={isPending}
-                style={styles.botaoCancelar}
+                style={({ pressed }) => [
+                  styles.botaoCancelar,
+                  pressed && styles.botaoCancelarPressionado,
+                ]}
                 onPress={onClose}
               >
-                <ThemedText variant="subtitle" style={styles.textoCancelar}>
+                <ThemedText style={styles.textoCancelar}>
                   Voltar e Manter Caixa Aberto
                 </ThemedText>
               </Pressable>
@@ -162,6 +156,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
     justifyContent: 'flex-end',
+    ...(Platform.OS === 'web'
+      ? {
+          position: 'fixed' as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 50,
+        }
+      : {}),
   },
   backdrop: {
     flex: 1,
@@ -218,43 +222,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.typography.fontMd,
     fontWeight: '700',
   },
-  resumoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F8F8',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    padding: tokens.spacing.md,
-    marginBottom: tokens.spacing.md,
-  },
-  resumoItem: {
-    flex: 1,
-  },
-  labelResumo: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  valorResumoDestaque: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-    marginTop: 2,
-  },
-  valorResumo: {
-    fontSize: tokens.typography.fontMd,
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-    marginTop: 2,
-  },
-  resumoDivisor: {
-    width: 1,
-    height: 36,
-    backgroundColor: tokens.colors.border,
-    marginHorizontal: tokens.spacing.md,
-  },
   acoesContainer: {
     gap: tokens.spacing.sm,
   },
@@ -284,14 +251,22 @@ const styles = StyleSheet.create({
     fontSize: tokens.typography.fontMd,
   },
   botaoCancelar: {
-    height: 48,
+    minHeight: 44,
+    width: '100%',
     borderRadius: tokens.radii.md,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: tokens.spacing.xs,
+  },
+  botaoCancelarPressionado: {
+    backgroundColor: '#E5E7EB',
   },
   textoCancelar: {
     fontSize: tokens.typography.fontSm,
-    color: tokens.colors.textSecondary,
-    fontWeight: '600',
+    color: tokens.colors.textPrimary,
+    fontWeight: '700',
   },
 });

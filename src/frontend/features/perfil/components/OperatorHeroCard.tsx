@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { BadgeCheck, UserCheck, Mail, ShieldCheck, Check } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows, createShadow } from '@/shared/utils/shadows';
@@ -31,7 +32,7 @@ export function OperatorHeroCard({ operador }: OperatorHeroCardProps) {
             <ThemedText style={styles.avatarText}>{iniciais}</ThemedText>
           </View>
           <View style={styles.activeCheckBadge}>
-            <ThemedText style={styles.checkIcon}>✓</ThemedText>
+            <Check size={10} color="#FFFFFF" strokeWidth={3} />
           </View>
         </View>
 
@@ -42,14 +43,15 @@ export function OperatorHeroCard({ operador }: OperatorHeroCardProps) {
               {nome}
             </ThemedText>
             <View style={styles.badgeIconBox}>
-              <ThemedText style={styles.badgeIcon}>🪪</ThemedText>
+              <BadgeCheck size={16} color={tokens.colors.primary} />
             </View>
           </View>
 
           {/* Tag de Cargo Operacional */}
           <View style={styles.roleTag}>
+            <UserCheck size={13} color={tokens.colors.primaryDark} />
             <ThemedText style={styles.roleText}>
-              💳 Operador de Caixa & Balcão
+              Operador de Caixa & Balcão
             </ThemedText>
           </View>
 
@@ -63,7 +65,7 @@ export function OperatorHeroCard({ operador }: OperatorHeroCardProps) {
             </View>
 
             <View style={styles.emailRow}>
-              <ThemedText style={styles.emailIcon}>✉️</ThemedText>
+              <Mail size={13} color={tokens.colors.textMuted} />
               <ThemedText style={styles.emailText} numberOfLines={1}>
                 {email}
               </ThemedText>
@@ -75,7 +77,7 @@ export function OperatorHeroCard({ operador }: OperatorHeroCardProps) {
       {/* Faixa Inferior de Privilégios & Sessão */}
       <View style={styles.footerStrip}>
         <View style={styles.levelRow}>
-          <ThemedText style={styles.shieldIcon}>🛡️</ThemedText>
+          <ShieldCheck size={14} color={tokens.colors.textSecondary} />
           <ThemedText style={styles.levelText}>Nível: Balcão & Sangria</ThemedText>
         </View>
         <View style={styles.sessionActiveBadge}>
@@ -168,10 +170,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   roleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     alignSelf: 'flex-start',
     backgroundColor: tokens.colors.primaryLight,
     paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: tokens.radii.full,
     marginTop: tokens.spacing.xs,
   },

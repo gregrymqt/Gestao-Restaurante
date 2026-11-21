@@ -1,14 +1,109 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Plus, Minus, Lock, Power, ShieldAlert } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows, createShadow } from '@/shared/utils/shadows';
+
+export interface QuickCashActionsProps {
+  onAbrirSuprimento: () => void;
+  onAbrirSangria: () => void;
+}
+
+export function QuickCashActions({
+  onAbrirSuprimento,
+  onAbrirSangria,
+}: QuickCashActionsProps) {
+  return (
+    <View style={styles.quickToolsGrid}>
+      <TouchableOpacity
+        style={styles.toolButton}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Entrada de Suprimento"
+        onPress={onAbrirSuprimento}
+      >
+        <Plus size={16} color={tokens.colors.status.greenText} />
+        <ThemedText style={styles.toolText}>Suprimento</ThemedText>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolButton}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Sangria de Caixa"
+        onPress={onAbrirSangria}
+      >
+        <Minus size={16} color={tokens.colors.status.redText} />
+        <ThemedText style={styles.toolText}>Sangria Caixa</ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+export interface ClosingActionsSectionProps {
+  onBloquearTerminal: () => void;
+  onEncerrarTurno: () => void;
+  isOffline?: boolean;
+}
+
+export function ClosingActionsSection({
+  onBloquearTerminal,
+  onEncerrarTurno,
+  isOffline = false,
+}: ClosingActionsSectionProps) {
+  return (
+    <View style={styles.actionGroup}>
+      {/* Bloqueio de Terminal */}
+      <TouchableOpacity
+        style={styles.lockButton}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Bloquear terminal mantendo caixa aberto"
+        onPress={onBloquearTerminal}
+      >
+        <Lock size={16} color={tokens.colors.textPrimary} />
+        <ThemedText style={styles.lockButtonText}>
+          Bloquear Terminal (Manter Caixa Aberto)
+        </ThemedText>
+      </TouchableOpacity>
+
+      {/* Fechar Caixa & Encerrar Turno */}
+      <TouchableOpacity
+        style={[
+          styles.logoutButton,
+          isOffline && styles.logoutButtonDisabled,
+        ]}
+        activeOpacity={isOffline ? 1 : 0.85}
+        accessibilityRole="button"
+        accessibilityLabel={isOffline ? 'Conexão necessária para encerrar' : 'Fechar caixa e encerrar turno'}
+        accessibilityState={{ disabled: isOffline }}
+        disabled={isOffline}
+        onPress={isOffline ? undefined : onEncerrarTurno}
+      >
+        <Power size={18} color={tokens.colors.white} />
+        <ThemedText style={styles.logoutButtonText}>
+          {isOffline ? 'Conexão necessária para encerrar' : 'Fechar Caixa & Encerrar Turno'}
+        </ThemedText>
+      </TouchableOpacity>
+
+      {/* Nota de Segurança Fiscal e Local */}
+      <View style={styles.noteRow}>
+        <ShieldAlert size={14} color={tokens.colors.textMuted} />
+        <ThemedText style={styles.noteText}>
+          O encerramento confere a gaveta física e consolida as vendas do turno.
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
 
 interface OperationalActionsSectionProps {
   onAbrirSuprimento: () => void;
   onAbrirSangria: () => void;
   onBloquearTerminal: () => void;
   onEncerrarTurno: () => void;
+  isOffline?: boolean;
 }
 
 export function OperationalActionsSection({
@@ -16,64 +111,19 @@ export function OperationalActionsSection({
   onAbrirSangria,
   onBloquearTerminal,
   onEncerrarTurno,
+  isOffline = false,
 }: OperationalActionsSectionProps) {
   return (
     <View style={styles.container}>
-      {/* Atalhos Rápidos Operacionais de Caixa (Abertura de Bottom Sheet) */}
-      <View style={styles.quickToolsGrid}>
-        <TouchableOpacity
-          style={styles.toolButton}
-          activeOpacity={0.8}
-          onPress={onAbrirSuprimento}
-        >
-          <ThemedText style={styles.toolIcon}>➕</ThemedText>
-          <ThemedText style={styles.toolText}>Suprimento</ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.toolButton}
-          activeOpacity={0.8}
-          onPress={onAbrirSangria}
-        >
-          <ThemedText style={styles.toolIcon}>➖</ThemedText>
-          <ThemedText style={styles.toolText}>Sangria Caixa</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Ações de Alta Prioridade e Segurança */}
-      <View style={styles.actionGroup}>
-        {/* Bloqueio de Terminal */}
-        <TouchableOpacity
-          style={styles.lockButton}
-          activeOpacity={0.85}
-          onPress={onBloquearTerminal}
-        >
-          <ThemedText style={styles.lockIcon}>🔒</ThemedText>
-          <ThemedText style={styles.lockButtonText}>
-            Bloquear Terminal (Manter Caixa Aberto)
-          </ThemedText>
-        </TouchableOpacity>
-
-        {/* Fechar Caixa & Encerrar Turno */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          activeOpacity={0.85}
-          onPress={onEncerrarTurno}
-        >
-          <ThemedText style={styles.logoutIcon}>⏻</ThemedText>
-          <ThemedText style={styles.logoutButtonText}>
-            Fechar Caixa & Encerrar Turno
-          </ThemedText>
-        </TouchableOpacity>
-
-        {/* Nota de Segurança Fiscal e Local */}
-        <View style={styles.noteRow}>
-          <ThemedText style={styles.noteIcon}>🛡️</ThemedText>
-          <ThemedText style={styles.noteText}>
-            O encerramento confere a gaveta física e consolida as vendas do turno.
-          </ThemedText>
-        </View>
-      </View>
+      <QuickCashActions
+        onAbrirSuprimento={onAbrirSuprimento}
+        onAbrirSangria={onAbrirSangria}
+      />
+      <ClosingActionsSection
+        onBloquearTerminal={onBloquearTerminal}
+        onEncerrarTurno={onEncerrarTurno}
+        isOffline={isOffline}
+      />
     </View>
   );
 }
@@ -101,9 +151,6 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.xs,
     ...shadows.sm,
   },
-  toolIcon: {
-    fontSize: 16,
-  },
   toolText: {
     fontSize: tokens.typography.fontSm,
     fontWeight: '700',
@@ -122,9 +169,6 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.sm,
     borderColor: tokens.colors.border,
     borderWidth: 1,
-  },
-  lockIcon: {
-    fontSize: 18,
   },
   lockButtonText: {
     fontSize: tokens.typography.fontMd,
@@ -147,10 +191,11 @@ const styles = StyleSheet.create({
       elevation: 3,
     }),
   },
-  logoutIcon: {
-    fontSize: 20,
-    color: tokens.colors.white,
-    fontWeight: '900',
+  logoutButtonDisabled: {
+    backgroundColor: tokens.colors.textMuted,
+    opacity: 0.6,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   logoutButtonText: {
     fontSize: tokens.typography.fontMd,
@@ -165,9 +210,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: tokens.spacing.sm,
     marginTop: 2,
-  },
-  noteIcon: {
-    fontSize: 13,
   },
   noteText: {
     fontSize: 11,

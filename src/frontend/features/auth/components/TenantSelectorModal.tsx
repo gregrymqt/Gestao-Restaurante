@@ -6,12 +6,15 @@ import {
   TouchableOpacity,
   TextInput,
   Pressable,
+  Platform,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
+import { X } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { RestauranteTenant } from '../types';
+import { TenantItemCard } from './TenantItemCard';
 
 interface TenantSelectorModalProps {
   visible: boolean;
@@ -54,7 +57,13 @@ export function TenantSelectorModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
       <View style={styles.overlay}>
         <Pressable
           accessibilityRole="button"
@@ -67,12 +76,24 @@ export function TenantSelectorModal({
           <View style={styles.dragIndicator} />
 
           <View style={styles.header}>
-            <ThemedText variant="subtitle" weight="bold" style={styles.title}>
-              Selecionar Unidade / Filial
-            </ThemedText>
-            <ThemedText variant="caption" color={tokens.colors.textMuted}>
-              Escolha a loja que deseja gerenciar neste acesso
-            </ThemedText>
+            <View style={styles.headerTitleCol}>
+              <ThemedText variant="subtitle" weight="bold" style={styles.title}>
+                Selecionar Unidade / Filial
+              </ThemedText>
+              <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                Escolha a loja que deseja gerenciar neste acesso
+              </ThemedText>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar modal de seleção de filial"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={18} color={tokens.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
 
           {/* Barra de Pesquisa */}
@@ -111,36 +132,13 @@ export function TenantSelectorModal({
                   </ThemedText>
                 </View>
               }
-              renderItem={({ item: t }) => {
-                const isSelected = t.id === tenantAtivoId;
-
-                return (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleSelect(t)}
-                    style={[styles.tenantItem, isSelected && styles.tenantItemActive]}
-                  >
-                    <View style={styles.iconBox}>
-                      <ThemedText style={styles.icon}>🏢</ThemedText>
-                    </View>
-
-                    <View style={styles.tenantDetails}>
-                      <ThemedText variant="body" weight="bold" style={styles.tenantNome}>
-                        {t.nome}
-                      </ThemedText>
-                      <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                        CNPJ: {t.cnpj} • {t.filialNumero}
-                      </ThemedText>
-                    </View>
-
-                    {isSelected && (
-                      <View style={styles.checkBadge}>
-                        <Ionicons name="checkmark-circle" size={18} color={tokens.colors.primary} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
+              renderItem={({ item: t }) => (
+                <TenantItemCard
+                  tenant={t}
+                  isSelected={t.id === tenantAtivoId}
+                  onSelect={() => handleSelect(t)}
+                />
+              )}
             />
           </View>
 
@@ -164,8 +162,18 @@ export function TenantSelectorModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     justifyContent: 'flex-end',
+    ...(Platform.OS === 'web'
+      ? {
+          position: 'fixed' as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 50,
+        }
+      : {}),
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
@@ -174,7 +182,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
     borderTopLeftRadius: tokens.radii.lg,
     borderTopRightRadius: tokens.radii.lg,
-    maxHeight: '80%',
+    maxHeight: '85%',
     paddingBottom: tokens.spacing.lg,
   },
   dragIndicator: {
@@ -187,15 +195,28 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.xs,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.xs,
     paddingBottom: tokens.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  title: {
-    fontSize: tokens.typography.fontLg,
+  headerTitleCol: { flex: 1 },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: tokens.radii.full,
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: tokens.spacing.sm,
   },
+  title: { fontSize: tokens.typography.fontLg },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -216,51 +237,13 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
   },
   listContainer: {
-    height: 280,
+    maxHeight: 280,
     paddingHorizontal: tokens.spacing.lg,
     marginTop: tokens.spacing.sm,
   },
   emptyContainer: {
     paddingVertical: tokens.spacing.xl,
     alignItems: 'center',
-  },
-  tenantItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: tokens.spacing.md,
-    borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    marginBottom: tokens.spacing.sm,
-  },
-  tenantItemActive: {
-    borderColor: tokens.colors.primary,
-    backgroundColor: tokens.colors.primaryLight,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: tokens.radii.sm,
-    backgroundColor: tokens.colors.card,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: tokens.spacing.md,
-  },
-  icon: {
-    fontSize: 20,
-  },
-  tenantDetails: {
-    flex: 1,
-  },
-  tenantNome: {
-    color: tokens.colors.textPrimary,
-    marginBottom: 2,
-  },
-  checkBadge: {
-    marginLeft: tokens.spacing.sm,
   },
   footer: {
     paddingHorizontal: tokens.spacing.lg,
@@ -276,7 +259,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
   },
-  fecharButtonText: {
-    color: tokens.colors.textSecondary,
-  },
+  fecharButtonText: { color: tokens.colors.textSecondary },
 });

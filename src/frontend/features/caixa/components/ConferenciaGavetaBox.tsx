@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { Banknote, AlertTriangle } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 
@@ -8,12 +9,17 @@ interface ConferenciaGavetaBoxProps {
 }
 
 export function ConferenciaGavetaBox({ valorDinheiro }: ConferenciaGavetaBoxProps) {
+  const valorFormatado = valorDinheiro.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+
   return (
     <View style={styles.container}>
       {/* Alerta de Conferência Física de Dinheiro em Gaveta */}
       <View style={styles.gavetaBox}>
         <View style={styles.gavetaHeader}>
-          <ThemedText variant="title">💵</ThemedText>
+          <Banknote size={18} color="#8D6E63" />
           <ThemedText variant="subtitle" style={styles.tituloGaveta}>
             Conferência Física da Gaveta
           </ThemedText>
@@ -29,16 +35,14 @@ export function ConferenciaGavetaBox({ valorDinheiro }: ConferenciaGavetaBoxProp
             color="#B25E00"
             style={styles.valorGavetaTexto}
           >
-            R$ {valorDinheiro.toFixed(2).replace('.', ',')} em cédulas/moedas
+            {valorFormatado} em cédulas/moedas
           </ThemedText>
         </View>
       </View>
 
       {/* Aviso de Irreversibilidade e Disparo RabbitMQ */}
       <View style={styles.avisoBox}>
-        <ThemedText variant="title" style={styles.iconeAviso}>
-          ⚠️
-        </ThemedText>
+        <AlertTriangle size={18} color={tokens.colors.status.redText} style={styles.iconeAviso} />
         <View style={styles.avisoCol}>
           <ThemedText
             variant="caption"

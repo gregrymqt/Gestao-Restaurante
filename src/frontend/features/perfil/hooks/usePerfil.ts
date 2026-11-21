@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore, RestauranteTenant, TENANTS_PADRAO } from '@/features/auth';
 import { useSseStatus } from '@/shared/hooks/useSseStatus';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { SessaoCaixaResumo } from '@/features/caixa/types';
 import { perfilService } from '../services/perfilService';
@@ -16,6 +17,8 @@ export function usePerfil() {
 
   const sseStatus = useSseStatus((state) => state.status);
   const isSseConnected = sseStatus === 'CONNECTED';
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+  const isOffline = !isApiOnline || !isSseConnected;
 
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [metricas, setMetricas] = useState<ShiftMetrics | null>(null);
@@ -139,7 +142,7 @@ export function usePerfil() {
       dataHoraFormatada: `${metricas?.inicioTurno || '08:30'} - Hoje`,
       turno: metricas?.turnoNumero ? `Turno ${metricas.turnoNumero}` : 'Turno Operacional',
       operador: operador?.nome || 'Operador Homologação',
-      totalApurado: metricas?.volumeTotal || 1280.0,
+      totalApurado: metricas?.volumeTotal ?? 1280.5,
       percentualMeta: metricas?.tendenciaPercentual || 18,
       totalVendas: metricas?.totalVendas || 24,
       ticketMedio: metricas?.ticketMedio || 53.35,
@@ -189,6 +192,8 @@ export function usePerfil() {
     currentTenant,
     availableTenants,
     isSseConnected,
+    isApiOnline,
+    isOffline,
     metricas,
     terminalStatus,
     isTenantModalOpen,
