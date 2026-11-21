@@ -250,7 +250,12 @@ test('Tratamento de Erros e extractErrorMessage no Frontend', async (t) => {
     );
 
     await assert.rejects(
-      () => perfilService.registrarMovimentacao({ tipo: 'SUPRIMENTO', valor: 50 }, 100, controller.signal),
+      () =>
+        perfilService.registrarMovimentacao(
+          { tipo: 'SUPRIMENTO', valor: 50, motivo: 'Troco de teste' },
+          100,
+          controller.signal
+        ),
       (err: unknown) => isCancel(err)
     );
   });
