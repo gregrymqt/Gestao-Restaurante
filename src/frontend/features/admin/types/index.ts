@@ -1,5 +1,7 @@
 export type StatusAssinaturaAdmin = 'TRIAL' | 'ATIVA' | 'ATRASADA' | 'EXPIRADA' | 'CANCELADA';
 
+export type FiltroStatusTenant = 'TODOS' | 'TRIAL' | 'ATIVA' | 'EXPIRADA';
+
 export interface TenantAdminItem {
   readonly restauranteId: string;
   readonly nomeRestaurante: string;
@@ -15,6 +17,20 @@ export interface TenantAdminItem {
   readonly dataExpiracao?: string;
   readonly planoNome: string;
   readonly precoMensal: number;
+}
+
+export interface TenantsAdminPaginadoResponse {
+  readonly itens: TenantAdminItem[];
+  readonly totalItens: number;
+  readonly paginaAtual: number;
+  readonly totalPaginas: number;
+}
+
+export interface FiltroTenantsAdmin {
+  readonly busca?: string;
+  readonly status?: FiltroStatusTenant | string;
+  readonly pagina?: number;
+  readonly itensPorPagina?: number;
 }
 
 export interface EstenderTrialPayload {

@@ -29,17 +29,23 @@ public sealed class AdminController : ControllerBase
         User?.Identity?.IsAuthenticated == true && (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"));
 
     /// <summary>
-    /// Lista todos os inquilinos (Tenants) da plataforma, dados de contato e vigência de assinatura para o SuperAdmin.
+    /// Lista inquilinos (Tenants) da plataforma de forma paginada e filtrada para o SuperAdmin.
     /// </summary>
     [HttpGet("tenants")]
-    public async Task<IActionResult> ListarTenants(CancellationToken ct)
+    public async Task<IActionResult> ListarTenants(
+        [FromQuery] string? busca = null,
+        [FromQuery] string? status = null,
+        [FromQuery] int pagina = 1,
+        [FromQuery] int itensPorPagina = 20,
+        CancellationToken ct = default)
     {
         if (!IsAuthorizedAdmin())
             return Forbid();
 
         try
         {
-            var resultado = await _listarTenantsUseCase.ExecutarAsync(ct);
+            var filtro = new ConsultaTenantsAdminFiltro(busca, status, pagina, itensPorPagina);
+            var resultado = await _listarTenantsUseCase.ExecutarAsync(filtro, ct);
             return Ok(resultado);
         }
         catch (Exception ex)
