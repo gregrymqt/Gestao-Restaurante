@@ -1,18 +1,50 @@
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { adminService, TENANTS_ADMIN_PADRAO } from '../services/adminService';
-import { TenantAdminItem } from '../types';
+import {
+  TenantAdminItem,
+  TenantsAdminPaginadoResponse,
+  FiltroStatusTenant,
+} from '../types';
+
+const RESPOSTA_PADRAO: TenantsAdminPaginadoResponse = {
+  itens: TENANTS_ADMIN_PADRAO,
+  totalItens: TENANTS_ADMIN_PADRAO.length,
+  paginaAtual: 1,
+  totalPaginas: 1,
+};
 
 export function useAdminTenants() {
   const queryClient = useQueryClient();
+  const [busca, setBusca] = useState('');
+  const [debounceBusca, setDebounceBusca] = useState('');
+  const [statusFiltro, setStatusFiltro] = useState<FiltroStatusTenant>('TODOS');
+  const [paginaAtual, setPaginaAtual] = useState(1);
+
+  // Debounce de 300ms para evitar requisições a cada tecla
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebounceBusca(busca);
+      setPaginaAtual(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [busca]);
 
   const {
-    data: tenants = TENANTS_ADMIN_PADRAO,
+    data: resposta = RESPOSTA_PADRAO,
     isLoading,
     refetch,
-  } = useQuery<TenantAdminItem[]>({
-    queryKey: ['admin', 'tenants'],
-    queryFn: () => adminService.listarTenants(),
+  } = useQuery<TenantsAdminPaginadoResponse>({
+    queryKey: ['admin', 'tenants', debounceBusca, statusFiltro, paginaAtual],
+    queryFn: () =>
+      adminService.listarTenants({
+        busca: debounceBusca,
+        status: statusFiltro,
+        pagina: paginaAtual,
+        itensPorPagina: 20,
+      }),
     staleTime: 1000 * 30, // 30 segundos
   });
 
@@ -20,13 +52,13 @@ export function useAdminTenants() {
     mutationFn: ({ restauranteId, dias }: { restauranteId: string; dias: number }) =>
       adminService.estenderTrial(restauranteId, dias),
     onSuccess: (updated) => {
-      queryClient.setQueryData<TenantAdminItem[]>(['admin', 'tenants'], (old = []) =>
-        old.map((t) => (t.restauranteId === updated.restauranteId ? updated : t))
-      );
-      AppDialog.success(
-        'Trial Estendido! 🎉',
-        `Foram adicionados dias de degustação para o restaurante ${updated.nomeRestaurante}.\nNovo saldo: ${updated.diasRestantesTrial} dias.`
-      );
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
+      useSseStatus.getState().showToast({
+        titulo: 'Trial Estendido! 🎉',
+        mensagem: `+${updated.diasRestantesTrial}d adicionados para ${updated.nomeRestaurante}.`,
+        tipo: 'sucesso',
+        icone: '⏳',
+      });
     },
     onError: (err: Error) => {
       AppDialog.error('Erro na Operação', err.message);
@@ -44,13 +76,13 @@ export function useAdminTenants() {
       planoId?: string;
     }) => adminService.alterarStatus(restauranteId, novoStatus, planoId),
     onSuccess: (updated) => {
-      queryClient.setQueryData<TenantAdminItem[]>(['admin', 'tenants'], (old = []) =>
-        old.map((t) => (t.restauranteId === updated.restauranteId ? updated : t))
-      );
-      AppDialog.success(
-        'Status Atualizado! 🔒',
-        `Assinatura do restaurante ${updated.nomeRestaurante} alterada para status: ${updated.statusAssinatura}.`
-      );
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
+      useSseStatus.getState().showToast({
+        titulo: 'Status Atualizado! 🔒',
+        mensagem: `Loja ${updated.nomeRestaurante} alterada para status: ${updated.statusAssinatura}.`,
+        tipo: updated.statusAssinatura === 'EXPIRADA' ? 'critico' : 'sucesso',
+        icone: updated.statusAssinatura === 'EXPIRADA' ? '⚠️' : '✓',
+      });
     },
     onError: (err: Error) => {
       AppDialog.error('Erro na Operação', err.message);
@@ -58,7 +90,24 @@ export function useAdminTenants() {
   });
 
   return {
-    tenants,
+    tenants: resposta.itens,
+    totalItens: resposta.totalItens,
+    totalPaginas: resposta.totalPaginas,
+    paginaAtual,
+    setPaginaAtual,
+    busca,
+    setBusca,
+    statusFiltro,
+    setStatusFiltro: (status: FiltroStatusTenant) => {
+      setStatusFiltro(status);
+      setPaginaAtual(1);
+    },
+    limparFiltros: () => {
+      setBusca('');
+      setDebounceBusca('');
+      setStatusFiltro('TODOS');
+      setPaginaAtual(1);
+    },
     isLoading,
     refetch,
     estenderTrial: estenderMutation.mutate,

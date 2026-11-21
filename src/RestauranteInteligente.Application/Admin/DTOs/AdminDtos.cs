@@ -25,3 +25,17 @@ public sealed record AlterarStatusAssinaturaInputDto(
     string NovoStatus,
     Guid? PlanoId
 );
+
+public sealed record ConsultaTenantsAdminFiltro(
+    string? Busca = null,
+    string? Status = null,
+    int Pagina = 1,
+    int ItensPorPagina = 20
+);
+
+public sealed record TenantsAdminPaginadoDto(
+    IReadOnlyList<TenantAdminItemDto> Itens,
+    int TotalItens,
+    int PaginaAtual,
+    int TotalPaginas
+);

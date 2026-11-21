@@ -7,15 +7,17 @@ import { TenantAdminItem } from '../types';
 interface CardTenantAdminProps {
   tenant: TenantAdminItem;
   isProcessando: boolean;
-  onEstenderTrial: (id: string, dias: number) => void;
-  onAlterarStatus: (id: string, status: string) => void;
+  onAbrirModalTrial: (tenant: TenantAdminItem) => void;
+  onAbrirModalSuspender: (tenant: TenantAdminItem) => void;
+  onAtivarPlanoPro: (id: string) => void;
 }
 
 export function CardTenantAdmin({
   tenant,
   isProcessando,
-  onEstenderTrial,
-  onAlterarStatus,
+  onAbrirModalTrial,
+  onAbrirModalSuspender,
+  onAtivarPlanoPro,
 }: CardTenantAdminProps) {
   const isTrial = tenant.statusAssinatura === 'TRIAL';
   const isAtiva = tenant.statusAssinatura === 'ATIVA';
@@ -82,27 +84,29 @@ export function CardTenantAdmin({
       {/* Ações Administrativas de 1 Toque */}
       <View style={styles.acoesContainer}>
         <ThemedText variant="caption" weight="bold" style={styles.tituloAcoes}>
-          AÇÕES RÁPIDAS SUPERADMIN:
+          AÇÕES SUPERADMIN:
         </ThemedText>
 
         <View style={styles.botoesRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Adicionar 14 dias de degustação"
+            accessibilityLabel="Abrir seletor de dias de degustação"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             disabled={isProcessando}
-            onPress={() => onEstenderTrial(tenant.restauranteId, 14)}
+            onPress={() => onAbrirModalTrial(tenant)}
             style={({ pressed }) => [styles.botaoAcao, styles.botaoTrial, pressed && styles.pressed]}
           >
             <ThemedText variant="caption" weight="bold" color="#B25E00">
-              +14d Trial
+              ⏳ +dias Trial
             </ThemedText>
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Ativar plano pro com IA"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             disabled={isProcessando}
-            onPress={() => onAlterarStatus(tenant.restauranteId, 'ATIVA')}
+            onPress={() => onAtivarPlanoPro(tenant.restauranteId)}
             style={({ pressed }) => [styles.botaoAcao, styles.botaoAtivar, pressed && styles.pressed]}
           >
             <ThemedText variant="caption" weight="bold" color={tokens.colors.status.greenText}>
@@ -112,9 +116,10 @@ export function CardTenantAdmin({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Suspender ou expirar inquilino"
+            accessibilityLabel="Abrir confirmação de suspensão de inquilino"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             disabled={isProcessando}
-            onPress={() => onAlterarStatus(tenant.restauranteId, 'EXPIRADA')}
+            onPress={() => onAbrirModalSuspender(tenant)}
             style={({ pressed }) => [styles.botaoAcao, styles.botaoExpirar, pressed && styles.pressed]}
           >
             <ThemedText variant="caption" weight="bold" color={tokens.colors.status.redText}>

@@ -109,3 +109,11 @@
 - Criada suíte de testes unitários frontend `equipeAndPinLogin.test.ts` cobrindo extração de erros e fluxos de PIN.
 - Suíte completa de 246 testes backend executada com 100% de sucesso (0 falhas) e testes frontend 100% aprovados.
 - Compilação limpa (`dotnet build` e `tsc --noEmit`) e grafo estrutural sincronizado via `graft build` (2530 nós, 2381 arestas).
+
+
+## [2026-11-21] Backoffice SuperAdmin SaaS - Evolução UI/UX, Modais e Paginação da API
+- Implementados filtros (`busca`, `status`) e paginação (`ConsultaTenantsAdminFiltro`, `TenantsAdminPaginadoDto`) em `ListarTenantsAdminUseCase` e `AdminController`.
+- Criados modais do Design System: `ModalConfirmarSuspensao` (alerta de bloqueio do PDV em 2 toques) e `ModalEstenderTrial` (atalhos +7d, +14d, +30d e input numérico).
+- Migrada lista para `<FlashList>` virtualizado, com chips interativos de filtro por status e `EmptyStateTenants` na `AdminBackofficeScreen`.
+- Integrado feedback visual não-intrusivo via Toasts globais (`RealtimeEventToast`) nas operações administrativas.
+- Validação completa com 247 testes unitários .NET aprovados, testes frontend `adminBackofficeFlow.test.ts` 100% OK, `tsc --noEmit` limpo e grafo sincronizado via `graft build` (2555 nós).

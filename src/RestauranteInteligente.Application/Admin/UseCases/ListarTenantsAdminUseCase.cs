@@ -26,8 +26,14 @@ public sealed class ListarTenantsAdminUseCase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IReadOnlyList<TenantAdminItemDto>> ExecutarAsync(CancellationToken ct = default)
+    public async Task<TenantsAdminPaginadoDto> ExecutarAsync(
+        ConsultaTenantsAdminFiltro? filtro = null,
+        CancellationToken ct = default)
     {
+        filtro ??= new ConsultaTenantsAdminFiltro();
+        var pagina = Math.Max(1, filtro.Pagina);
+        var itensPorPagina = filtro.ItensPorPagina > 0 ? filtro.ItensPorPagina : 20;
+
         var restaurantes = await _restauranteRepository.ObterTodosAsync(ct);
         var assinaturas = await _assinaturaRepository.ObterTodasAssinaturasAsync(ct);
         var usuarios = await _usuarioRepository.ObterTodosAsync(ct);
@@ -36,7 +42,7 @@ public sealed class ListarTenantsAdminUseCase
         var assinaturasMap = assinaturas.ToDictionary(a => a.RestauranteId);
         var planosMap = planos.ToDictionary(p => p.Id);
 
-        var resultado = new List<TenantAdminItemDto>();
+        var todosItens = new List<TenantAdminItemDto>();
 
         foreach (var rest in restaurantes)
         {
@@ -59,7 +65,7 @@ public sealed class ListarTenantsAdminUseCase
             var dataFimTrial = assinatura?.DataFimTrial ?? rest.CriadoEm.AddDays(14);
             var dataExpiracao = assinatura?.DataExpiracao;
 
-            resultado.Add(new TenantAdminItemDto(
+            todosItens.Add(new TenantAdminItemDto(
                 RestauranteId: rest.Id,
                 NomeRestaurante: rest.Nome,
                 Cnpj: rest.Cnpj,
@@ -77,8 +83,41 @@ public sealed class ListarTenantsAdminUseCase
             ));
         }
 
-        _logger.LogInformation("SuperAdmin listou {Qtd} inquilinos da plataforma.", resultado.Count);
+        var query = todosItens.AsEnumerable();
 
-        return resultado;
+        if (!string.IsNullOrWhiteSpace(filtro.Busca))
+        {
+            var termo = filtro.Busca.Trim();
+            query = query.Where(t =>
+                t.NomeRestaurante.Contains(termo, StringComparison.OrdinalIgnoreCase) ||
+                t.Cnpj.Contains(termo, StringComparison.OrdinalIgnoreCase) ||
+                t.GestorNome.Contains(termo, StringComparison.OrdinalIgnoreCase) ||
+                t.GestorEmail.Contains(termo, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filtro.Status) && !filtro.Status.Equals("TODOS", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(t => t.StatusAssinatura.Equals(filtro.Status.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        var listaFiltrada = query.ToList();
+        var totalItens = listaFiltrada.Count;
+        var totalPaginas = (int)Math.Ceiling((double)totalItens / itensPorPagina);
+        if (totalPaginas == 0) totalPaginas = 1;
+
+        var itensPaginados = listaFiltrada
+            .Skip((pagina - 1) * itensPorPagina)
+            .Take(itensPorPagina)
+            .ToList();
+
+        _logger.LogInformation("SuperAdmin listou {Qtd} inquilinos (Total: {Total}, Página: {Pagina}/{TotalPaginas}).",
+            itensPaginados.Count, totalItens, pagina, totalPaginas);
+
+        return new TenantsAdminPaginadoDto(
+            Itens: itensPaginados,
+            TotalItens: totalItens,
+            PaginaAtual: pagina,
+            TotalPaginas: totalPaginas
+        );
     }
 }

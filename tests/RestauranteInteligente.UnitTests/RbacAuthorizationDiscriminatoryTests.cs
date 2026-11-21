@@ -110,7 +110,7 @@ public sealed class RbacAuthorizationDiscriminatoryTests
         var controller = CreateAdminControllerWithUser(roleNaoAutorizada);
 
         // Act
-        var resultado = await controller.ListarTenants(CancellationToken.None);
+        var resultado = await controller.ListarTenants(ct: CancellationToken.None);
 
         // Assert
         resultado.Should().BeOfType<ForbidResult>(
@@ -124,7 +124,7 @@ public sealed class RbacAuthorizationDiscriminatoryTests
         var controller = CreateAdminControllerWithUser(null, isAuthenticated: false);
 
         // Act
-        var resultado = await controller.ListarTenants(CancellationToken.None);
+        var resultado = await controller.ListarTenants(ct: CancellationToken.None);
 
         // Assert
         resultado.Should().BeOfType<ForbidResult>("usuário anônimo deve ser barrado com 403 Forbidden");
@@ -148,10 +148,40 @@ public sealed class RbacAuthorizationDiscriminatoryTests
         var controller = CreateAdminControllerWithUser(roleAutorizada);
 
         // Act
-        var resultado = await controller.ListarTenants(CancellationToken.None);
+        var resultado = await controller.ListarTenants(ct: CancellationToken.None);
 
         // Assert
         resultado.Should().BeOfType<OkObjectResult>("SuperAdmin e Admin devem ter acesso pleno ao Backoffice");
+        var okResult = (OkObjectResult)resultado;
+        okResult.Value.Should().BeOfType<TenantsAdminPaginadoDto>();
+    }
+
+    [Fact]
+    public async Task ListarTenants_ComFiltroEStatus_DeveRetornarItensPaginadosCorretamente()
+    {
+        // Arrange
+        var rest1 = new Restaurante(Guid.NewGuid(), "Restaurante Alpha", "11.111.111/0001-11", "São Paulo", "SP", -23.55m, -46.63m);
+        var rest2 = new Restaurante(Guid.NewGuid(), "Burger Beta", "22.222.222/0001-22", "Campinas", "SP", -22.90m, -47.06m);
+
+        _restauranteRepoMock.Setup(r => r.ObterTodosAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Restaurante> { rest1, rest2 });
+        _assinaturaRepoMock.Setup(a => a.ObterTodasAssinaturasAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Assinatura>());
+        _usuarioRepoMock.Setup(u => u.ObterTodosAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Usuario>());
+        _assinaturaRepoMock.Setup(a => a.ObterPlanosAtivosAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Plano>());
+
+        var controller = CreateAdminControllerWithUser("SuperAdmin");
+
+        // Act - Filtrando por "Alpha"
+        var resultado = await controller.ListarTenants(busca: "Alpha", status: null, pagina: 1, itensPorPagina: 10, CancellationToken.None);
+
+        // Assert
+        resultado.Should().BeOfType<OkObjectResult>();
+        var paginado = (TenantsAdminPaginadoDto)((OkObjectResult)resultado).Value!;
+        paginado.TotalItens.Should().Be(1);
+        paginado.Itens.Should().ContainSingle(t => t.NomeRestaurante == "Restaurante Alpha");
     }
 
     [Theory]

@@ -1,5 +1,9 @@
-import { apiClient, extractErrorMessage } from '@/shared/services/api';
-import { TenantAdminItem } from '../types';
+import { apiClient, extractErrorMessage } from '../../../shared/services/api';
+import {
+  TenantAdminItem,
+  TenantsAdminPaginadoResponse,
+  FiltroTenantsAdmin,
+} from '../types';
 
 export const TENANTS_ADMIN_PADRAO: TenantAdminItem[] = [
   {
@@ -33,18 +37,88 @@ export const TENANTS_ADMIN_PADRAO: TenantAdminItem[] = [
     planoNome: 'Plano Starter',
     precoMensal: 99.00,
   },
+  {
+    restauranteId: '33333333-3333-3333-3333-333333333333',
+    nomeRestaurante: 'Pizzaria Donna Bella',
+    cnpj: '45.678.910/0001-30',
+    cidade: 'Campinas',
+    estado: 'SP',
+    dataCadastro: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
+    gestorNome: 'Roberto Santos',
+    gestorEmail: 'roberto@donnabella.com',
+    statusAssinatura: 'EXPIRADA',
+    diasRestantesTrial: 0,
+    dataFimTrial: new Date(Date.now() - 1000 * 60 * 60 * 24 * 26).toISOString(),
+    dataExpiracao: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+    planoNome: 'Nenhum (Trial Expirado)',
+    precoMensal: 0,
+  },
 ];
 
+function filtrarMock(filtro?: FiltroTenantsAdmin): TenantsAdminPaginadoResponse {
+  let itens = [...TENANTS_ADMIN_PADRAO];
+
+  if (filtro?.busca && filtro.busca.trim().length > 0) {
+    const termo = filtro.busca.toLowerCase().trim();
+    itens = itens.filter(
+      (t) =>
+        t.nomeRestaurante.toLowerCase().includes(termo) ||
+        t.cnpj.includes(termo) ||
+        t.gestorNome.toLowerCase().includes(termo) ||
+        t.gestorEmail.toLowerCase().includes(termo)
+    );
+  }
+
+  if (filtro?.status && filtro.status !== 'TODOS') {
+    itens = itens.filter((t) => t.statusAssinatura === filtro.status);
+  }
+
+  const pagina = filtro?.pagina && filtro.pagina > 0 ? filtro.pagina : 1;
+  const itensPorPagina = filtro?.itensPorPagina && filtro.itensPorPagina > 0 ? filtro.itensPorPagina : 20;
+  const totalItens = itens.length;
+  const totalPaginas = Math.max(1, Math.ceil(totalItens / itensPorPagina));
+  const inicio = (pagina - 1) * itensPorPagina;
+  const itensPaginados = itens.slice(inicio, inicio + itensPorPagina);
+
+  return {
+    itens: itensPaginados,
+    totalItens,
+    paginaAtual: pagina,
+    totalPaginas,
+  };
+}
+
 export const adminService = {
-  async listarTenants(): Promise<TenantAdminItem[]> {
+  async listarTenants(filtro?: FiltroTenantsAdmin): Promise<TenantsAdminPaginadoResponse> {
     try {
-      const response = await apiClient.get<TenantAdminItem[]>('/admin/tenants');
-      if (response.data && response.data.length > 0) {
-        return response.data;
+      const params = new URLSearchParams();
+      if (filtro?.busca) params.append('busca', filtro.busca.trim());
+      if (filtro?.status && filtro.status !== 'TODOS') params.append('status', filtro.status);
+      if (filtro?.pagina) params.append('pagina', String(filtro.pagina));
+      if (filtro?.itensPorPagina) params.append('itensPorPagina', String(filtro.itensPorPagina));
+
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response = await apiClient.get<TenantsAdminPaginadoResponse | TenantAdminItem[]>(
+        `/admin/tenants${queryString}`
+      );
+
+      if (response.data) {
+        if ('itens' in response.data && Array.isArray(response.data.itens)) {
+          return response.data as TenantsAdminPaginadoResponse;
+        }
+        if (Array.isArray(response.data)) {
+          return {
+            itens: response.data,
+            totalItens: response.data.length,
+            paginaAtual: 1,
+            totalPaginas: 1,
+          };
+        }
       }
-      return TENANTS_ADMIN_PADRAO;
+
+      return filtrarMock(filtro);
     } catch {
-      return TENANTS_ADMIN_PADRAO;
+      return filtrarMock(filtro);
     }
   },
 
