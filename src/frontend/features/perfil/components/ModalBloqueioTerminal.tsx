@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Lock, AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
@@ -28,6 +29,7 @@ export function ModalBloqueioTerminal({
 }: ModalBloqueioTerminalProps) {
   const [pin, setPin] = useState('');
   const [erro, setErro] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleTentarDesbloqueio = () => {
     // Validação mínima de PIN (qualquer PIN de 4 dígitos ou PIN cadastrado)
@@ -52,13 +54,14 @@ export function ModalBloqueioTerminal({
         style={styles.container}
       >
         <View style={styles.content}>
-          {/* Ícone de Cadeado & Avatar */}
-          <View style={styles.lockBadge}>
-            <ThemedText style={styles.lockIcon}>🔒</ThemedText>
-          </View>
-
-          <View style={styles.avatar}>
-            <ThemedText style={styles.avatarText}>{operadorIniciais}</ThemedText>
+          {/* Avatar com Badge de Cadeado Ancorado no Canto Inferior Direito */}
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>{operadorIniciais}</ThemedText>
+            </View>
+            <View style={styles.lockBadge}>
+              <Lock size={13} color="#FFFFFF" />
+            </View>
           </View>
 
           <ThemedText variant="title" style={styles.title}>
@@ -74,13 +77,19 @@ export function ModalBloqueioTerminal({
               DIGITE O PIN DE DESBLOQUEIO:
             </ThemedText>
             <TextInput
-              style={[styles.pinInput, erro && styles.pinInputError]}
-              placeholder="••••"
+              style={[
+                styles.pinInput,
+                isFocused && styles.pinInputFocused,
+                erro && styles.pinInputError,
+              ]}
+              placeholder={pin.length === 0 ? '••••' : ''}
               placeholderTextColor={tokens.colors.textMuted}
               keyboardType="number-pad"
               secureTextEntry
               maxLength={6}
               value={pin}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               onChangeText={(txt) => {
                 setPin(txt);
                 if (erro) setErro(false);
@@ -88,9 +97,12 @@ export function ModalBloqueioTerminal({
               autoFocus
             />
             {erro && (
-              <ThemedText variant="caption" color={tokens.colors.status.redText} style={styles.errorText}>
-                ⚠️ Digite ao menos 4 dígitos para desbloquear.
-              </ThemedText>
+              <View style={styles.errorRow}>
+                <AlertTriangle size={14} color={tokens.colors.status.redText} />
+                <ThemedText variant="caption" color={tokens.colors.status.redText} style={styles.errorText}>
+                  Digite ao menos 4 dígitos para desbloquear.
+                </ThemedText>
+              </View>
             )}
           </View>
 
@@ -143,18 +155,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  lockBadge: {
-    position: 'absolute',
-    top: -20,
-    backgroundColor: tokens.colors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockIcon: {
-    fontSize: 20,
+  avatarContainer: {
+    position: 'relative',
+    marginTop: tokens.spacing.xs,
+    marginBottom: tokens.spacing.sm,
   },
   avatar: {
     width: 64,
@@ -163,13 +167,24 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: tokens.spacing.sm,
-    marginBottom: tokens.spacing.sm,
   },
   avatarText: {
     fontSize: tokens.typography.fontXl,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  lockBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: tokens.typography.fontLg,
@@ -204,13 +219,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 8,
     color: tokens.colors.textPrimary,
+    ...(Platform.OS === 'web'
+      ? ({ outlineStyle: 'none', outline: 'none' } as any)
+      : {}),
+  },
+  pinInputFocused: {
+    borderColor: tokens.colors.primary,
+    borderWidth: 2,
   },
   pinInputError: {
     borderColor: tokens.colors.status.redText,
+    borderWidth: 2,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: tokens.spacing.xs,
   },
   errorText: {
     textAlign: 'center',
-    marginTop: tokens.spacing.xs,
   },
   desbloquearButton: {
     width: '100%',

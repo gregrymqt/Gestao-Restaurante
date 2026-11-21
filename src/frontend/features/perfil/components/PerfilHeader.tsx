@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Wallet } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 
@@ -8,6 +10,8 @@ interface PerfilHeaderProps {
 }
 
 export function PerfilHeader({ iniciais }: PerfilHeaderProps) {
+  const router = useRouter();
+
   return (
     <View style={styles.topBar}>
       <View style={styles.brandContainer}>
@@ -18,9 +22,17 @@ export function PerfilHeader({ iniciais }: PerfilHeaderProps) {
       </View>
 
       <View style={styles.topBarActions}>
-        <View style={styles.wifiBox}>
-          <ThemedText style={styles.wifiIcon}>📶</ThemedText>
-        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Ir para Auditoria de Caixa"
+          style={styles.caixaButton}
+          activeOpacity={0.7}
+          onPress={() => router.push('/caixa')}
+        >
+          <Wallet size={16} color={tokens.colors.primary} />
+          <ThemedText style={styles.caixaButtonText}>Caixa</ThemedText>
+        </TouchableOpacity>
+
         <View style={styles.miniAvatar}>
           <ThemedText style={styles.miniAvatarText}>{iniciais}</ThemedText>
         </View>
@@ -60,20 +72,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.spacing.sm,
   },
-  wifiBox: {
-    width: 34,
-    height: 34,
-    borderRadius: tokens.radii.full,
-    backgroundColor: tokens.colors.background,
+  caixaButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: tokens.spacing.md,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.background,
   },
-  wifiIcon: {
-    fontSize: 16,
+  caixaButtonText: {
+    fontSize: tokens.typography.fontSm,
+    fontWeight: '700',
+    color: tokens.colors.textPrimary,
   },
   miniAvatar: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: tokens.radii.full,
     backgroundColor: tokens.colors.primaryLight,
     alignItems: 'center',

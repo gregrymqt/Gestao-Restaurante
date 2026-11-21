@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Store, ArrowLeftRight } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows } from '@/shared/utils/shadows';
@@ -23,22 +24,22 @@ export function TenantBranchCard({
       <View style={styles.contentLeft}>
         {/* Ícone de Unidade Operacional */}
         <View style={styles.iconBox}>
-          <ThemedText style={styles.storeIcon}>🏪</ThemedText>
+          <Store size={20} color={tokens.colors.primary} />
         </View>
 
         {/* Detalhes da Filial e CNPJ */}
         <View style={styles.textContainer}>
-          <View style={styles.nameRow}>
-            <ThemedText variant="body" style={styles.tenantName} numberOfLines={1}>
-              {nome}
-            </ThemedText>
+          <ThemedText variant="body" style={styles.tenantName} numberOfLines={1}>
+            {nome}
+          </ThemedText>
+          <View style={styles.subRow}>
             <View style={styles.filialTag}>
               <ThemedText style={styles.filialText}>{filial}</ThemedText>
             </View>
+            <ThemedText style={styles.cnpjLabel}>
+              • CNPJ: {cnpj}
+            </ThemedText>
           </View>
-          <ThemedText style={styles.cnpjLabel}>
-            CNPJ: {cnpj}
-          </ThemedText>
         </View>
       </View>
 
@@ -46,10 +47,12 @@ export function TenantBranchCard({
       <TouchableOpacity
         style={styles.switchButton}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Trocar unidade ou filial"
         onPress={onTrocarFilial}
       >
         <ThemedText style={styles.switchButtonText}>Trocar</ThemedText>
-        <ThemedText style={styles.switchIcon}>⇄</ThemedText>
+        <ArrowLeftRight size={14} color={tokens.colors.textPrimary} />
       </TouchableOpacity>
     </View>
   );
@@ -72,38 +75,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.spacing.sm,
     flex: 1,
-    marginRight: tokens.spacing.sm,
+    minWidth: 0,
+    marginRight: tokens.spacing.xs,
   },
   iconBox: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.primaryLight,
+    backgroundColor: '#FFF7ED',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  storeIcon: {
-    fontSize: 22,
+    flexShrink: 0,
   },
   textContainer: {
     flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.xs,
+    minWidth: 0,
   },
   tenantName: {
     fontSize: tokens.typography.fontMd,
     fontWeight: '700',
     color: tokens.colors.textPrimary,
-    flexShrink: 1,
+  },
+  subRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+    flexWrap: 'wrap',
   },
   filialTag: {
     backgroundColor: tokens.colors.background,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: tokens.radii.sm,
+    flexShrink: 0,
   },
   filialText: {
     fontSize: 10,
@@ -113,26 +118,22 @@ const styles = StyleSheet.create({
   cnpjLabel: {
     fontSize: tokens.typography.fontXs,
     color: tokens.colors.textMuted,
-    marginTop: 2,
   },
   switchButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    minHeight: 44,
     backgroundColor: tokens.colors.background,
     paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    borderRadius: tokens.radii.sm,
+    borderRadius: tokens.radii.md,
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    flexShrink: 0,
   },
   switchButtonText: {
     fontSize: tokens.typography.fontSm,
     fontWeight: '700',
     color: tokens.colors.textPrimary,
-  },
-  switchIcon: {
-    fontSize: 14,
-    color: tokens.colors.textSecondary,
   },
 });

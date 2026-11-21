@@ -14,7 +14,7 @@ export const perfilService = {
       tempoDecorrido: 'Há 3h 15m',
       totalVendas: 24,
       ticketMedio: 53.35,
-      volumeTotal: 1280.0,
+      volumeTotal: 1280.5,
       tendenciaPercentual: 18,
       tenderBreakdown: {
         pix: 720.0,

@@ -12,10 +12,13 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { formatarMoeda } from '@/shared/utils/formatters';
 import { TipoMovimentacaoCaixa } from '../types';
+import { styles } from './ModalMovimentacaoCaixa.styles';
+import { AtalhosValorChips } from './AtalhosValorChips';
 
 interface ModalMovimentacaoCaixaProps {
   visible: boolean;
@@ -37,6 +40,7 @@ export function ModalMovimentacaoCaixa({
   const [valorTexto, setValorTexto] = useState('');
   const [motivo, setMotivo] = useState('');
   const [erro, setErro] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const isSuprimento = tipo === 'SUPRIMENTO';
 
@@ -79,8 +83,18 @@ export function ModalMovimentacaoCaixa({
     await onSubmit({ valor: valorNumerico, motivo: motivo.trim() });
   };
 
+  const saldoProjetado = isSuprimento
+    ? saldoDisponivel + valorNumerico
+    : saldoDisponivel - valorNumerico;
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -126,17 +140,40 @@ export function ModalMovimentacaoCaixa({
                 </ThemedText>
               </View>
 
-              {/* Campo Valor */}
+              {/* Campo Valor com Botão Limpar */}
               <View style={styles.inputGroup}>
-                <ThemedText variant="caption" weight="bold" style={styles.label}>
-                  VALOR (R$):
-                </ThemedText>
+                <View style={styles.labelRow}>
+                  <ThemedText variant="caption" weight="bold" style={styles.label}>
+                    VALOR (R$):
+                  </ThemedText>
+                  {valorNumerico > 0 && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setValorTexto('');
+                        if (erro) setErro(null);
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Limpar valor digitado"
+                    >
+                      <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
+                        Limpar
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <TextInput
-                  style={[styles.inputValor, saldoInsuficiente && styles.inputErrorBorder]}
+                  style={[
+                    styles.inputValor,
+                    isFocused && (isSuprimento ? styles.inputValorFocadoSuprimento : styles.inputValorFocadoSangria),
+                    saldoInsuficiente && styles.inputErrorBorder,
+                  ]}
                   placeholder="0,00"
                   placeholderTextColor={tokens.colors.textMuted}
                   keyboardType="decimal-pad"
                   value={valorTexto}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
                   onChangeText={(txt) => {
                     setValorTexto(txt);
                     if (erro) setErro(null);
@@ -146,52 +183,37 @@ export function ModalMovimentacaoCaixa({
               </View>
 
               {/* Chips de Preenchimento Rápido */}
-              <View style={styles.chipsContainer}>
-                <ThemedText variant="caption" style={styles.chipsLabel}>
-                  Atalhos de valor:
-                </ThemedText>
-                <View style={styles.chipsRow}>
-                  <Pressable
-                    style={styles.chip}
-                    onPress={() => handleAdicionarValor(50)}
-                    hitSlop={6}
+              <AtalhosValorChips
+                isSuprimento={isSuprimento}
+                saldoDisponivel={saldoDisponivel}
+                onAdicionarValor={handleAdicionarValor}
+                onPreencherTudo={handlePreencherTudo}
+              />
+
+              {/* Projeção do Saldo em Tempo Real (Abaixo dos Atalhos) */}
+              {valorNumerico > 0 && (
+                <View style={styles.projecaoContainer}>
+                  <ThemedText variant="caption" style={styles.projecaoLabel}>
+                    Saldo projetado na gaveta:
+                  </ThemedText>
+                  <ThemedText
+                    variant="caption"
+                    weight="bold"
+                    style={[
+                      styles.projecaoValor,
+                      {
+                        color: isSuprimento
+                          ? '#059669'
+                          : saldoInsuficiente
+                          ? tokens.colors.status.redText
+                          : '#D97706',
+                      },
+                    ]}
                   >
-                    <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-                      + R$ 50
-                    </ThemedText>
-                  </Pressable>
-                  <Pressable
-                    style={styles.chip}
-                    onPress={() => handleAdicionarValor(100)}
-                    hitSlop={6}
-                  >
-                    <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-                      + R$ 100
-                    </ThemedText>
-                  </Pressable>
-                  {isSuprimento ? (
-                    <Pressable
-                      style={styles.chip}
-                      onPress={() => handleAdicionarValor(200)}
-                      hitSlop={6}
-                    >
-                      <ThemedText variant="caption" weight="bold" color={tokens.colors.primary}>
-                        + R$ 200
-                      </ThemedText>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      style={[styles.chip, styles.chipTudo]}
-                      onPress={handlePreencherTudo}
-                      hitSlop={6}
-                    >
-                      <ThemedText variant="caption" weight="bold" color={tokens.colors.status.redText}>
-                        Tudo ({formatarMoeda(saldoDisponivel)})
-                      </ThemedText>
-                    </Pressable>
-                  )}
+                    {formatarMoeda(saldoDisponivel)} → {formatarMoeda(saldoProjetado)}
+                  </ThemedText>
                 </View>
-              </View>
+              )}
 
               {/* Campo Motivo / Justificativa */}
               <View style={styles.inputGroup}>
@@ -217,8 +239,9 @@ export function ModalMovimentacaoCaixa({
               {/* Mensagem de Erro / Validação */}
               {erro ? (
                 <View style={styles.errorBox}>
-                  <ThemedText variant="caption" color={tokens.colors.status.redText}>
-                    ⚠️ {erro}
+                  <AlertTriangle size={14} color={tokens.colors.status.redText} />
+                  <ThemedText variant="caption" color={tokens.colors.status.redText} style={styles.errorText}>
+                    {erro}
                   </ThemedText>
                 </View>
               ) : null}
@@ -262,180 +285,3 @@ export function ModalMovimentacaoCaixa({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  keyboardContainer: {
-    width: '100%',
-  },
-  sheetContainer: {
-    backgroundColor: tokens.colors.white,
-    borderTopLeftRadius: tokens.radii.lg,
-    borderTopRightRadius: tokens.radii.lg,
-    maxHeight: '85%',
-  },
-  dragIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: tokens.colors.border,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: tokens.spacing.sm,
-    marginBottom: tokens.spacing.xs,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: tokens.spacing.md,
-    marginHorizontal: tokens.spacing.md,
-    marginTop: tokens.spacing.xs,
-    borderRadius: tokens.radii.md,
-    gap: tokens.spacing.sm,
-  },
-  headerSuprimento: {
-    backgroundColor: '#1E6B3A',
-  },
-  headerSangria: {
-    backgroundColor: '#A82A2A',
-  },
-  headerIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTexts: {
-    flex: 1,
-  },
-  headerSubtext: {
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-    fontSize: tokens.typography.fontXs,
-  },
-  formScroll: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.sm,
-  },
-  saldoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.background,
-    padding: tokens.spacing.sm,
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    marginBottom: tokens.spacing.sm,
-  },
-  inputGroup: {
-    marginBottom: tokens.spacing.sm,
-  },
-  label: {
-    color: tokens.colors.textMuted,
-    marginBottom: tokens.spacing.xs,
-    letterSpacing: 0.5,
-  },
-  inputValor: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  chipsContainer: {
-    marginBottom: tokens.spacing.md,
-  },
-  chipsLabel: {
-    color: tokens.colors.textMuted,
-    marginBottom: tokens.spacing.xs,
-    fontSize: tokens.typography.fontXs,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    backgroundColor: tokens.colors.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: tokens.radii.full,
-    borderWidth: 1,
-    borderColor: tokens.colors.primary,
-  },
-  chipTudo: {
-    backgroundColor: tokens.colors.status.redBg,
-    borderColor: tokens.colors.status.redText,
-  },
-  inputMotivo: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    fontSize: tokens.typography.fontSm,
-    color: tokens.colors.textPrimary,
-  },
-  inputErrorBorder: {
-    borderColor: tokens.colors.status.redText,
-  },
-  errorBox: {
-    backgroundColor: '#FFECEC',
-    padding: tokens.spacing.sm,
-    borderRadius: tokens.radii.sm,
-    marginBottom: tokens.spacing.sm,
-  },
-  footerFixed: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.sm,
-    paddingBottom: Platform.OS === 'ios' ? tokens.spacing.xl : tokens.spacing.md,
-    backgroundColor: tokens.colors.white,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
-  },
-  cancelarButton: {
-    flex: 1,
-    paddingVertical: tokens.spacing.sm + 2,
-    borderRadius: tokens.radii.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 46,
-  },
-  cancelarText: {
-    fontWeight: '700',
-    color: tokens.colors.textMuted,
-  },
-  confirmarButton: {
-    flex: 2,
-    paddingVertical: tokens.spacing.sm + 2,
-    borderRadius: tokens.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 46,
-  },
-  confirmarSuprimento: {
-    backgroundColor: '#1E6B3A',
-  },
-  confirmarSangria: {
-    backgroundColor: '#A82A2A',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-});

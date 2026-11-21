@@ -7,6 +7,7 @@ import {
   Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Wifi, WifiOff, ShieldCheck } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { InstallPwaBanner } from '@/shared/components/InstallPwaBanner';
@@ -18,10 +19,14 @@ import { OperatorHeroCard } from '../components/OperatorHeroCard';
 import { TenantBranchCard } from '../components/TenantBranchCard';
 import { ShiftMetricsSection } from '../components/ShiftMetricsSection';
 import { TerminalStatusCard } from '../components/TerminalStatusCard';
-import { OperationalActionsSection } from '../components/OperationalActionsSection';
+import {
+  QuickCashActions,
+  ClosingActionsSection,
+} from '../components/OperationalActionsSection';
 import { ModalMovimentacaoCaixa } from '../components/ModalMovimentacaoCaixa';
 import { ModalBloqueioTerminal } from '../components/ModalBloqueioTerminal';
 import { PerfilHeader } from '../components/PerfilHeader';
+import { LiveConnectionBanner } from '../components/LiveConnectionBanner';
 
 export function PerfilScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +35,7 @@ export function PerfilScreen() {
     currentTenant,
     availableTenants,
     isSseConnected,
+    isOffline,
     metricas,
     terminalStatus,
     isTenantModalOpen,
@@ -72,39 +78,7 @@ export function PerfilScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Banner de Conexão em Tempo Real */}
-        <View style={styles.liveBanner}>
-          <View style={styles.liveLeft}>
-            <View
-              style={[
-                styles.liveDot,
-                {
-                  backgroundColor: isSseConnected
-                    ? tokens.colors.status.greenText
-                    : tokens.colors.status.redText,
-                },
-              ]}
-            />
-            <ThemedText
-              style={[
-                styles.liveText,
-                {
-                  color: isSseConnected
-                    ? tokens.colors.status.greenText
-                    : tokens.colors.status.redText,
-                },
-              ]}
-            >
-              {isSseConnected ? 'Tempo Real Conectado' : 'Reconectando ao Servidor...'}
-            </ThemedText>
-          </View>
-
-          {isSseConnected ? (
-            <View style={styles.latencyBadge}>
-              <ThemedText style={styles.boltIcon}>⚡</ThemedText>
-              <ThemedText style={styles.latencyText}>18ms</ThemedText>
-            </View>
-          ) : null}
-        </View>
+        <LiveConnectionBanner isOffline={isOffline} />
 
         {/* 1. Hero Card do Operador */}
         <OperatorHeroCard operador={operador} />
@@ -115,27 +89,33 @@ export function PerfilScreen() {
           onTrocarFilial={() => setIsTenantModalOpen(true)}
         />
 
-        {/* 3. Métricas do Turno Operacional */}
+        {/* 3. Atalhos Rápidos Operacionais do Turno (Zona do Polegar) */}
+        <QuickCashActions
+          onAbrirSuprimento={handleAbrirSuprimento}
+          onAbrirSangria={handleAbrirSangria}
+        />
+
+        {/* 4. Métricas do Turno Operacional */}
         <ShiftMetricsSection metricas={metricas} />
 
-        {/* 4. Status do Terminal & Telemetria */}
+        {/* 5. Status do Terminal & Telemetria */}
         <TerminalStatusCard
           status={terminalStatus}
           isSseConnected={isSseConnected}
+          isOffline={isOffline}
         />
 
-        {/* 5. Ações Operacionais & Logout Seguro */}
-        <OperationalActionsSection
-          onAbrirSuprimento={handleAbrirSuprimento}
-          onAbrirSangria={handleAbrirSangria}
+        {/* 6. Ações de Bloqueio e Encerramento de Turno */}
+        <ClosingActionsSection
           onBloquearTerminal={handleBloquearTerminal}
           onEncerrarTurno={handleAbrirFechamentoTurno}
+          isOffline={isOffline}
         />
 
         {/* Atalho de Instalação PWA quando disponível no navegador */}
         <InstallPwaBanner variant="card" />
 
-        {/* 6. Acesso SuperAdmin Backoffice SaaS (Restrito por RBAC) */}
+        {/* 7. Acesso SuperAdmin Backoffice SaaS (Restrito por RBAC) */}
         {operador?.role === 'SuperAdmin' ? (
           <View style={styles.superAdminContainer}>
             <Pressable
@@ -144,7 +124,7 @@ export function PerfilScreen() {
               onPress={() => setIsAdminBackofficeOpen(true)}
               style={({ pressed }) => [styles.botaoSuperAdmin, pressed && styles.pressedSuperAdmin]}
             >
-              <ThemedText style={styles.iconeSuperAdmin}>🛡️</ThemedText>
+              <ShieldCheck size={24} color="#FFFFFF" />
               <View style={styles.textosSuperAdmin}>
                 <ThemedText variant="subtitle" weight="bold" color="#FFFFFF">
                   Backoffice SuperAdmin SaaS
@@ -220,48 +200,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: tokens.spacing.md,
     gap: tokens.spacing.md,
-  },
-  liveBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: tokens.colors.card,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-    borderRadius: tokens.radii.md,
-    borderColor: tokens.colors.border,
-    borderWidth: 1,
-  },
-  liveLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.xs,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: tokens.radii.full,
-  },
-  liveText: {
-    fontSize: tokens.typography.fontSm,
-    fontWeight: '700',
-  },
-  latencyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: tokens.colors.background,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 2,
-    borderRadius: tokens.radii.full,
-  },
-  boltIcon: {
-    fontSize: 11,
-  },
-  latencyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: tokens.colors.textSecondary,
   },
   superAdminContainer: {
     paddingHorizontal: tokens.spacing.lg,
