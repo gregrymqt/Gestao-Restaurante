@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import {
   InsumoEstoque,
   FichaTecnicaItem,
@@ -69,23 +69,24 @@ export const FICHAS_TECNICAS_MOCK_INICIAL: FichaTecnicaItem[] = [
 ];
 
 export const estoqueService = {
-  async obterInsumos(): Promise<InsumoEstoque[]> {
+  async obterInsumos(signal?: AbortSignal): Promise<InsumoEstoque[]> {
     try {
-      const response = await apiClient.get<InsumoEstoque[]>('/estoque/insumos');
+      const response = await apiClient.get<InsumoEstoque[]>('/estoque/insumos', { signal });
       if (Array.isArray(response.data) && response.data.length > 0) return response.data;
       return INSUMOS_MOCK_INICIAL;
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       return INSUMOS_MOCK_INICIAL;
     }
   },
 
-  async obterFichasTecnicas(): Promise<FichaTecnicaItem[]> {
+  async obterFichasTecnicas(signal?: AbortSignal): Promise<FichaTecnicaItem[]> {
     try {
       const response = await apiClient.get<Array<{
         id: string; nome: string; categoria: string; imagemUrl?: string;
         ingredientes: Array<{ insumoId: string; nome: string; quantidade: string }>;
         custoInsumos: number; precoBalcao: number; margemBrutaPercentual: number; capacidadeTurnoPorcoes: number;
-      }>>('/estoque/fichas-tecnicas');
+      }>>('/estoque/fichas-tecnicas', { signal });
 
       if (Array.isArray(response.data) && response.data.length > 0) {
         return response.data.map((f) => {
@@ -111,48 +112,69 @@ export const estoqueService = {
         });
       }
       return FICHAS_TECNICAS_MOCK_INICIAL;
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       return FICHAS_TECNICAS_MOCK_INICIAL;
     }
   },
 
-  async registrarEntradaEstoque(entrada: EntradaEstoqueInput): Promise<EntradaEstoqueResponse> {
+  async registrarEntradaEstoque(
+    entrada: EntradaEstoqueInput,
+    signal?: AbortSignal
+  ): Promise<EntradaEstoqueResponse> {
     try {
-      const response = await apiClient.post<EntradaEstoqueResponse>('/estoque/entrada', entrada);
+      const response = await apiClient.post<EntradaEstoqueResponse>('/estoque/entrada', entrada, { signal });
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível registrar entrada no estoque.'));
     }
   },
 
-  async cadastrarInsumo(dados: CadastrarInsumoInput): Promise<InsumoEstoque> {
+  async cadastrarInsumo(
+    dados: CadastrarInsumoInput,
+    signal?: AbortSignal
+  ): Promise<InsumoEstoque> {
     try {
-      const response = await apiClient.post<InsumoEstoque>('/estoque/insumos', dados);
+      const response = await apiClient.post<InsumoEstoque>('/estoque/insumos', dados, { signal });
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível cadastrar o insumo.'));
     }
   },
 
-  async registrarBaixaEstoque(dados: BaixaEstoqueInput): Promise<{ status: string }> {
+  async registrarBaixaEstoque(
+    dados: BaixaEstoqueInput,
+    signal?: AbortSignal
+  ): Promise<{ status: string }> {
     const origemMap: Record<string, number> = { Avaria: 3, Validade: 3, Inventario: 2 };
     try {
-      const response = await apiClient.post<{ status: string }>('/estoque/baixa', {
-        itens: [{ insumoId: dados.insumoId, quantidade: dados.quantidade }],
-        origem: origemMap[dados.motivo] ?? 3,
-        observacao: `[${dados.motivo}] ${dados.observacao || 'Baixa manual registrada pelo gestor'}`.trim(),
-      });
+      const response = await apiClient.post<{ status: string }>(
+        '/estoque/baixa',
+        {
+          itens: [{ insumoId: dados.insumoId, quantidade: dados.quantidade }],
+          origem: origemMap[dados.motivo] ?? 3,
+          observacao: `[${dados.motivo}] ${dados.observacao || 'Baixa manual registrada pelo gestor'}`.trim(),
+        },
+        { signal }
+      );
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível registrar a baixa de estoque.'));
     }
   },
 
-  async salvarFichaTecnica(dados: FichaTecnicaInput): Promise<FichaTecnicaItem> {
+  async salvarFichaTecnica(
+    dados: FichaTecnicaInput,
+    signal?: AbortSignal
+  ): Promise<FichaTecnicaItem> {
     try {
-      const response = await apiClient.post<FichaTecnicaItem>('/estoque/fichas-tecnicas', dados);
+      const response = await apiClient.post<FichaTecnicaItem>('/estoque/fichas-tecnicas', dados, { signal });
       return response.data;
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       const id = dados.id || `ficha-${Date.now()}`;
       return {
         id, produtoId: dados.produtoId || id, nomeProduto: dados.nomeProduto,

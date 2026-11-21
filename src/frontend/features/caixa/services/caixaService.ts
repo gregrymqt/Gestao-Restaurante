@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import { AbrirCaixaResponseDto, FecharCaixaResponseDto, SessaoCaixaResumo } from '../types';
 
 export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
@@ -74,18 +74,19 @@ interface DashboardResumoSessaoResponse {
 }
 
 export const caixaService = {
-  async abrirCaixa(): Promise<AbrirCaixaResponseDto> {
+  async abrirCaixa(signal?: AbortSignal): Promise<AbrirCaixaResponseDto> {
     try {
-      const response = await apiClient.post<AbrirCaixaResponseDto>('/caixa/abrir', {});
+      const response = await apiClient.post<AbrirCaixaResponseDto>('/caixa/abrir', {}, { signal });
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível abrir o caixa.'));
     }
   },
 
-  async obterSessaoAtiva(): Promise<SessaoCaixaResumo> {
+  async obterSessaoAtiva(signal?: AbortSignal): Promise<SessaoCaixaResumo> {
     try {
-      const res = await apiClient.get<DashboardResumoSessaoResponse>('/dashboard/resumo');
+      const res = await apiClient.get<DashboardResumoSessaoResponse>('/dashboard/resumo', { signal });
       if (res.data) {
         const kpis = res.data.kpis;
         return {
@@ -98,18 +99,20 @@ export const caixaService = {
           turno: res.data.turnoAtual || DADOS_SESSAO_PADRAO.turno,
         };
       }
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       // Fallback resiliente
     }
 
     return DADOS_SESSAO_PADRAO;
   },
 
-  async fecharCaixa(): Promise<FecharCaixaResponseDto> {
+  async fecharCaixa(signal?: AbortSignal): Promise<FecharCaixaResponseDto> {
     try {
-      const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar');
+      const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar', undefined, { signal });
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível fechar o caixa.'));
     }
   },

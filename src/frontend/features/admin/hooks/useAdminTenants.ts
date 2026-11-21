@@ -38,13 +38,16 @@ export function useAdminTenants() {
     refetch,
   } = useQuery<TenantsAdminPaginadoResponse>({
     queryKey: ['admin', 'tenants', debounceBusca, statusFiltro, paginaAtual],
-    queryFn: () =>
-      adminService.listarTenants({
-        busca: debounceBusca,
-        status: statusFiltro,
-        pagina: paginaAtual,
-        itensPorPagina: 20,
-      }),
+    queryFn: ({ signal }) =>
+      adminService.listarTenants(
+        {
+          busca: debounceBusca,
+          status: statusFiltro,
+          pagina: paginaAtual,
+          itensPorPagina: 20,
+        },
+        signal
+      ),
     staleTime: 1000 * 30, // 30 segundos
   });
 

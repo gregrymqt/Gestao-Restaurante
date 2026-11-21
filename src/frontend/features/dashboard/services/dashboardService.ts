@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/services/api';
+import { apiClient, isCancel } from '@/shared/services/api';
 import { DashboardExecutivoData } from '../types';
 
 export const DADOS_DASHBOARD_PADRAO: DashboardExecutivoData = {
@@ -52,10 +52,10 @@ interface DashboardResumoApiResponse {
 }
 
 export const dashboardService = {
-  async obterResumoExecutivo(): Promise<DashboardExecutivoData> {
+  async obterResumoExecutivo(signal?: AbortSignal): Promise<DashboardExecutivoData> {
     try {
       // Consulta os dados reais e consolidados do backend .NET 9
-      const res = await apiClient.get<DashboardResumoApiResponse>('/dashboard/resumo');
+      const res = await apiClient.get<DashboardResumoApiResponse>('/dashboard/resumo', { signal });
       if (res.data) {
         return {
           statusLoja: res.data.statusLoja === 'ABERTA' ? 'ABERTA' : 'FECHADA',
@@ -86,7 +86,8 @@ export const dashboardService = {
           },
         };
       }
-    } catch {
+    } catch (e: unknown) {
+      if (isCancel(e)) throw e;
       // Fallback gracioso imediato garantindo alta disponibilidade da UI
     }
 

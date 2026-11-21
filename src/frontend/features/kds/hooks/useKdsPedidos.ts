@@ -10,7 +10,7 @@ export function useKdsPedidos() {
 
   const query = useQuery<PedidoKds[]>({
     queryKey: KDS_QUERY_KEY,
-    queryFn: kdsService.listarPedidosAtivos,
+    queryFn: ({ signal }) => kdsService.listarPedidosAtivos(signal),
     staleTime: 2000,
     refetchInterval: 15000, // Fallback leve (15s) caso o canal SSE oscile
   });

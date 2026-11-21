@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { isCancel, extractErrorMessage } from '@/services/api';
 import { vendasService } from '../services/vendasService';
 import { VendaHistorico } from '../types';
 
@@ -7,8 +8,9 @@ export function useHistoricoVendas() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const carregarHistorico = useCallback(async (isRefresh = false) => {
+  const carregarHistorico = useCallback(async (isRefresh = false, signal?: AbortSignal) => {
     if (isRefresh) {
       setIsRefreshing(true);
     } else {
@@ -17,10 +19,11 @@ export function useHistoricoVendas() {
     setErro(null);
 
     try {
-      const dados = await vendasService.obterHistorico();
+      const dados = await vendasService.obterHistorico(undefined, signal);
       setVendas(dados || []);
-    } catch (err: any) {
-      setErro(err?.message || 'Erro ao carregar histórico de vendas.');
+    } catch (err: unknown) {
+      if (isCancel(err)) return;
+      setErro(extractErrorMessage(err, 'Erro ao carregar histórico de vendas.'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -28,10 +31,21 @@ export function useHistoricoVendas() {
   }, []);
 
   useEffect(() => {
-    carregarHistorico();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    carregarHistorico(false, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, [carregarHistorico]);
 
-  const refetch = useCallback(() => carregarHistorico(true), [carregarHistorico]);
+  const refetch = useCallback(() => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    return carregarHistorico(true, controller.signal);
+  }, [carregarHistorico]);
 
   return {
     vendas,

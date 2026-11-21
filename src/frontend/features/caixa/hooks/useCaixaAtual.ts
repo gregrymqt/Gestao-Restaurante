@@ -12,7 +12,7 @@ export function useCaixaAtual() {
     refetch,
   } = useQuery<SessaoCaixaResumo>({
     queryKey: ['caixa', 'sessao-ativa'],
-    queryFn: () => caixaService.obterSessaoAtiva(),
+    queryFn: ({ signal }) => caixaService.obterSessaoAtiva(signal),
     staleTime: 1000 * 60 * 2, // 2 minutos de cache
   });
 

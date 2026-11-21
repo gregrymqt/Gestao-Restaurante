@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import {
   ShiftMetrics,
   TerminalStatus,
@@ -7,12 +7,12 @@ import {
 } from '../types';
 
 export const perfilService = {
-  async obterMetricasTurno(): Promise<ShiftMetrics> {
-    const response = await apiClient.get<ShiftMetrics>('/caixa/resumo-turno');
+  async obterMetricasTurno(signal?: AbortSignal): Promise<ShiftMetrics> {
+    const response = await apiClient.get<ShiftMetrics>('/caixa/resumo-turno', { signal });
     return response.data;
   },
 
-  async obterStatusTerminal(sseConectado: boolean): Promise<TerminalStatus> {
+  async obterStatusTerminal(sseConectado: boolean, _signal?: AbortSignal): Promise<TerminalStatus> {
     return {
       sseOnline: sseConectado,
       sseLatency: '18ms',
@@ -25,7 +25,8 @@ export const perfilService = {
 
   async registrarMovimentacao(
     dados: MovimentacaoCaixaInput,
-    _saldoAtual?: number
+    _saldoAtual?: number,
+    signal?: AbortSignal
   ): Promise<MovimentacaoCaixaResult> {
     const rota = dados.tipo === 'SUPRIMENTO' ? '/caixa/suprimento' : '/caixa/sangria';
     try {
@@ -39,10 +40,14 @@ export const perfilService = {
         dataHora: string;
         sucesso?: boolean;
         mensagem?: string;
-      }>(rota, {
-        valor: dados.valor,
-        motivo: dados.motivo,
-      });
+      }>(
+        rota,
+        {
+          valor: dados.valor,
+          motivo: dados.motivo,
+        },
+        { signal }
+      );
 
       const data = response.data;
       const rotulo = dados.tipo === 'SUPRIMENTO' ? 'Suprimento de troco' : 'Sangria de caixa';
@@ -54,6 +59,7 @@ export const perfilService = {
         mensagem: data.mensagem || `${rotulo} registrado com sucesso sob protocolo ${data.protocolo}.`,
       };
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível registrar o lançamento de caixa.'));
     }
   },

@@ -1,1 +1,1 @@
-export { apiClient, extractErrorMessage } from '@/shared/services/api';
+export { apiClient, extractErrorMessage, isCancel } from '@/shared/services/api';

@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '../../../shared/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '../../../shared/services/api';
 import {
   TenantAdminItem,
   TenantsAdminPaginadoResponse,
@@ -89,7 +89,10 @@ function filtrarMock(filtro?: FiltroTenantsAdmin): TenantsAdminPaginadoResponse 
 }
 
 export const adminService = {
-  async listarTenants(filtro?: FiltroTenantsAdmin): Promise<TenantsAdminPaginadoResponse> {
+  async listarTenants(
+    filtro?: FiltroTenantsAdmin,
+    signal?: AbortSignal
+  ): Promise<TenantsAdminPaginadoResponse> {
     try {
       const params = new URLSearchParams();
       if (filtro?.busca) params.append('busca', filtro.busca.trim());
@@ -99,7 +102,8 @@ export const adminService = {
 
       const queryString = params.toString() ? `?${params.toString()}` : '';
       const response = await apiClient.get<TenantsAdminPaginadoResponse | TenantAdminItem[]>(
-        `/admin/tenants${queryString}`
+        `/admin/tenants${queryString}`,
+        { signal }
       );
 
       if (response.data) {
@@ -117,19 +121,26 @@ export const adminService = {
       }
 
       return filtrarMock(filtro);
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       return filtrarMock(filtro);
     }
   },
 
-  async estenderTrial(restauranteId: string, diasAdicionais: number): Promise<TenantAdminItem> {
+  async estenderTrial(
+    restauranteId: string,
+    diasAdicionais: number,
+    signal?: AbortSignal
+  ): Promise<TenantAdminItem> {
     try {
       const response = await apiClient.post<TenantAdminItem>(
         `/admin/tenants/${restauranteId}/estender-trial`,
-        { diasAdicionais }
+        { diasAdicionais },
+        { signal }
       );
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Falha ao estender dias de trial.'));
     }
   },
@@ -137,15 +148,18 @@ export const adminService = {
   async alterarStatus(
     restauranteId: string,
     novoStatus: string,
-    planoId?: string
+    planoId?: string,
+    signal?: AbortSignal
   ): Promise<TenantAdminItem> {
     try {
       const response = await apiClient.post<TenantAdminItem>(
         `/admin/tenants/${restauranteId}/alterar-status`,
-        { novoStatus, planoId }
+        { novoStatus, planoId },
+        { signal }
       );
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Falha ao alterar status de assinatura.'));
     }
   },

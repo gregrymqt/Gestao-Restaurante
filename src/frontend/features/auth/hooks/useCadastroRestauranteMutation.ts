@@ -10,7 +10,10 @@ export function useCadastroRestauranteMutation() {
   const setSession = useAuthStore((state) => state.setSession);
 
   return useMutation({
-    mutationFn: (input: CadastrarRestauranteInput) => authService.cadastrarRestaurante(input),
+    mutationFn: (input: CadastrarRestauranteInput & { signal?: AbortSignal }) => {
+      const { signal, ...dados } = input;
+      return authService.cadastrarRestaurante(dados, signal);
+    },
     onSuccess: (data) => {
       const operadorFormatado: OperadorRecente = {
         id: data.operador.id,

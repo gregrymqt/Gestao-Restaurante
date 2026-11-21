@@ -5,9 +5,9 @@ import { GrupoModificador } from '../types';
 export function useModificadoresProduto(produtoId: string | null | undefined) {
   return useQuery<GrupoModificador[]>({
     queryKey: ['produtos', produtoId, 'modificadores'],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (!produtoId) return Promise.resolve([]);
-      return vendasService.obterModificadoresProduto(produtoId);
+      return vendasService.obterModificadoresProduto(produtoId, signal);
     },
     enabled: Boolean(produtoId),
     staleTime: 5 * 60 * 1000, // 5 minutos de cache em memória

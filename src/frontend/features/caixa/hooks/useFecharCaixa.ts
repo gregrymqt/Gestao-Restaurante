@@ -1,17 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isCancel } from '@/services/api';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { caixaService } from '../services/caixaService';
 import { FecharCaixaResponseDto } from '../types';
 
 interface UseFecharCaixaOptions {
   onSuccessCallback?: (data: FecharCaixaResponseDto) => void;
+  signal?: AbortSignal;
 }
 
 export function useFecharCaixa(options?: UseFecharCaixaOptions) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => caixaService.fecharCaixa(),
+    mutationFn: (vars?: { signal?: AbortSignal }) =>
+      caixaService.fecharCaixa(vars?.signal || options?.signal),
     onSuccess: (data: FecharCaixaResponseDto) => {
       // 1. Invalida os caches do caixa e previsões
       queryClient.invalidateQueries({ queryKey: ['caixa'] });
@@ -29,6 +32,7 @@ export function useFecharCaixa(options?: UseFecharCaixaOptions) {
       );
     },
     onError: (error: Error) => {
+      if (isCancel(error)) return;
       AppDialog.error(
         'Erro ao Encerrar Caixa',
         error.message || 'Não foi possível encerrar a sessão do caixa. Tente novamente.'

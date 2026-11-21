@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { isCancel } from '@/services/api';
 import { Produto, CategoriaProduto } from '../types';
 import { vendasService } from '../services/vendasService';
 
@@ -84,14 +85,15 @@ export function useCatalogoProdutos(
 ) {
   const { data: produtos = PRODUTOS_CATALOGO_INICIAL, isLoading, isError, refetch } = useQuery({
     queryKey: ['produtos', 'catalogo'],
-    queryFn: async (): Promise<Produto[]> => {
+    queryFn: async ({ signal }): Promise<Produto[]> => {
       try {
-        const backendProdutos = await vendasService.obterProdutos();
+        const backendProdutos = await vendasService.obterProdutos(signal);
         if (backendProdutos && backendProdutos.length > 0) {
           return backendProdutos;
         }
         return PRODUTOS_CATALOGO_INICIAL;
       } catch (error) {
+        if (isCancel(error)) throw error;
         console.warn(
           'Falha ao sincronizar catálogo do backend. Utilizando catálogo local resiliente:',
           error

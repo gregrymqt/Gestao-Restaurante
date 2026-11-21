@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import {
   RelatorioCapacidadeProducao,
   FichaTecnicaIngrediente,
@@ -15,10 +15,14 @@ import {
 export { DADOS_PREVISAO_PADRAO };
 
 export const previsoesService = {
-  async obterCapacidadeProducao(dataAlvo?: string): Promise<RelatorioCapacidadeProducao> {
+  async obterCapacidadeProducao(
+    dataAlvo?: string,
+    signal?: AbortSignal
+  ): Promise<RelatorioCapacidadeProducao> {
     try {
       const response = await apiClient.get<RelatorioCapacidadeProducao>('/previsoes/capacidade', {
         params: dataAlvo ? { dataAlvo } : undefined,
+        signal,
       });
 
       if (
@@ -45,14 +49,16 @@ export const previsoesService = {
       }
 
       return gerarProjecaoFallbackParaData(dataAlvo);
-    } catch {
+    } catch (e: unknown) {
+      if (isCancel(e)) throw e;
       return gerarProjecaoFallbackParaData(dataAlvo);
     }
   },
 
   async obterFichaTecnica(
     produtoId: string,
-    nomeProduto?: string
+    nomeProduto?: string,
+    signal?: AbortSignal
   ): Promise<FichaTecnicaIngrediente[]> {
     try {
       const response = await apiClient.get<Array<{
@@ -61,7 +67,7 @@ export const previsoesService = {
         ingredientes: Array<{ insumoId: string; nome: string; quantidade: string }>;
         custoInsumos: number;
         capacidadeTurnoPorcoes: number;
-      }>>('/estoque/fichas-tecnicas');
+      }>>('/estoque/fichas-tecnicas', { signal });
 
       if (Array.isArray(response.data)) {
         const fichaEncontrada = response.data.find(
@@ -89,17 +95,21 @@ export const previsoesService = {
           });
         }
       }
-    } catch {
+    } catch (e: unknown) {
+      if (isCancel(e)) throw e;
       // Fallback gracioso para dados locais caso backend offline
     }
 
     return [];
   },
 
-  async enviarOrdemCompra(pedido: {
-    insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
-    valorTotal: number;
-  }): Promise<{ sucesso: boolean; protocolo: string }> {
+  async enviarOrdemCompra(
+    pedido: {
+      insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
+      valorTotal: number;
+    },
+    signal?: AbortSignal
+  ): Promise<{ sucesso: boolean; protocolo: string }> {
     try {
       const response = await apiClient.post<{
         id: string;
@@ -108,21 +118,26 @@ export const previsoesService = {
         valorTotal: number;
         criadoEm: string;
         sucesso?: boolean;
-      }>('/previsoes/ordens-compra', {
-        insumos: pedido.insumos.map((i) => ({
-          insumoId: i.insumoId,
-          nomeInsumo: i.nomeInsumo,
-          quantidade: i.quantidade,
-          unidadeMedida: i.unidadeMedida,
-        })),
-        valorTotal: pedido.valorTotal,
-      });
+      }>(
+        '/previsoes/ordens-compra',
+        {
+          insumos: pedido.insumos.map((i) => ({
+            insumoId: i.insumoId,
+            nomeInsumo: i.nomeInsumo,
+            quantidade: i.quantidade,
+            unidadeMedida: i.unidadeMedida,
+          })),
+          valorTotal: pedido.valorTotal,
+        },
+        { signal }
+      );
 
       return {
         sucesso: response.data.sucesso ?? true,
         protocolo: response.data.protocolo,
       };
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível emitir a ordem de compra.'));
     }
   },

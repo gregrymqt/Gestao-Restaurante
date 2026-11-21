@@ -3,7 +3,8 @@ import assert from 'node:assert';
 
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:5000/api/v1';
 
-import { apiClient, extractErrorMessage } from '../shared/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '../shared/services/api';
+import { useConnectionStore } from '../shared/hooks/useConnectionStore';
 import { adminService } from '../features/admin/services/adminService';
 import { assinaturaService } from '../features/assinatura/services/assinaturaService';
 import { caixaService } from '../features/caixa/services/caixaService';
@@ -38,6 +39,13 @@ test('Tratamento de Erros e extractErrorMessage no Frontend', async (t) => {
     assert.strictEqual(extractErrorMessage(undefined, 'Fallback'), 'Fallback');
     assert.strictEqual(extractErrorMessage({}, 'Fallback'), 'Fallback');
     assert.strictEqual(extractErrorMessage({ response: {} }, 'Fallback'), 'Fallback');
+
+    // 6. Requisições canceladas intencionalmente não devem gerar mensagem de erro na UI
+    const errCanceled = { code: 'ERR_CANCELED', message: 'canceled' };
+    assert.strictEqual(extractErrorMessage(errCanceled, 'Fallback'), '');
+    const nativeCancel = new Error('canceled');
+    (nativeCancel as any).name = 'CanceledError';
+    assert.strictEqual(extractErrorMessage(nativeCancel, 'Fallback'), '');
   });
 
   await t.test('Todas as Feature Services devem expor métodos de mutação tipados', () => {
@@ -156,5 +164,94 @@ test('Tratamento de Erros e extractErrorMessage no Frontend', async (t) => {
       apiClient.post = originalPost;
       apiClient.patch = originalPatch;
     }
+  });
+
+  await t.test('Interceptor de rede deve ignorar cancelamentos sem marcar a API como offline', async () => {
+    // Garante que o estado inicial está online
+    useConnectionStore.getState().setApiOnline(true);
+    assert.strictEqual(useConnectionStore.getState().isApiOnline, true);
+
+    const controller = new AbortController();
+    controller.abort();
+
+    try {
+      await apiClient.get('/test-abort', { signal: controller.signal });
+      assert.fail('Deveria ter rejeitado por cancelamento');
+    } catch (err: unknown) {
+      assert.strictEqual(isCancel(err), true);
+      // Confirma que a API continua marcada como ONLINE
+      assert.strictEqual(useConnectionStore.getState().isApiOnline, true);
+    }
+  });
+
+  await t.test('Feature Services devem relançar CanceledError sem acionar fallbacks de mock', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    // 1. Admin Service
+    await assert.rejects(
+      () => adminService.listarTenants(undefined, controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    // 2. Assinatura Service
+    await assert.rejects(
+      () => assinaturaService.obterStatus(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    // 3. Estoque Service
+    await assert.rejects(
+      () => estoqueService.obterInsumos(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    // 4. Dashboard Service
+    await assert.rejects(
+      () => dashboardService.obterResumoExecutivo(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    // 5. Previsões Service
+    await assert.rejects(
+      () => previsoesService.obterCapacidadeProducao(undefined, controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    // 6. Vendas Service
+    await assert.rejects(
+      () => vendasService.obterProdutos(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+  });
+
+  await t.test('Mutações nos Feature Services devem suportar AbortSignal e rejeitar por cancelamento', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await assert.rejects(
+      () => vendasService.registrarVenda({} as any, controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    await assert.rejects(
+      () => caixaService.abrirCaixa(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    await assert.rejects(
+      () => caixaService.fecharCaixa(controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    await assert.rejects(
+      () => estoqueService.cadastrarInsumo({} as any, controller.signal),
+      (err: unknown) => isCancel(err)
+    );
+
+    await assert.rejects(
+      () => perfilService.registrarMovimentacao({ tipo: 'SUPRIMENTO', valor: 50 }, 100, controller.signal),
+      (err: unknown) => isCancel(err)
+    );
   });
 });
