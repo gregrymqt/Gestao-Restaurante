@@ -75,7 +75,7 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
       }
 
       const isCaixaFechado =
-        error?.response?.status === 422 ||
+        (error as { response?: { status?: number } })?.response?.status === 422 ||
         (typeof serverMessage === 'string' &&
           (serverMessage.toLowerCase().includes('caixa aberta') ||
             serverMessage.toLowerCase().includes('sessão de caixa')));
