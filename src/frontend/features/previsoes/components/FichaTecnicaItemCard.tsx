@@ -1,8 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { AlertTriangle, AlertCircle, Check } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
-import { formatarQuantidade, formatarPorcaoGastronomica } from '@/shared/utils/formatters';
+import {
+  formatarQuantidade,
+  formatarPorcaoGastronomica,
+  formatarMoeda,
+} from '@/shared/utils/formatters';
 import { FichaTecnicaIngrediente } from '../types';
 
 interface FichaTecnicaItemCardProps {
@@ -10,6 +15,10 @@ interface FichaTecnicaItemCardProps {
 }
 
 export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
+  const custoProporcional =
+    ing.custoUnitarioPorcao ??
+    (ing.custoUnitario ? ing.quantidadePorPorcao * ing.custoUnitario : 0);
+
   return (
     <View
       style={[
@@ -28,15 +37,21 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
             ing.isGargalo ? styles.badgeGargalo : styles.badgeOk,
           ]}
         >
-          <ThemedText
-            variant="caption"
-            style={[
-              styles.badgeText,
-              ing.isGargalo ? styles.badgeTextGargalo : styles.badgeTextOk,
-            ]}
-          >
-            {ing.isGargalo ? '🔴 GARGALO LIMITANTE' : '✓ OK'}
-          </ThemedText>
+          {ing.isGargalo ? (
+            <View style={styles.badgeInner}>
+              <AlertTriangle size={11} color={tokens.colors.status.redText} />
+              <ThemedText variant="caption" style={[styles.badgeText, styles.badgeTextGargalo]}>
+                GARGALO LIMITANTE
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={styles.badgeInner}>
+              <Check size={11} color={tokens.colors.status.greenText} />
+              <ThemedText variant="caption" style={[styles.badgeText, styles.badgeTextOk]}>
+                OK
+              </ThemedText>
+            </View>
+          )}
         </View>
       </View>
 
@@ -73,12 +88,22 @@ export function FichaTecnicaItemCard({ ing }: FichaTecnicaItemCardProps) {
             {formatarQuantidade(ing.capacidadeMaxItem, 'un')}
           </ThemedText>
         </View>
+
+        <View style={styles.specItem}>
+          <ThemedText variant="caption" color={tokens.colors.textMuted}>
+            Custo / Porção
+          </ThemedText>
+          <ThemedText variant="body" style={styles.specValor}>
+            {formatarMoeda(custoProporcional)}
+          </ThemedText>
+        </View>
       </View>
 
       {ing.isGargalo && (
         <View style={styles.calloutGargalo}>
+          <AlertCircle size={14} color={tokens.colors.status.redText} />
           <ThemedText variant="caption" style={styles.calloutGargaloText}>
-            ⚠️ Este insumo limita a produção a {ing.capacidadeMaxItem} un. Faltam ~{formatarQuantidade(Math.max(0, ing.estoqueNecessario - ing.estoqueAtual), ing.unidadeMedida)} para cobrir a demanda prevista.
+            Este insumo limita a produção a {ing.capacidadeMaxItem} un. Faltam ~{formatarQuantidade(Math.max(0, ing.estoqueNecessario - ing.estoqueAtual), ing.unidadeMedida)} para cobrir a demanda prevista.
           </ThemedText>
         </View>
       )}
@@ -115,6 +140,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.xs + 2,
     paddingVertical: 2,
     borderRadius: tokens.radii.sm,
+  },
+  badgeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   badgeGargalo: {
     backgroundColor: tokens.colors.status.redBg,
@@ -159,10 +189,15 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.status.redBg,
     padding: tokens.spacing.xs,
     borderRadius: tokens.radii.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
   },
   calloutGargaloText: {
+    flex: 1,
     color: tokens.colors.status.redText,
     fontWeight: '600',
     fontSize: 11,
+    lineHeight: 16,
   },
 });

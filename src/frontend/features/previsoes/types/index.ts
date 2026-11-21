@@ -31,6 +31,8 @@ export interface FichaTecnicaIngrediente {
   estoqueNecessario: number;
   capacidadeMaxItem: number;
   isGargalo: boolean;
+  custoUnitario?: number;
+  custoUnitarioPorcao?: number;
 }
 
 export interface RelatorioCapacidadeProducao {

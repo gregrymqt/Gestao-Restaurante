@@ -8,12 +8,14 @@ interface PrevisoesHeaderProps {
   datasFiltro: DataOpcaoFiltro[];
   dataSelecionada: string;
   onSelectData: (dataAlvo: string) => void;
+  isOffline?: boolean;
 }
 
 export function PrevisoesHeader({
   datasFiltro,
   dataSelecionada,
   onSelectData,
+  isOffline = false,
 }: PrevisoesHeaderProps) {
   return (
     <View style={styles.container}>
@@ -24,10 +26,13 @@ export function PrevisoesHeader({
       </View>
 
       <View style={styles.badgesRow}>
-        <View style={styles.syncBadge}>
-          <View style={styles.greenDot} />
-          <ThemedText variant="caption" style={styles.syncBadgeText}>
-            IA SINCRONIZADA
+        <View style={[styles.syncBadge, isOffline && styles.syncBadgeOffline]}>
+          <View style={[styles.greenDot, isOffline && styles.amberDot]} />
+          <ThemedText
+            variant="caption"
+            style={[styles.syncBadgeText, isOffline && styles.syncBadgeTextOffline]}
+          >
+            {isOffline ? 'Cache Local (Offline)' : 'IA SINCRONIZADA'}
           </ThemedText>
         </View>
 
@@ -105,17 +110,26 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.full,
     gap: 6,
   },
+  syncBadgeOffline: {
+    backgroundColor: '#FEF3C7',
+  },
   greenDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
     backgroundColor: tokens.colors.status.greenText,
   },
+  amberDot: {
+    backgroundColor: '#D97706',
+  },
   syncBadgeText: {
     color: tokens.colors.status.greenText,
     fontWeight: '700',
     fontSize: tokens.typography.fontXs,
     letterSpacing: 0.4,
+  },
+  syncBadgeTextOffline: {
+    color: '#92400E',
   },
   modelBadge: {
     backgroundColor: '#F1F3F4',
@@ -135,17 +149,17 @@ const styles = StyleSheet.create({
   },
   pillsScroll: {
     flexDirection: 'row',
-    gap: tokens.spacing.xs,
-    paddingRight: tokens.spacing.xl,
+    gap: 6,
+    paddingRight: tokens.spacing.md,
   },
   pillButton: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: tokens.radii.full,
     backgroundColor: tokens.colors.card,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    minHeight: 40,
+    minHeight: 34,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -155,7 +169,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontWeight: '600',
-    fontSize: tokens.typography.fontSm,
+    fontSize: tokens.typography.fontXs,
     color: tokens.colors.textPrimary,
   },
   pillTextActive: {
@@ -163,6 +177,7 @@ const styles = StyleSheet.create({
   },
   pillSubtext: {
     color: tokens.colors.textMuted,
+    fontSize: 10,
   },
   pillSubtextActive: {
     color: '#FCE8E6',

@@ -7,11 +7,14 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '@/components/primitives/tokens';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { AppDialog } from '@/shared/components/AppDialog';
 import { gerarMensagemOrdemCompraWhatsApp } from '@/shared/utils/formatters';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
+import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { useCapacidadeProducao } from '../hooks/useCapacidadeProducao';
 import { PrevisoesHeader } from '../components/PrevisoesHeader';
 import { GargaloCriticoCard } from '../components/GargaloCriticoCard';
@@ -22,7 +25,12 @@ import { OrdemCompraModal } from '../components/OrdemCompraModal';
 import { FichaTecnicaModal } from '../components/FichaTecnicaModal';
 
 export function PrevisoesScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isApiOnline = useConnectionStore((s) => s.isApiOnline);
+  const sseStatus = useSseStatus((s) => s.status);
+  const isOffline = !isApiOnline || sseStatus === 'DISCONNECTED' || sseStatus === 'RECONNECTING';
+
   const {
     relatorio,
     isLoading,
@@ -44,6 +52,13 @@ export function PrevisoesScreen() {
     gargaloPrincipal,
     perdaTotalEstimada,
   } = useCapacidadeProducao();
+
+  const dataSelecionadaObj = datasFiltro.find((d) => d.dataAlvo === dataAlvo);
+  const dataReferenciaTexto = dataSelecionadaObj?.sublabel || '(D+1)';
+
+  const handleCadastrarFichaTecnica = () => {
+    router.push({ pathname: '/(tabs)/estoque', params: { aba: 'fichas' } });
+  };
 
   const handleConfirmarOrdemCompra = async (pedido: {
     insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
@@ -95,6 +110,7 @@ export function PrevisoesScreen() {
           datasFiltro={datasFiltro}
           dataSelecionada={dataAlvo}
           onSelectData={setDataAlvo}
+          isOffline={isOffline}
         />
 
         {isLoading && !relatorio ? (
@@ -109,17 +125,22 @@ export function PrevisoesScreen() {
             <GargaloCriticoCard
               gargalo={gargaloPrincipal}
               perdaTotal={perdaTotalEstimada}
+              sugestoesReposicao={relatorio?.sugestoesReposicao || []}
               onSugerirPedido={abrirOrdemCompra}
+              onCadastrarFichaTecnica={handleCadastrarFichaTecnica}
+              isOffline={isOffline}
             />
 
             <ProjecaoProdutoCard
               itens={relatorio?.itensCapacidade || []}
+              dataReferenciaTexto={dataReferenciaTexto}
               onSelectProduto={abrirFichaTecnica}
             />
 
             <SugestaoReposicaoCard
               sugestoes={relatorio?.sugestoesReposicao || []}
               onGerarOrdemCompra={abrirOrdemCompra}
+              isOffline={isOffline}
             />
 
             <ContextoMeteorologicoBox
@@ -147,6 +168,7 @@ export function PrevisoesScreen() {
         ingredientes={fichaIngredientes}
         onClose={fecharFichaTecnica}
         onReporInsumo={abrirOrdemCompra}
+        onCadastrarFichaTecnica={handleCadastrarFichaTecnica}
       />
     </View>
   );

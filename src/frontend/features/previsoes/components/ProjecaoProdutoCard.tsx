@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Check, ChevronRight } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { formatarMoeda } from '@/shared/utils/formatters';
+import { calcularPerdaEstimada } from '../utils/previsoesHelpers';
 import { ItemCapacidadeProducao } from '../types';
 
 interface ProjecaoProdutoCardProps {
@@ -39,70 +41,106 @@ export function ProjecaoProdutoCard({
         </View>
       </View>
 
-      <View style={styles.list}>
-        {itens.map((item) => {
-          const total = Math.max(item.demandaPrevista, 1);
-          const atendivel = Math.min(item.demandaAtendivel, total);
-          const ruptura = Math.max(total - atendivel, 0);
+      {itens.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <ThemedText variant="body" color={tokens.colors.textMuted} style={styles.emptyText}>
+            Nenhuma projeção disponível para esta data.
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.list}>
+          {itens.map((item) => {
+            const isZeroDemanda = item.demandaPrevista === 0;
+            const isTotalRuptura =
+              item.demandaPrevista > 0 && item.demandaAtendivel === 0;
 
-          return (
-            <View key={item.produtoId} style={styles.itemCard}>
-              <View style={styles.itemHeader}>
-                <View style={styles.itemInfo}>
-                  <ThemedText variant="body" style={styles.nomeProduto}>
-                    {item.nomeProduto}
-                  </ThemedText>
-                  <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                    {Math.round(item.demandaAtendivel)} atendíveis de {Math.round(item.demandaPrevista)} demandados
-                  </ThemedText>
-                </View>
+            const atendivelPercent = isZeroDemanda
+              ? 100
+              : Math.min(100, Math.max(0, (item.demandaAtendivel / item.demandaPrevista) * 100));
 
-                {item.riscoRutura ? (
-                  <ThemedText variant="caption" style={styles.perdaTexto}>
-                    Perda -{formatarMoeda(item.perdaEstimadaReceita || 0)}
-                  </ThemedText>
-                ) : (
-                  <View style={styles.plenaBadge}>
-                    <ThemedText variant="caption" style={styles.plenaText}>
-                      ✓ Plena
+            const rupturaPercent = isZeroDemanda ? 0 : Math.max(0, 100 - atendivelPercent);
+
+            const perdaReal = calcularPerdaEstimada(item);
+            const isRiscoRuturaReal = item.riscoRutura && (item.deficitUnidades > 0 || rupturaPercent > 0);
+
+            return (
+              <TouchableOpacity
+                key={item.produtoId}
+                activeOpacity={0.85}
+                onPress={() => onSelectProduto(item)}
+                style={styles.itemCard}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver detalhes da ficha técnica de ${item.nomeProduto}`}
+              >
+                <View style={styles.itemHeader}>
+                  <View style={styles.itemInfo}>
+                    <ThemedText variant="body" style={styles.nomeProduto}>
+                      {item.nomeProduto}
+                    </ThemedText>
+                    <ThemedText variant="caption" color={tokens.colors.textMuted}>
+                      {isZeroDemanda
+                        ? `0 demandados • Capacidade para ${Math.round(item.capacidadeMaximaProducao)} un`
+                        : `${Math.round(item.demandaAtendivel)} atendíveis de ${Math.round(item.demandaPrevista)} demandados`}
                     </ThemedText>
                   </View>
-                )}
-              </View>
 
-              {/* Barra de Progresso Bicolor Proporcional Flexbox */}
-              <View style={styles.barContainer}>
-                <View
-                  style={[
-                    styles.barAtendivel,
-                    { flex: atendivel },
-                    ruptura === 0 && styles.barRoundedFull,
-                  ]}
-                />
-                {ruptura > 0 && (
-                  <View
-                    style={[
-                      styles.barRuptura,
-                      { flex: ruptura },
-                      atendivel === 0 && styles.barRoundedFull,
-                    ]}
-                  />
-                )}
-              </View>
+                  {isRiscoRuturaReal ? (
+                    <ThemedText variant="caption" style={styles.perdaTexto}>
+                      Perda -{formatarMoeda(perdaReal)}
+                    </ThemedText>
+                  ) : (
+                    <View style={styles.plenaBadge}>
+                      <Check size={11} color={tokens.colors.status.greenText} />
+                      <ThemedText variant="caption" style={styles.plenaText}>
+                        Plena
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => onSelectProduto(item)}
-                style={styles.detalhesButton}
-              >
-                <ThemedText variant="caption" style={styles.detalhesButtonText}>
-                  Ver detalhes &gt;
-                </ThemedText>
+                {/* Barra de Progresso Bicolor Proporcional */}
+                <View style={styles.barContainer}>
+                  {isZeroDemanda ? (
+                    <View style={[styles.barAtendivel, styles.barFullWidth]} />
+                  ) : isTotalRuptura ? (
+                    <View style={[styles.barRuptura, styles.barFullWidth]} />
+                  ) : (
+                    <>
+                      {atendivelPercent > 0 && (
+                        <View
+                          style={[
+                            styles.barAtendivel,
+                            { width: `${atendivelPercent}%` },
+                            rupturaPercent === 0 && styles.barRoundedFull,
+                          ]}
+                        />
+                      )}
+                      {rupturaPercent > 0 && (
+                        <View
+                          style={[
+                            styles.barRuptura,
+                            { width: `${rupturaPercent}%` },
+                            atendivelPercent === 0 && styles.barRoundedFull,
+                          ]}
+                        />
+                      )}
+                    </>
+                  )}
+                </View>
+
+                <View style={styles.detalhesRow}>
+                  <View style={styles.detalhesButton}>
+                    <ThemedText variant="caption" style={styles.detalhesButtonText}>
+                      Ver detalhes
+                    </ThemedText>
+                    <ChevronRight size={13} color={tokens.colors.primary} />
+                  </View>
+                </View>
               </TouchableOpacity>
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -150,6 +188,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: tokens.colors.textMuted,
   },
+  emptyContainer: {
+    paddingVertical: tokens.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontStyle: 'italic',
+  },
   list: {
     gap: tokens.spacing.md,
   },
@@ -184,6 +230,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.xs + 2,
     paddingVertical: 2,
     borderRadius: tokens.radii.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   plenaText: {
     color: tokens.colors.status.greenText,
@@ -200,16 +249,33 @@ const styles = StyleSheet.create({
   },
   barAtendivel: {
     backgroundColor: tokens.colors.status.greenText,
+    height: '100%',
   },
   barRuptura: {
     backgroundColor: tokens.colors.status.redText,
+    height: '100%',
+  },
+  barFullWidth: {
+    width: '100%',
+    height: '100%',
+    borderRadius: tokens.radii.full,
   },
   barRoundedFull: {
     borderRadius: tokens.radii.full,
   },
+  detalhesRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   detalhesButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: 4,
+    minHeight: 44,
+    minWidth: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 2,
     paddingHorizontal: tokens.spacing.xs,
   },
   detalhesButtonText: {
