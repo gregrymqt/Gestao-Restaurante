@@ -251,7 +251,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build WebApi Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: src/RestauranteInteligente.Api/Dockerfile
@@ -259,7 +259,7 @@ jobs:
           tags: restaurante-webapi:ci-test
 
       - name: Build ML Worker Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./ml/RestauranteInteligente.ML
           file: ./ml/RestauranteInteligente.ML/Dockerfile
@@ -267,7 +267,7 @@ jobs:
           tags: restaurante-ml-worker:ci-test
 
       - name: Build Frontend Nginx Gateway Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: infra/nginx/Dockerfile
@@ -328,7 +328,7 @@ jobs:
             type=raw,value=${{ github.sha }}
 
       - name: Build & Push WebApi Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: src/RestauranteInteligente.Api/Dockerfile
@@ -347,7 +347,7 @@ jobs:
             type=raw,value=${{ github.sha }}
 
       - name: Build & Push ML Worker Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./ml/RestauranteInteligente.ML
           file: ./ml/RestauranteInteligente.ML/Dockerfile
