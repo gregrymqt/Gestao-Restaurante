@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/shared/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/shared/services/api';
 import { AssinaturaStatus } from '../types';
 
 export const ASSINATURA_PADRAO: AssinaturaStatus = {
@@ -27,23 +27,33 @@ export const ASSINATURA_PADRAO: AssinaturaStatus = {
 };
 
 export const assinaturaService = {
-  async obterStatus(): Promise<AssinaturaStatus> {
+  async obterStatus(signal?: AbortSignal): Promise<AssinaturaStatus> {
     try {
-      const response = await apiClient.get<AssinaturaStatus>('/assinatura/status');
+      const response = await apiClient.get<AssinaturaStatus>('/assinatura/status', { signal });
       return response.data;
-    } catch {
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       return ASSINATURA_PADRAO;
     }
   },
 
-  async assinarPlano(planoId: string, mesesVigencia = 1): Promise<AssinaturaStatus> {
+  async assinarPlano(
+    planoId: string,
+    mesesVigencia = 1,
+    signal?: AbortSignal
+  ): Promise<AssinaturaStatus> {
     try {
-      const response = await apiClient.post<AssinaturaStatus>('/assinatura/assinar', {
-        planoId,
-        mesesVigencia,
-      });
+      const response = await apiClient.post<AssinaturaStatus>(
+        '/assinatura/assinar',
+        {
+          planoId,
+          mesesVigencia,
+        },
+        { signal }
+      );
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível contratar o plano. Tente novamente.'));
     }
   },

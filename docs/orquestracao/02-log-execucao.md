@@ -117,3 +117,40 @@
 - Migrada lista para `<FlashList>` virtualizado, com chips interativos de filtro por status e `EmptyStateTenants` na `AdminBackofficeScreen`.
 - Integrado feedback visual não-intrusivo via Toasts globais (`RealtimeEventToast`) nas operações administrativas.
 - Validação completa com 247 testes unitários .NET aprovados, testes frontend `adminBackofficeFlow.test.ts` 100% OK, `tsc --noEmit` limpo e grafo sincronizado via `graft build` (2555 nós).
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 1: Camada de Rede Base & Interceptor
+- Atualizado `apiClient.interceptors.response` para ignorar cancelamentos (`isCancel`, `ERR_CANCELED`, `CanceledError`, `AbortError`) sem marcar API offline.
+- Atualizado `extractErrorMessage` e reexportado `isCancel` em `shared/services/api.ts` e `services/api.ts` para supressão limpa de mensagens de UI.
+- Adicionados testes automatizados cobrindo cancelamento com `AbortController` e integridade do estado da conexão em `servicesErrorHandling.test.ts` (100% aprovados).
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 2: Propagação nos 11 Feature Services
+- Propagado `signal?: AbortSignal` em todos os métodos dos 11 services de feature do frontend.
+- Integrada guarda `if (isCancel(err)) throw err;` nos blocos de contingência mock para preservar cache e estado do React Query.
+- Refatorado `authService.ts` garantindo 296 linhas (< teto de 300).
+- Suíte de testes unitários frontend expandida com 6 novos cenários de cancelamento (100% de sucesso) e grafo estrutural sincronizado via `graft build` (2554 nós, 2430 arestas).
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 3: Injeção nos Hooks de Consulta (useQuery)
+- Injetado `{ signal }` nativo do TanStack Query v5 na `queryFn` de todos os 9 hooks de leitura do frontend.
+- Conectado cancelamento em voo nas mudanças de filtros (debounce de busca, abas, datas e chaves dinâmicas).
+- Todos os hooks mantidos com menos de 190 linhas (abaixo do teto de 300) e 100% de testes unitários aprovados.
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 4: Hooks de Efeito Direto (useEffect com AbortController)
+- Integrado `AbortController` com cancelamento no cleanup (`return () => controller.abort()`) em `usePerfil.ts` e `useHistoricoVendas.ts`.
+- Adicionado controle de refetch seguro com descarte da requisição anterior em `useHistoricoVendas.ts`.
+- Substituído `err: any` por `err: unknown` com supressão silenciosa em caso de aborto voluntário.
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 5: Hooks de Mutação (useMutation)
+- Habilitado repasse opcional de `signal?: AbortSignal` em todas as mutações (`useRegistrarVenda`, `useFecharCaixa`, `useMovimentacaoCaixa`, `useCadastrarInsumo`, `useRegistrarBaixaEstoque`, `useRegistrarEntradaEstoque`, `useCriarProduto`, `useCadastroRestauranteMutation`, `useLoginMutation`).
+- Eliminado uso de `error: any` no `useRegistrarVenda` com validação de cancelamento silencioso via `isCancel(error)`.
+- Todos os hooks de mutação com menos de 100 linhas e 100% dos testes unitários passando.
+
+
+## [2026-11-21] AbortSignal Cooperativo - Lote 6: Validação Final, Testes Automatizados e Grafo
+- Suíte `servicesErrorHandling.test.ts` ampliada com cenários de cancelamento em queries e mutações (7/7 testes aprovados).
+- Validação cruzada com todos os 247 testes unitários .NET do backend aprovados (0 falhas).
+- Grafo estrutural reconstruído e consistente via `graft build` (2554 nós, 2438 arestas).

@@ -5,8 +5,8 @@ import { CadastrarInsumoInput, InsumoEstoque } from '../types';
 export function useCadastrarInsumo() {
   const queryClient = useQueryClient();
 
-  return useMutation<InsumoEstoque, Error, CadastrarInsumoInput>({
-    mutationFn: (dados) => estoqueService.cadastrarInsumo(dados),
+  return useMutation<InsumoEstoque, Error, CadastrarInsumoInput & { signal?: AbortSignal }>({
+    mutationFn: ({ signal, ...dados }) => estoqueService.cadastrarInsumo(dados, signal),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insumos-estoque'] });
       queryClient.invalidateQueries({ queryKey: ['fichas-tecnicas'] });

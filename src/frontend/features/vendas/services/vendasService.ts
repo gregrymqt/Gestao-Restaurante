@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import {
   CategoriaProduto,
   Produto,
@@ -35,8 +35,8 @@ function categorizarProduto(nome: string, descricao?: string): CategoriaProduto 
 }
 
 export const vendasService = {
-  async obterProdutos(): Promise<Produto[]> {
-    const response = await apiClient.get<ProdutoApiResponse[]>('/produtos');
+  async obterProdutos(signal?: AbortSignal): Promise<Produto[]> {
+    const response = await apiClient.get<ProdutoApiResponse[]>('/produtos', { signal });
     return response.data.map((p) => ({
       id: p.id,
       nome: p.nome,
@@ -47,35 +47,50 @@ export const vendasService = {
     }));
   },
 
-  async registrarVenda(dto: RegistrarVendaRequestDto): Promise<VendaResponseDto> {
+  async registrarVenda(
+    dto: RegistrarVendaRequestDto,
+    signal?: AbortSignal
+  ): Promise<VendaResponseDto> {
     try {
-      const response = await apiClient.post<VendaResponseDto>('/vendas', dto);
+      const response = await apiClient.post<VendaResponseDto>('/vendas', dto, { signal });
       return response.data;
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível registrar a venda.'));
     }
   },
 
-  async obterHistorico(dataInicio?: string): Promise<VendaHistorico[]> {
+  async obterHistorico(dataInicio?: string, signal?: AbortSignal): Promise<VendaHistorico[]> {
     const response = await apiClient.get<VendaHistorico[]>('/vendas', {
       params: dataInicio ? { dataInicio } : undefined,
+      signal,
     });
     return response.data;
   },
 
-  async obterModificadoresProduto(produtoId: string): Promise<GrupoModificador[]> {
-    const response = await apiClient.get<GrupoModificador[]>(`/produtos/${produtoId}/modificadores`);
+  async obterModificadoresProduto(
+    produtoId: string,
+    signal?: AbortSignal
+  ): Promise<GrupoModificador[]> {
+    const response = await apiClient.get<GrupoModificador[]>(
+      `/produtos/${produtoId}/modificadores`,
+      { signal }
+    );
     return response.data;
   },
 
-  async criarProduto(dto: CriarProdutoInput): Promise<Produto> {
+  async criarProduto(dto: CriarProdutoInput, signal?: AbortSignal): Promise<Produto> {
     try {
-      const response = await apiClient.post<ProdutoApiResponse>('/produtos', {
-        nome: dto.nome,
-        descricao: dto.descricao,
-        preco: dto.preco,
-        fichaTecnica: dto.fichaTecnica,
-      });
+      const response = await apiClient.post<ProdutoApiResponse>(
+        '/produtos',
+        {
+          nome: dto.nome,
+          descricao: dto.descricao,
+          preco: dto.preco,
+          fichaTecnica: dto.fichaTecnica,
+        },
+        { signal }
+      );
       return {
         id: response.data.id,
         nome: response.data.nome,
@@ -85,6 +100,7 @@ export const vendasService = {
         ativo: response.data.ativo,
       };
     } catch (err: unknown) {
+      if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível cadastrar o produto.'));
     }
   },

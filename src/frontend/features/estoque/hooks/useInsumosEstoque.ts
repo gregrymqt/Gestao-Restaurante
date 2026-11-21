@@ -44,7 +44,7 @@ export function useInsumosEstoque() {
     refetch: refetchInsumos,
   } = useQuery({
     queryKey: ['insumos-estoque'],
-    queryFn: () => estoqueService.obterInsumos(),
+    queryFn: ({ signal }) => estoqueService.obterInsumos(signal),
     initialData: INSUMOS_MOCK_INICIAL,
     staleTime: 1000 * 60 * 2,
   });
@@ -56,7 +56,7 @@ export function useInsumosEstoque() {
     refetch: refetchFichas,
   } = useQuery({
     queryKey: ['fichas-tecnicas'],
-    queryFn: () => estoqueService.obterFichasTecnicas(),
+    queryFn: ({ signal }) => estoqueService.obterFichasTecnicas(signal),
     initialData: FICHAS_TECNICAS_MOCK_INICIAL,
     staleTime: 1000 * 60 * 5,
   });

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'expo-router';
+import { isCancel } from '@/services/api';
 import { useAuthStore, RestauranteTenant, TENANTS_PADRAO, authService } from '@/features/auth';
 import { useSseStatus } from '@/shared/hooks/useSseStatus';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
@@ -41,8 +42,28 @@ export function usePerfil() {
       : TENANTS_PADRAO;
 
   useEffect(() => {
-    perfilService.obterMetricasTurno().then(setMetricas);
-    perfilService.obterStatusTerminal(isSseConnected).then(setTerminalStatus);
+    const controller = new AbortController();
+    perfilService
+      .obterMetricasTurno(controller.signal)
+      .then(setMetricas)
+      .catch((err: unknown) => {
+        if (!isCancel(err)) {
+          console.warn('Erro ao carregar metricas de turno:', err);
+        }
+      });
+
+    perfilService
+      .obterStatusTerminal(isSseConnected, controller.signal)
+      .then(setTerminalStatus)
+      .catch((err: unknown) => {
+        if (!isCancel(err)) {
+          console.warn('Erro ao carregar status do terminal:', err);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [isSseConnected]);
 
   // Ações de Suprimento & Sangria em 2 toques

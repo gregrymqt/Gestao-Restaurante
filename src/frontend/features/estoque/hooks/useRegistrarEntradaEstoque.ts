@@ -5,8 +5,8 @@ import { EntradaEstoqueInput, EntradaEstoqueResponse } from '../types';
 export function useRegistrarEntradaEstoque() {
   const queryClient = useQueryClient();
 
-  return useMutation<EntradaEstoqueResponse, Error, EntradaEstoqueInput>({
-    mutationFn: (entrada) => estoqueService.registrarEntradaEstoque(entrada),
+  return useMutation<EntradaEstoqueResponse, Error, EntradaEstoqueInput & { signal?: AbortSignal }>({
+    mutationFn: ({ signal, ...entrada }) => estoqueService.registrarEntradaEstoque(entrada, signal),
     onSuccess: () => {
       // Invalida e atualiza imediatamente a visão materializada do estoque e as projeções
       queryClient.invalidateQueries({ queryKey: ['insumos-estoque'] });

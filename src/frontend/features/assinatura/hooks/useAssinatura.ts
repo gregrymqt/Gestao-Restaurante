@@ -12,7 +12,7 @@ export function useAssinatura() {
     refetch,
   } = useQuery<AssinaturaStatus>({
     queryKey: ['assinatura', 'status'],
-    queryFn: () => assinaturaService.obterStatus(),
+    queryFn: ({ signal }) => assinaturaService.obterStatus(signal),
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 

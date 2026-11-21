@@ -5,8 +5,8 @@ import { BaixaEstoqueInput } from '../types';
 export function useRegistrarBaixaEstoque() {
   const queryClient = useQueryClient();
 
-  return useMutation<{ status: string }, Error, BaixaEstoqueInput>({
-    mutationFn: (dados) => estoqueService.registrarBaixaEstoque(dados),
+  return useMutation<{ status: string }, Error, BaixaEstoqueInput & { signal?: AbortSignal }>({
+    mutationFn: ({ signal, ...dados }) => estoqueService.registrarBaixaEstoque(dados, signal),
     onSuccess: () => {
       // Invalida e atualiza imediatamente a visão materializada do estoque e as projeções
       queryClient.invalidateQueries({ queryKey: ['insumos-estoque'] });

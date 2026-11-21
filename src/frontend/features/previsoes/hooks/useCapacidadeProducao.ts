@@ -49,7 +49,7 @@ export function useCapacidadeProducao() {
     refetch,
   } = useQuery({
     queryKey: ['capacidade-producao', dataAlvo],
-    queryFn: () => previsoesService.obterCapacidadeProducao(dataAlvo),
+    queryFn: ({ signal }) => previsoesService.obterCapacidadeProducao(dataAlvo, signal),
     staleTime: 5000, // 5 segundos para refletir novas previsões
   });
 

@@ -9,8 +9,11 @@ export function useLoginMutation() {
   const setSession = useAuthStore((state) => state.setSession);
   const currentTenant = useAuthStore((state) => state.tenant);
 
-  return useMutation<LoginResponse, Error, LoginInput>({
-    mutationFn: (input) => authService.login(input),
+  return useMutation<LoginResponse, Error, LoginInput & { signal?: AbortSignal }>({
+    mutationFn: (input) => {
+      const { signal, ...dados } = input;
+      return authService.login(dados, signal);
+    },
     onSuccess: (data, variables) => {
       const activeTenant =
         data.operador.restaurantesVinculados.find((t) => t.id === variables.restauranteId) ||

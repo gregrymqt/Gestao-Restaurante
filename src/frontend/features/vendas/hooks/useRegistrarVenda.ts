@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { isCancel, extractErrorMessage } from '@/services/api';
 import { vendasService } from '../services/vendasService';
 import { RegistrarVendaRequestDto, VendaResponseDto } from '../types';
 import { useCarrinho } from './useCarrinho';
@@ -18,11 +19,12 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
   const limparCarrinho = useCarrinho((state) => state.limparCarrinho);
 
   return useMutation({
-    mutationFn: async (dto: RegistrarVendaRequestDto) => {
+    mutationFn: async (dto: RegistrarVendaRequestDto & { signal?: AbortSignal }) => {
       if (!useConnectionStore.getState().isApiOnline) {
         throw new Error('Servidor offline. Não é possível emitir vendas sem comunicação com o servidor.');
       }
-      return vendasService.registrarVenda(dto);
+      const { signal, ...dados } = dto;
+      return vendasService.registrarVenda(dados, signal);
     },
     onSuccess: (data: VendaResponseDto) => {
       // 1. Limpa o carrinho de comanda ativa
@@ -52,11 +54,12 @@ export function useRegistrarVenda(options?: UseRegistrarVendaOptions) {
         );
       }
     },
-    onError: (error: any) => {
-      const serverMessage =
-        error?.response?.data?.error ||
-        error?.message ||
-        'Não foi possível registrar a venda. Verifique a conexão com o servidor.';
+    onError: (error: unknown) => {
+      if (isCancel(error)) return;
+      const serverMessage = extractErrorMessage(
+        error,
+        'Não foi possível registrar a venda. Verifique a conexão com o servidor.'
+      );
 
       if (
         typeof serverMessage === 'string' &&

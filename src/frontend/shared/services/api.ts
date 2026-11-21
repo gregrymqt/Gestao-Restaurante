@@ -1,7 +1,9 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, isCancel } from 'axios';
 import { storage, STORAGE_KEYS } from './storage';
 import { env } from '../config/env';
 import { useConnectionStore } from '../hooks/useConnectionStore';
+
+export { isCancel };
 
 let unauthorizedHandler: (() => void) | null = null;
 
@@ -70,6 +72,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Requisições abortadas/canceladas intencionalmente não devem marcar a API como offline
+    const isCancelled =
+      isCancel(error) ||
+      error?.code === 'ERR_CANCELED' ||
+      error?.name === 'CanceledError' ||
+      error?.name === 'AbortError';
+
+    if (isCancelled) {
+      return Promise.reject(error);
+    }
+
     // Detecta indisponibilidade da API: falhas de rede, timeouts, CORS ou erros 502/503/504
     const isNetworkError =
       !error.response ||
@@ -99,6 +112,17 @@ apiClient.interceptors.response.use(
  * ou exceções de rede/runtime, fornecendo uma mensagem amigável de fallback.
  */
 export function extractErrorMessage(err: unknown, fallback: string): string {
+  const isCancelled =
+    isCancel(err) ||
+    (err &&
+      typeof err === 'object' &&
+      ((err as { code?: string }).code === 'ERR_CANCELED' ||
+        (err as { name?: string }).name === 'CanceledError' ||
+        (err as { name?: string }).name === 'AbortError'));
+
+  if (isCancelled) {
+    return '';
+  }
   if (err && typeof err === 'object' && 'response' in err) {
     const res = (err as { response?: { data?: { error?: string; detail?: string; title?: string } } }).response;
     if (res?.data?.error) return res.data.error;
