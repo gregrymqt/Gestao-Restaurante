@@ -74,4 +74,14 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .AsNoTracking()
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<Usuario>> ListarPorRestauranteAsync(Guid restauranteId, CancellationToken ct = default)
+    {
+        return await _context.Usuarios
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(u => u.RestauranteId == restauranteId && u.Ativo)
+            .OrderBy(u => u.Nome)
+            .ToListAsync(ct);
+    }
 }

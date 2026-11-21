@@ -7,7 +7,7 @@ import {
   Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Wifi, WifiOff, ShieldCheck } from 'lucide-react-native';
+import { Wifi, WifiOff, ShieldCheck, Users } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { InstallPwaBanner } from '@/shared/components/InstallPwaBanner';
@@ -25,6 +25,7 @@ import {
 } from '../components/OperationalActionsSection';
 import { ModalMovimentacaoCaixa } from '../components/ModalMovimentacaoCaixa';
 import { ModalBloqueioTerminal } from '../components/ModalBloqueioTerminal';
+import { ModalGestaoEquipe } from '../components/ModalGestaoEquipe';
 import { PerfilHeader } from '../components/PerfilHeader';
 import { LiveConnectionBanner } from '../components/LiveConnectionBanner';
 
@@ -65,6 +66,7 @@ export function PerfilScreen() {
   } = usePerfil();
 
   const [isAdminBackofficeOpen, setIsAdminBackofficeOpen] = useState(false);
+  const [isEquipeModalOpen, setIsEquipeModalOpen] = useState(false);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -114,6 +116,28 @@ export function PerfilScreen() {
 
         {/* Atalho de Instalação PWA quando disponível no navegador */}
         <InstallPwaBanner variant="card" />
+
+        {/* Gestão de Equipe & Colaboradores (Gestor / Owner / SuperAdmin) */}
+        {operador?.role === 'Manager' || operador?.role === 'Owner' || operador?.role === 'SuperAdmin' ? (
+          <View style={styles.equipeContainer}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Gerenciar Equipe e Operadores de Caixa"
+              onPress={() => setIsEquipeModalOpen(true)}
+              style={({ pressed }) => [styles.botaoEquipe, pressed && styles.pressedEquipe]}
+            >
+              <Users size={22} color={tokens.colors.primary} />
+              <View style={styles.textosEquipe}>
+                <ThemedText variant="subtitle" weight="bold" color={tokens.colors.textPrimary}>
+                  Equipe & Operadores de Caixa
+                </ThemedText>
+                <ThemedText variant="caption" color={tokens.colors.textMuted} style={styles.subtextoEquipe}>
+                  Cadastre operadores, defina PINs e gerencie acessos
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* 7. Acesso SuperAdmin Backoffice SaaS (Restrito por RBAC) */}
         {operador?.role === 'SuperAdmin' ? (
@@ -185,6 +209,12 @@ export function PerfilScreen() {
           <AdminBackofficeScreen onVoltar={() => setIsAdminBackofficeOpen(false)} />
         </Modal>
       ) : null}
+
+      {/* Modal de Gestão de Equipe e Operadores */}
+      <ModalGestaoEquipe
+        visible={isEquipeModalOpen}
+        onClose={() => setIsEquipeModalOpen(false)}
+      />
     </View>
   );
 }
@@ -200,6 +230,29 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: tokens.spacing.md,
     gap: tokens.spacing.md,
+  },
+  equipeContainer: {
+    paddingHorizontal: tokens.spacing.sm,
+    marginTop: tokens.spacing.xs,
+  },
+  botaoEquipe: {
+    backgroundColor: tokens.colors.card,
+    borderRadius: tokens.radii.lg,
+    padding: tokens.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  pressedEquipe: {
+    opacity: 0.85,
+  },
+  textosEquipe: {
+    flex: 1,
+  },
+  subtextoEquipe: {
+    marginTop: 2,
   },
   superAdminContainer: {
     paddingHorizontal: tokens.spacing.lg,

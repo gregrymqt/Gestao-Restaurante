@@ -51,9 +51,83 @@ interface CadastrarApiResponse {
   email: string;
 }
 
+interface OperadorApiItem {
+  id: string;
+  nome: string;
+  email?: string;
+  role: string;
+  iniciais: string;
+  ativo: boolean;
+  possuiPin: boolean;
+}
+
+interface LoginPinApiResponse {
+  token: string;
+  refreshToken: string;
+  usuarioId: string;
+  nome: string;
+  role: string;
+  restauranteId: string;
+}
+
 export const authService = {
-  async obterOperadoresRecentes(): Promise<OperadorRecente[]> {
-    return OPERADORES_RECENTES_PADRAO;
+  async obterOperadoresRecentes(restauranteId?: string): Promise<OperadorRecente[]> {
+    if (!restauranteId) {
+      return OPERADORES_RECENTES_PADRAO;
+    }
+
+    try {
+      const response = await apiClient.get<OperadorApiItem[]>(`/auth/operadores?restauranteId=${restauranteId}`);
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        return response.data.map((item, index) => ({
+          id: item.id,
+          nome: item.nome,
+          matricula: String(index + 1).padStart(4, '0'),
+          email: item.email || '',
+          iniciais: item.iniciais || 'OP',
+          cargo: item.role === 'Manager' ? 'Gestor' : 'Operador de PDV',
+          role: item.role,
+        }));
+      }
+      return OPERADORES_RECENTES_PADRAO;
+    } catch {
+      return OPERADORES_RECENTES_PADRAO;
+    }
+  },
+
+  async loginComPin(restauranteId: string, usuarioId: string, pin: string): Promise<LoginResponse> {
+    try {
+      const response = await apiClient.post<LoginPinApiResponse>('/auth/login-pin', {
+        restauranteId,
+        usuarioId,
+        pin: pin.trim(),
+      });
+
+      const backendData = response.data;
+      const tenant: RestauranteTenant = {
+        id: backendData.restauranteId,
+        nome: 'Restaurante Local',
+        cnpj: '',
+        filialNumero: 'Filial PDV',
+        ativo: true,
+      };
+
+      return {
+        token: backendData.token,
+        refreshToken: backendData.refreshToken,
+        expiracao: new Date(Date.now() + 1000 * 60 * 60 * 10).toISOString(),
+        operador: {
+          id: backendData.usuarioId,
+          nome: backendData.nome,
+          email: '',
+          cargo: backendData.role === 'Manager' ? 'Gestor' : 'Operador de PDV',
+          role: backendData.role,
+          restaurantesVinculados: [tenant],
+        },
+      };
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'PIN incorreto ou operador não autorizado.'));
+    }
   },
 
   async login(input: LoginInput): Promise<LoginResponse> {

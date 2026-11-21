@@ -363,4 +363,55 @@ public sealed class AuthController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Autenticação rápida de operador de frente de caixa via PIN de 4 dígitos.
+    /// </summary>
+    [HttpPost("login-pin")]
+    [AllowAnonymous]
+    public async Task<IActionResult> LoginPin(
+        [FromBody] LoginOperadorPinRequestDto request,
+        [FromServices] LoginOperadorPinUseCase useCase,
+        CancellationToken ct)
+    {
+        try
+        {
+            var resultado = await useCase.ExecutarAsync(request, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Lista os operadores e colaboradores ativos de um restaurante para seleção ágil no terminal PDV.
+    /// </summary>
+    [HttpGet("operadores")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ListarOperadoresTerminal(
+        [FromQuery] Guid restauranteId,
+        [FromServices] ListarOperadoresRestauranteUseCase useCase,
+        CancellationToken ct)
+    {
+        if (restauranteId == Guid.Empty)
+        {
+            return BadRequest(new { error = "O parâmetro restauranteId é obrigatório." });
+        }
+
+        try
+        {
+            var resultado = await useCase.ExecutarAsync(restauranteId, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

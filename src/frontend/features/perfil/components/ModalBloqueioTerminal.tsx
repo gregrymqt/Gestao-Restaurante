@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import {
   Modal,
   View,
-  StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
+  Pressable,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Lock, AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { styles } from './ModalBloqueioTerminal.styles';
 
 interface ModalBloqueioTerminalProps {
   visible: boolean;
@@ -28,14 +31,15 @@ export function ModalBloqueioTerminal({
   onDesbloquear,
   onLogout,
 }: ModalBloqueioTerminalProps) {
+  const insets = useSafeAreaInsets();
   const [pin, setPin] = useState('');
   const [erroMensagem, setErroMensagem] = useState<string | null>(null);
   const [isCarregando, setIsCarregando] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   const handleTentarDesbloqueio = async () => {
-    if (pin.length < 4 || pin.length > 6) {
-      setErroMensagem('Digite um PIN entre 4 e 6 dígitos.');
+    if (pin.length < 4) {
+      setErroMensagem('Digite o PIN de 4 dígitos.');
       return;
     }
 
@@ -63,219 +67,118 @@ export function ModalBloqueioTerminal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
-        <View style={styles.content}>
-          {/* Avatar com Badge de Cadeado Ancorado no Canto Inferior Direito */}
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>{operadorIniciais}</ThemedText>
-            </View>
-            <View style={styles.lockBadge}>
-              <Lock size={13} color="#FFFFFF" />
-            </View>
-          </View>
-
-          <ThemedText variant="title" style={styles.title}>
-            Terminal Bloqueado
-          </ThemedText>
-          <ThemedText variant="body" color={tokens.colors.textMuted} style={styles.subtitle}>
-            Sessão de {operadorNome} pausada. O caixa e as rotinas fiscais permanecem abertos.
-          </ThemedText>
-
-          {/* Campo de PIN */}
-          <View style={styles.pinContainer}>
-            <ThemedText variant="caption" weight="bold" style={styles.pinLabel}>
-              DIGITE O PIN DE DESBLOQUEIO:
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.pinInput,
-                isFocused && styles.pinInputFocused,
-                !!erroMensagem && styles.pinInputError,
-              ]}
-              placeholder={pin.length === 0 ? '••••' : ''}
-              placeholderTextColor={tokens.colors.textMuted}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={6}
-              value={pin}
-              editable={!isCarregando}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChangeText={(txt) => {
-                setPin(txt.replace(/\D/g, ''));
-                if (erroMensagem) setErroMensagem(null);
-              }}
-              autoFocus
-            />
-            {!!erroMensagem && (
-              <View style={styles.errorRow}>
-                <AlertTriangle size={14} color={tokens.colors.status.redText} />
-                <ThemedText variant="caption" color={tokens.colors.status.redText} style={styles.errorText}>
-                  {erroMensagem}
-                </ThemedText>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            Platform.OS !== 'web' && {
+              paddingBottom: Math.max(24, insets.bottom + 24),
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Avatar com Badge de Cadeado Ancorado no Canto Inferior Direito */}
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>{operadorIniciais}</ThemedText>
               </View>
-            )}
-          </View>
+              <View style={styles.lockBadge}>
+                <Lock size={13} color="#FFFFFF" />
+              </View>
+            </View>
 
-          {/* Botões de Ação */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.desbloquearButton, isCarregando && styles.buttonDisabled]}
-            onPress={handleTentarDesbloqueio}
-            disabled={isCarregando}
-          >
-            {isCarregando ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <ThemedText variant="body" weight="bold" color="#FFFFFF">
-                Desbloquear Terminal
-              </ThemedText>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.trocarButton}
-            onPress={onLogout}
-            disabled={isCarregando}
-          >
-            <ThemedText variant="caption" style={styles.trocarText}>
-              Trocar de Operador ou Sair
+            <ThemedText variant="title" style={styles.title}>
+              Terminal Bloqueado
             </ThemedText>
-          </TouchableOpacity>
-        </View>
+            <ThemedText variant="body" color={tokens.colors.textMuted} style={styles.subtitle}>
+              Sessão de {operadorNome} pausada. O caixa e as rotinas fiscais permanecem abertos.
+            </ThemedText>
+
+            {/* Campo de PIN */}
+            <View style={styles.pinContainer}>
+              <ThemedText variant="caption" weight="bold" style={styles.pinLabel}>
+                DIGITE O PIN DE DESBLOQUEIO:
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.pinInput,
+                  isFocused && styles.pinInputFocused,
+                  !!erroMensagem && styles.pinInputError,
+                ]}
+                placeholder={pin.length === 0 ? '••••' : ''}
+                placeholderTextColor="#D1D5DB"
+                keyboardType="number-pad"
+                inputMode="numeric"
+                secureTextEntry
+                maxLength={4}
+                value={pin}
+                editable={!isCarregando}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChangeText={(txt) => {
+                  const cleaned = txt.replace(/\D/g, '').slice(0, 4);
+                  setPin(cleaned);
+                  if (erroMensagem) setErroMensagem(null);
+                }}
+                autoFocus
+                {...(Platform.OS === 'web' ? { type: 'password', pattern: '[0-9]*' } : {})}
+              />
+
+              {/* Feedback de Erro Estável sem Salto no Layout */}
+              <View
+                style={styles.errorContainer}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                {...(Platform.OS === 'web' ? { role: 'alert', 'aria-live': 'polite' } : {})}
+              >
+                {erroMensagem ? (
+                  <View style={styles.errorRow}>
+                    <AlertTriangle size={14} color="#DC2626" />
+                    <ThemedText variant="caption" style={styles.errorText}>
+                      {erroMensagem}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Botões de Ação */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.desbloquearButton, isCarregando && styles.buttonDisabled]}
+              onPress={handleTentarDesbloqueio}
+              disabled={isCarregando}
+              accessibilityRole="button"
+              accessibilityLabel="Desbloquear Terminal"
+            >
+              {isCarregando ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <ThemedText variant="body" weight="bold" color="#FFFFFF">
+                  Desbloquear Terminal
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+
+            <Pressable
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                styles.trocarButton,
+                (pressed || hovered) && styles.trocarButtonPressed,
+              ]}
+              onPress={onLogout}
+              disabled={isCarregando}
+              accessibilityRole="button"
+              accessibilityLabel="Trocar de Operador ou Sair"
+            >
+              <ThemedText variant="caption" style={styles.trocarText}>
+                Trocar de Operador ou Sair
+              </ThemedText>
+            </Pressable>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: tokens.spacing.xl,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: tokens.colors.white,
-    borderRadius: tokens.radii.lg,
-    padding: tokens.spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginTop: tokens.spacing.xs,
-    marginBottom: tokens.spacing.sm,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: tokens.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  lockBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: tokens.typography.fontLg,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-    marginTop: tokens.spacing.xs,
-  },
-  subtitle: {
-    textAlign: 'center',
-    marginTop: tokens.spacing.xs,
-    marginBottom: tokens.spacing.lg,
-    lineHeight: 20,
-  },
-  pinContainer: {
-    width: '100%',
-    marginBottom: tokens.spacing.lg,
-  },
-  pinLabel: {
-    color: tokens.colors.textMuted,
-    marginBottom: tokens.spacing.xs,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  pinInput: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radii.md,
-    paddingVertical: tokens.spacing.sm + 2,
-    fontSize: tokens.typography.fontXl,
-    fontWeight: '800',
-    textAlign: 'center',
-    letterSpacing: 8,
-    color: tokens.colors.textPrimary,
-    ...(Platform.OS === 'web'
-      ? { outlineWidth: 0 }
-      : {}),
-  },
-  pinInputFocused: {
-    borderColor: tokens.colors.primary,
-    borderWidth: 2,
-  },
-  pinInputError: {
-    borderColor: tokens.colors.status.redText,
-    borderWidth: 2,
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: tokens.spacing.xs,
-  },
-  errorText: {
-    textAlign: 'center',
-  },
-  desbloquearButton: {
-    width: '100%',
-    backgroundColor: tokens.colors.primary,
-    paddingVertical: tokens.spacing.sm + 4,
-    borderRadius: tokens.radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    marginBottom: tokens.spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  trocarButton: {
-    paddingVertical: tokens.spacing.xs,
-  },
-  trocarText: {
-    color: tokens.colors.textMuted,
-    textDecorationLine: 'underline',
-  },
-});
