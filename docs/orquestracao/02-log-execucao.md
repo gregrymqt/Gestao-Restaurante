@@ -154,3 +154,9 @@
 - Suíte `servicesErrorHandling.test.ts` ampliada com cenários de cancelamento em queries e mutações (7/7 testes aprovados).
 - Validação cruzada com todos os 247 testes unitários .NET do backend aprovados (0 falhas).
 - Grafo estrutural reconstruído e consistente via `graft build` (2554 nós, 2438 arestas).
+
+## [2026-11-21] Correção de Estilo Web, Migração CI Node 24 e Hardening de Segurança
+- Removido shorthand `outline: 'none'` em `EsqueciSenhaScreen.styles.ts` e `ModalBloqueioTerminal.styles.ts`.
+- Atualizado workflow CI para Node 24 nativo com actions atualizadas e `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
+- Sanitizado log de OTP em `SolicitarRecuperacaoSenhaUseCase`, adicionado limitador de 5 tentativas com `FixedTimeEquals` em `RedisPasswordResetTokenService` e rate limiting estrito de recuperação.
+- Restringido CORS com origens locais seguras / `ALLOWED_CORS_ORIGINS`; 248 testes .NET e frontend aprovados (PRs #22 e #23 mergeados).
