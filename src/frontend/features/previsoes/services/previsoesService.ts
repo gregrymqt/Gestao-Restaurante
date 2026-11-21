@@ -1,4 +1,4 @@
-import { apiClient } from '@/services/api';
+import { apiClient, extractErrorMessage } from '@/services/api';
 import {
   RelatorioCapacidadeProducao,
   FichaTecnicaIngrediente,
@@ -100,26 +100,30 @@ export const previsoesService = {
     insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
     valorTotal: number;
   }): Promise<{ sucesso: boolean; protocolo: string }> {
-    const response = await apiClient.post<{
-      id: string;
-      protocolo: string;
-      status: string;
-      valorTotal: number;
-      criadoEm: string;
-      sucesso?: boolean;
-    }>('/previsoes/ordens-compra', {
-      insumos: pedido.insumos.map((i) => ({
-        insumoId: i.insumoId,
-        nomeInsumo: i.nomeInsumo,
-        quantidade: i.quantidade,
-        unidadeMedida: i.unidadeMedida,
-      })),
-      valorTotal: pedido.valorTotal,
-    });
+    try {
+      const response = await apiClient.post<{
+        id: string;
+        protocolo: string;
+        status: string;
+        valorTotal: number;
+        criadoEm: string;
+        sucesso?: boolean;
+      }>('/previsoes/ordens-compra', {
+        insumos: pedido.insumos.map((i) => ({
+          insumoId: i.insumoId,
+          nomeInsumo: i.nomeInsumo,
+          quantidade: i.quantidade,
+          unidadeMedida: i.unidadeMedida,
+        })),
+        valorTotal: pedido.valorTotal,
+      });
 
-    return {
-      sucesso: response.data.sucesso ?? true,
-      protocolo: response.data.protocolo,
-    };
+      return {
+        sucesso: response.data.sucesso ?? true,
+        protocolo: response.data.protocolo,
+      };
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível emitir a ordem de compra.'));
+    }
   },
 };

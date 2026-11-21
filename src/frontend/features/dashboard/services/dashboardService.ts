@@ -37,11 +37,25 @@ export const DADOS_DASHBOARD_PADRAO: DashboardExecutivoData = {
   },
 };
 
+interface DashboardResumoApiResponse {
+  statusLoja?: string;
+  turnoAtual?: string;
+  kpis?: Partial<DashboardExecutivoData['kpis']>;
+  insumosCriticos?: Array<{
+    id: string;
+    nome: string;
+    quantidadeAtual: number | string;
+    quantidadeMinima: number | string;
+    unidadeMedida: string;
+  }>;
+  previsaoIa?: Partial<DashboardExecutivoData['previsaoIa']>;
+}
+
 export const dashboardService = {
   async obterResumoExecutivo(): Promise<DashboardExecutivoData> {
     try {
       // Consulta os dados reais e consolidados do backend .NET 9
-      const res = await apiClient.get<any>('/dashboard/resumo');
+      const res = await apiClient.get<DashboardResumoApiResponse>('/dashboard/resumo');
       if (res.data) {
         return {
           statusLoja: res.data.statusLoja === 'ABERTA' ? 'ABERTA' : 'FECHADA',
@@ -55,7 +69,7 @@ export const dashboardService = {
             pedidosNaCozinha: Number(res.data.kpis?.pedidosNaCozinha ?? 0),
           },
           insumosCriticos: (res.data.insumosCriticos && res.data.insumosCriticos.length > 0)
-            ? res.data.insumosCriticos.map((i: any) => ({
+            ? res.data.insumosCriticos.map((i) => ({
                 id: i.id,
                 nome: i.nome,
                 quantidadeAtual: Number(i.quantidadeAtual),

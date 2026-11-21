@@ -1,4 +1,4 @@
-import { apiClient } from '@/services/api';
+import { apiClient, extractErrorMessage } from '@/services/api';
 import { AbrirCaixaResponseDto, FecharCaixaResponseDto, SessaoCaixaResumo } from '../types';
 
 export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
@@ -62,15 +62,30 @@ export const DADOS_SESSAO_PADRAO: SessaoCaixaResumo = {
   ],
 };
 
+interface DashboardResumoSessaoResponse {
+  statusLoja?: string;
+  turnoAtual?: string;
+  kpis?: {
+    totalFaturadoDia?: number | string;
+    quantidadePedidos?: number | string;
+    ticketMedio?: number | string;
+    percentualMeta?: number | string;
+  };
+}
+
 export const caixaService = {
   async abrirCaixa(): Promise<AbrirCaixaResponseDto> {
-    const response = await apiClient.post<AbrirCaixaResponseDto>('/caixa/abrir', {});
-    return response.data;
+    try {
+      const response = await apiClient.post<AbrirCaixaResponseDto>('/caixa/abrir', {});
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível abrir o caixa.'));
+    }
   },
 
   async obterSessaoAtiva(): Promise<SessaoCaixaResumo> {
     try {
-      const res = await apiClient.get<any>('/dashboard/resumo');
+      const res = await apiClient.get<DashboardResumoSessaoResponse>('/dashboard/resumo');
       if (res.data) {
         const kpis = res.data.kpis;
         return {
@@ -91,7 +106,11 @@ export const caixaService = {
   },
 
   async fecharCaixa(): Promise<FecharCaixaResponseDto> {
-    const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar');
-    return response.data;
+    try {
+      const response = await apiClient.post<FecharCaixaResponseDto>('/caixa/fechar');
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível fechar o caixa.'));
+    }
   },
 };

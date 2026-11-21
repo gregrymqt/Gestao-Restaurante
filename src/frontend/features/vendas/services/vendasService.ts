@@ -1,4 +1,4 @@
-import { apiClient } from '@/services/api';
+import { apiClient, extractErrorMessage } from '@/services/api';
 import {
   CategoriaProduto,
   Produto,
@@ -48,8 +48,12 @@ export const vendasService = {
   },
 
   async registrarVenda(dto: RegistrarVendaRequestDto): Promise<VendaResponseDto> {
-    const response = await apiClient.post<VendaResponseDto>('/vendas', dto);
-    return response.data;
+    try {
+      const response = await apiClient.post<VendaResponseDto>('/vendas', dto);
+      return response.data;
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível registrar a venda.'));
+    }
   },
 
   async obterHistorico(dataInicio?: string): Promise<VendaHistorico[]> {
@@ -65,19 +69,23 @@ export const vendasService = {
   },
 
   async criarProduto(dto: CriarProdutoInput): Promise<Produto> {
-    const response = await apiClient.post<ProdutoApiResponse>('/produtos', {
-      nome: dto.nome,
-      descricao: dto.descricao,
-      preco: dto.preco,
-      fichaTecnica: dto.fichaTecnica,
-    });
-    return {
-      id: response.data.id,
-      nome: response.data.nome,
-      descricao: response.data.descricao,
-      preco: Number(response.data.preco),
-      categoria: dto.categoria,
-      ativo: response.data.ativo,
-    };
+    try {
+      const response = await apiClient.post<ProdutoApiResponse>('/produtos', {
+        nome: dto.nome,
+        descricao: dto.descricao,
+        preco: dto.preco,
+        fichaTecnica: dto.fichaTecnica,
+      });
+      return {
+        id: response.data.id,
+        nome: response.data.nome,
+        descricao: response.data.descricao,
+        preco: Number(response.data.preco),
+        categoria: dto.categoria,
+        ativo: response.data.ativo,
+      };
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Não foi possível cadastrar o produto.'));
+    }
   },
 };

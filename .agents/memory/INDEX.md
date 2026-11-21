@@ -17,9 +17,8 @@ Este índice aponta às fontes canônicas; confirme o estado atual antes de reut
 - Ferramenta/versão: Graft v0.21.1 (`@nanonets/graft` via Node.js)
 - Comando na raiz e cache: `graft build` e `graft check`; cache estrutural em `/graft/` (ignorado no `.gitignore`)
 - Cobertura, validação e limites: 2.165 nós e 1.936 arestas sincronizados sobre 430 arquivos de código-fonte (.NET, Python, React Native/TS). Camada profunda conceitual (`--deep`) pendente de chave LLM opcional; grafo estrutural e chamadores 100% validados.
-- Configuração Antigravity e servidor: Servidor MCP `graft` configurado no arquivo local [.agents/mcp_config.json](../mcp_config.json) via comando stdio `node.exe dist/cli.js mcp C:\Users\digob\Documents\Projetos\Gestao-Restaurante`.
-- Protocolo/chamada real e descoberta na sessão: Executável e argumentos de CLI validados via host; conexão stdio expõe ferramentas `graft_find_code`, `graft_trace_calls`, `graft_file_api`, `graft_repo_map` e `graft_find_all`. Descoberta ativa na sessão Antigravity em andamento requer nova conversa/reload de workspace; CLI `graft` opera como fallback imediato.
-- Não altere confiança nem encerre sessões. Configuração escrita não comprova conexão ativa.
+- Configuração MCP: Servidor MCP `graft` unificado em [.mcp.json](../../.mcp.json) na raiz do repositório (comando stdio `graft mcp`).
+- Protocolo e ferramentas: Conexão stdio expõe ferramentas `graft_find_code`, `graft_trace_calls`, `graft_file_api`, `graft_repo_map` e `graft_find_all`. Descoberta ativa depende do runtime do agente; CLI `graft` opera como fallback imediato.
 
 ## Verificação
 

@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/services/api';
+import { apiClient, extractErrorMessage } from '@/shared/services/api';
 import { TenantAdminItem } from '../types';
 
 export const TENANTS_ADMIN_PADRAO: TenantAdminItem[] = [
@@ -55,9 +55,8 @@ export const adminService = {
         { diasAdicionais }
       );
       return response.data;
-    } catch (err: any) {
-      const msg = err.response?.data?.error || 'Falha ao estender dias de trial.';
-      throw new Error(msg);
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Falha ao estender dias de trial.'));
     }
   },
 
@@ -72,9 +71,8 @@ export const adminService = {
         { novoStatus, planoId }
       );
       return response.data;
-    } catch (err: any) {
-      const msg = err.response?.data?.error || 'Falha ao alterar status de assinatura.';
-      throw new Error(msg);
+    } catch (err: unknown) {
+      throw new Error(extractErrorMessage(err, 'Falha ao alterar status de assinatura.'));
     }
   },
 };

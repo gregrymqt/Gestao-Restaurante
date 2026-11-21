@@ -48,3 +48,25 @@
 - Atualizado `authService.ts` consumindo `extractErrorMessage`, removendo `any` e tipando respostas de login/cadastro com interfaces estritas.
 - Criados testes unitários para os cenários de erro da função em `src/frontend/__tests__/authTerminalAndReset.test.ts`.
 - Validada compilação TypeScript (`tsc --noEmit`) com 0 erros e sincronizado o grafo com `graft build` (2462 nós, 2286 arestas).
+
+## [2026-11-21] Lote 1 Concluído: adminService e assinaturaService com extractErrorMessage e unknown
+- Eliminado o uso proibido de `any` em `estenderTrial`, `alterarStatus` (`adminService.ts`) e `assinarPlano` (`assinaturaService.ts`).
+- Tratamento de erro padronizado para `catch (err: unknown)` com propagação via `new Error(extractErrorMessage(err, fallback))`.
+- Compilação TypeScript validada com 0 erros (`tsc --noEmit`) e testes unitários aprovados com 100% de sucesso.
+- Ocorrências de `any` no frontend reduzidas no `graft-lint`.
+
+## [2026-11-21] Lote 2 Concluído: caixaService, dashboardService e perfilService padronizados
+- Eliminado `apiClient.get<any>` em `caixaService.ts` e `dashboardService.ts` via interfaces tipadas com DTOs existentes.
+- Interceptadas mutações em `abrirCaixa`, `fecharCaixa` e `registrarMovimentacao` com `try/catch (err: unknown)` e `extractErrorMessage`.
+- Compilação TypeScript validada com 0 erros (`tsc --noEmit`) e `graft-lint` com 0 ocorrências de `any` em serviços de caixa/dashboard.
+
+## [2026-11-21] Lote 3 Concluído: estoqueService, kdsService, vendasService e previsoesService
+- Padronizadas mutações de estoque (`registrarEntradaEstoque`, `cadastrarInsumo`, `registrarBaixaEstoque`) com `extractErrorMessage`.
+- Padronizadas mutações em `kdsService` (`atualizarStatusPedido`), `vendasService` (`registrarVenda`, `criarProduto`) e `previsoesService` (`enviarOrdemCompra`).
+- Compilação TypeScript validada com 0 erros (`tsc --noEmit`) e todas as 10 feature services operando a 100% sem `any`.
+
+## [2026-11-21] Lote 4 Concluído: Suíte de Testes Automatizada, Validação e Grafo
+- Criada a suíte `servicesErrorHandling.test.ts` cobrindo extração de erros de API (error, detail, title), exceções nativas e fallbacks de rede.
+- Validada rejeição e propagação de mensagens amigáveis em todas as services via mocks de `apiClient`.
+- Compilação TypeScript aprovada com 0 erros (`tsc --noEmit`) e suíte de testes unitários executada com 100% de sucesso (7 testes).
+- Grafo estrutural sincronizado via `graft build` (2465 nós, 2314 arestas).
