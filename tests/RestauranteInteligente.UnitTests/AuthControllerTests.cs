@@ -7,7 +7,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RestauranteInteligente.Api.Controllers;
 using RestauranteInteligente.Api.DTOs.Auth;
+using RestauranteInteligente.Application.Auth.UseCases;
 using RestauranteInteligente.Domain.Common.Interfaces;
+using RestauranteInteligente.Domain.Entities;
 using Xunit;
 
 namespace RestauranteInteligente.UnitTests;
@@ -19,6 +21,7 @@ public sealed class AuthControllerTests
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly Mock<IAuthUserService> _authUserServiceMock;
+    private readonly Mock<IUsuarioRepository> _usuarioRepoMock;
     private readonly AuthController _controller;
 
     private readonly Guid _defaultUserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -31,6 +34,7 @@ public sealed class AuthControllerTests
         _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _authUserServiceMock = new Mock<IAuthUserService>();
+        _usuarioRepoMock = new Mock<IUsuarioRepository>();
 
         _controller = new AuthController(
             _tokenGeneratorMock.Object,
@@ -196,5 +200,163 @@ public sealed class AuthControllerTests
             It.Is<TimeSpan>(t => t > TimeSpan.Zero),
             It.IsAny<CancellationToken>()
         ), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidarPin_ComPinValido_DeveRetornarOk()
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _defaultUserId.ToString()) };
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+        };
+
+        var usuario = new Usuario(_defaultUserId, _defaultTenantId, "Operador Teste", "operador@teste.com", "hash", "Cashier", pinHash: "hash_pin");
+        _usuarioRepoMock.Setup(r => r.ObterPorIdAsync(_defaultUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+        _passwordHasherMock.Setup(p => p.VerifyPassword("123456", "hash_pin"))
+            .Returns(true);
+
+        var useCase = new ValidarPinTerminalUseCase(_usuarioRepoMock.Object, _passwordHasherMock.Object);
+        var result = await _controller.ValidarPin(new ValidarPinRequest("123456"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task ValidarPin_SemPinCustomizado_ComFallback1234_DeveRetornarOk()
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _defaultUserId.ToString()) };
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+        };
+
+        var usuario = new Usuario(_defaultUserId, _defaultTenantId, "Operador Teste", "operador@teste.com", "hash", "Cashier", pinHash: null);
+        _usuarioRepoMock.Setup(r => r.ObterPorIdAsync(_defaultUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+
+        var useCase = new ValidarPinTerminalUseCase(_usuarioRepoMock.Object, _passwordHasherMock.Object);
+        var result = await _controller.ValidarPin(new ValidarPinRequest("1234"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task ValidarPin_ComPinIncorreto_DeveRetornarUnauthorized()
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _defaultUserId.ToString()) };
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+        };
+
+        var usuario = new Usuario(_defaultUserId, _defaultTenantId, "Operador Teste", "operador@teste.com", "hash", "Cashier", pinHash: "hash_pin");
+        _usuarioRepoMock.Setup(r => r.ObterPorIdAsync(_defaultUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+        _passwordHasherMock.Setup(p => p.VerifyPassword("000000", "hash_pin"))
+            .Returns(false);
+
+        var useCase = new ValidarPinTerminalUseCase(_usuarioRepoMock.Object, _passwordHasherMock.Object);
+        var result = await _controller.ValidarPin(new ValidarPinRequest("000000"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task ValidarPin_ComPinFormatoInvalido_DeveRetornarBadRequest()
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _defaultUserId.ToString()) };
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+        };
+
+        var useCase = new ValidarPinTerminalUseCase(_usuarioRepoMock.Object, _passwordHasherMock.Object);
+        var result = await _controller.ValidarPin(new ValidarPinRequest("12"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task DefinirPin_ComPinValido_DeveAtualizarPinHashERetornarOk()
+    {
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _defaultUserId.ToString()) };
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+        };
+
+        var usuario = new Usuario(_defaultUserId, _defaultTenantId, "Operador Teste", "operador@teste.com", "hash", "Cashier");
+        _usuarioRepoMock.Setup(r => r.ObterPorIdAsync(_defaultUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+        _passwordHasherMock.Setup(p => p.HashPassword("654321"))
+            .Returns("hashed_654321");
+
+        var useCase = new DefinirPinTerminalUseCase(_usuarioRepoMock.Object, _passwordHasherMock.Object);
+        var result = await _controller.DefinirPin(new DefinirPinRequest("654321"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        usuario.PinHash.Should().Be("hashed_654321");
+        _usuarioRepoMock.Verify(r => r.AtualizarAsync(usuario, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task EsqueciSenha_ComEmailCadastrado_DeveSalvarOtpERetornarOk()
+    {
+        var email = "gestor@restaurante.com";
+        _authUserServiceMock.Setup(a => a.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserAccount(_defaultUserId, _defaultTenantId, "Gestor", email, "hash", "Manager"));
+
+        var tokenServiceMock = new Mock<IPasswordResetTokenService>();
+        tokenServiceMock.Setup(t => t.GerarOtpAsync(email, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("123456");
+
+        var useCase = new SolicitarRecuperacaoSenhaUseCase(_authUserServiceMock.Object, tokenServiceMock.Object, NullLogger<SolicitarRecuperacaoSenhaUseCase>.Instance);
+        var result = await _controller.EsqueciSenha(new EsqueciSenhaRequest(email), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        tokenServiceMock.Verify(t => t.GerarOtpAsync(email, TimeSpan.FromMinutes(15), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RedefinirSenha_ComOtpValido_DeveAtualizarSenhaERetornarOk()
+    {
+        var email = "gestor@restaurante.com";
+        var otp = "123456";
+        var novaSenha = "NovaSenhaSegura123";
+
+        var tokenServiceMock = new Mock<IPasswordResetTokenService>();
+        tokenServiceMock.Setup(t => t.ValidarEConsumirOtpAsync(email, otp, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var usuario = new Usuario(_defaultUserId, _defaultTenantId, "Gestor", email, "antiga_hash", "Manager");
+        _usuarioRepoMock.Setup(r => r.ObterPorEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+
+        _passwordHasherMock.Setup(p => p.HashPassword(novaSenha))
+            .Returns("nova_hash_segura");
+
+        var useCase = new RedefinirSenhaUseCase(tokenServiceMock.Object, _usuarioRepoMock.Object, _passwordHasherMock.Object, NullLogger<RedefinirSenhaUseCase>.Instance);
+        var result = await _controller.RedefinirSenha(new RedefinirSenhaRequest(email, otp, novaSenha), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        usuario.SenhaHash.Should().Be("nova_hash_segura");
+        tokenServiceMock.Verify(t => t.ValidarEConsumirOtpAsync(email, otp, It.IsAny<CancellationToken>()), Times.Once);
+        _usuarioRepoMock.Verify(r => r.AtualizarAsync(usuario, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RedefinirSenha_ComOtpInvalido_DeveRetornarBadRequest()
+    {
+        var email = "gestor@restaurante.com";
+        var tokenServiceMock = new Mock<IPasswordResetTokenService>();
+        tokenServiceMock.Setup(t => t.ValidarEConsumirOtpAsync(email, "999999", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var useCase = new RedefinirSenhaUseCase(tokenServiceMock.Object, _usuarioRepoMock.Object, _passwordHasherMock.Object, NullLogger<RedefinirSenhaUseCase>.Instance);
+        var result = await _controller.RedefinirSenha(new RedefinirSenhaRequest(email, "999999", "NovaSenha123"), useCase, CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
     }
 }

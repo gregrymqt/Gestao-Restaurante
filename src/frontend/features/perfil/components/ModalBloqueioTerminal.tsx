@@ -7,6 +7,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Lock, AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
@@ -16,7 +17,7 @@ interface ModalBloqueioTerminalProps {
   visible: boolean;
   operadorNome: string;
   operadorIniciais: string;
-  onDesbloquear: () => void;
+  onDesbloquear: (pin: string) => Promise<boolean | void> | boolean | void;
   onLogout: () => void;
 }
 
@@ -28,17 +29,26 @@ export function ModalBloqueioTerminal({
   onLogout,
 }: ModalBloqueioTerminalProps) {
   const [pin, setPin] = useState('');
-  const [erro, setErro] = useState(false);
+  const [erroMensagem, setErroMensagem] = useState<string | null>(null);
+  const [isCarregando, setIsCarregando] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  const handleTentarDesbloqueio = () => {
-    // Validação mínima de PIN (qualquer PIN de 4 dígitos ou PIN cadastrado)
-    if (pin.length >= 4) {
+  const handleTentarDesbloqueio = async () => {
+    if (pin.length < 4 || pin.length > 6) {
+      setErroMensagem('Digite um PIN entre 4 e 6 dígitos.');
+      return;
+    }
+
+    try {
+      setIsCarregando(true);
+      setErroMensagem(null);
+      await onDesbloquear(pin);
       setPin('');
-      setErro(false);
-      onDesbloquear();
-    } else {
-      setErro(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'PIN incorreto. Tente novamente.';
+      setErroMensagem(msg);
+    } finally {
+      setIsCarregando(false);
     }
   };
 
@@ -80,7 +90,7 @@ export function ModalBloqueioTerminal({
               style={[
                 styles.pinInput,
                 isFocused && styles.pinInputFocused,
-                erro && styles.pinInputError,
+                !!erroMensagem && styles.pinInputError,
               ]}
               placeholder={pin.length === 0 ? '••••' : ''}
               placeholderTextColor={tokens.colors.textMuted}
@@ -88,19 +98,20 @@ export function ModalBloqueioTerminal({
               secureTextEntry
               maxLength={6}
               value={pin}
+              editable={!isCarregando}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onChangeText={(txt) => {
-                setPin(txt);
-                if (erro) setErro(false);
+                setPin(txt.replace(/\D/g, ''));
+                if (erroMensagem) setErroMensagem(null);
               }}
               autoFocus
             />
-            {erro && (
+            {!!erroMensagem && (
               <View style={styles.errorRow}>
                 <AlertTriangle size={14} color={tokens.colors.status.redText} />
                 <ThemedText variant="caption" color={tokens.colors.status.redText} style={styles.errorText}>
-                  Digite ao menos 4 dígitos para desbloquear.
+                  {erroMensagem}
                 </ThemedText>
               </View>
             )}
@@ -109,18 +120,24 @@ export function ModalBloqueioTerminal({
           {/* Botões de Ação */}
           <TouchableOpacity
             activeOpacity={0.85}
-            style={styles.desbloquearButton}
+            style={[styles.desbloquearButton, isCarregando && styles.buttonDisabled]}
             onPress={handleTentarDesbloqueio}
+            disabled={isCarregando}
           >
-            <ThemedText variant="body" weight="bold" color="#FFFFFF">
-              Desbloquear Terminal
-            </ThemedText>
+            {isCarregando ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <ThemedText variant="body" weight="bold" color="#FFFFFF">
+                Desbloquear Terminal
+              </ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.8}
             style={styles.trocarButton}
             onPress={onLogout}
+            disabled={isCarregando}
           >
             <ThemedText variant="caption" style={styles.trocarText}>
               Trocar de Operador ou Sair
@@ -250,6 +267,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
     marginBottom: tokens.spacing.md,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   trocarButton: {
     paddingVertical: tokens.spacing.xs,

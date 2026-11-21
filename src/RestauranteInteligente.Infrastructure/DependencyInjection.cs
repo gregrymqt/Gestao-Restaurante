@@ -112,6 +112,7 @@ public static class DependencyInjection
         services.AddSingleton<ITokenBlacklistService, RedisTokenBlacklistService>();
         services.AddSingleton<IRateLimiterService, RedisSlidingWindowRateLimiter>();
         services.AddSingleton<IRefreshTokenService, RedisRefreshTokenService>();
+        services.AddSingleton<IPasswordResetTokenService, RedisPasswordResetTokenService>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         var keyBytes = Encoding.UTF8.GetBytes(env.Jwt.Key);

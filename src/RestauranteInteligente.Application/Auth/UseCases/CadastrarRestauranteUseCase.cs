@@ -42,8 +42,7 @@ public sealed class CadastrarRestauranteUseCase
 
     public async Task<CadastrarRestauranteOutputDto> ExecutarAsync(CadastrarRestauranteInputDto input, CancellationToken ct = default)
     {
-        if (input == null)
-            throw new ArgumentNullException(nameof(input));
+        ArgumentNullException.ThrowIfNull(input);
 
         if (string.IsNullOrWhiteSpace(input.NomeRestaurante))
             throw new ArgumentException("O nome do restaurante é obrigatório.", nameof(input.NomeRestaurante));

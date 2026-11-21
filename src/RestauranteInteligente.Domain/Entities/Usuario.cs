@@ -12,6 +12,7 @@ public sealed class Usuario : IRestauranteEntity
     public string Nome { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string SenhaHash { get; private set; } = string.Empty;
+    public string? PinHash { get; private set; }
     public string Role { get; private set; } = string.Empty;
     public bool Ativo { get; private set; } = true;
     public DateTimeOffset CriadoEm { get; private set; } = DateTimeOffset.UtcNow;
@@ -26,7 +27,8 @@ public sealed class Usuario : IRestauranteEntity
         string senhaHash,
         string role,
         bool ativo = true,
-        DateTimeOffset? criadoEm = null)
+        DateTimeOffset? criadoEm = null,
+        string? pinHash = null)
     {
         if (string.IsNullOrWhiteSpace(nome))
             throw new ArgumentException("O nome do usuário é obrigatório.", nameof(nome));
@@ -48,6 +50,15 @@ public sealed class Usuario : IRestauranteEntity
         Role = role.Trim();
         Ativo = ativo;
         CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
+        PinHash = string.IsNullOrWhiteSpace(pinHash) ? null : pinHash.Trim();
+    }
+
+    public void DefinirPin(string novoPinHash)
+    {
+        if (string.IsNullOrWhiteSpace(novoPinHash))
+            throw new ArgumentException("O hash do PIN é obrigatório.", nameof(novoPinHash));
+
+        PinHash = novoPinHash.Trim();
     }
 
     public void AtualizarSenha(string novaSenhaHash)

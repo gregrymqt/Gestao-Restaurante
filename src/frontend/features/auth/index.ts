@@ -1,4 +1,5 @@
 export { LoginScreen } from './screens/LoginScreen';
+export { EsqueciSenhaScreen } from './screens/EsqueciSenhaScreen';
 export { TenantSelectorModal } from './components/TenantSelectorModal';
 export { ModalCadastroRestaurante } from './components/ModalCadastroRestaurante';
 export { useAuthStore } from './hooks/useAuthStore';

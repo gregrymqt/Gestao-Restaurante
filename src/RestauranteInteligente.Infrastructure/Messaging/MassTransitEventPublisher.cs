@@ -22,8 +22,7 @@ public sealed class MassTransitEventPublisher : IEventPublisher
 
     public async Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) where T : class
     {
-        if (message == null)
-            throw new ArgumentNullException(nameof(message));
+        ArgumentNullException.ThrowIfNull(message);
 
         try
         {
