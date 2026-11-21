@@ -29,16 +29,34 @@ public static class ServiceCollectionExtensions
         // 3. Documentação OpenAPI nativa do .NET 9
         services.AddOpenApi();
 
-        // 4. Configuração de CORS: Permite conexões do Expo Web e clientes com credenciais
+        // 4. Configuração de CORS: Permite origens seguras (configuráveis via ALLOWED_CORS_ORIGINS ou localhost/dev)
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
             {
-                policy.SetIsOriginAllowed(_ => true)
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials()
-                      .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After");
+                var allowedOriginsEnv = Environment.GetEnvironmentVariable("ALLOWED_CORS_ORIGINS");
+                if (!string.IsNullOrWhiteSpace(allowedOriginsEnv))
+                {
+                    var origins = allowedOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    policy.WithOrigins(origins)
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials()
+                          .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After");
+                }
+                else
+                {
+                    policy.SetIsOriginAllowed(origin =>
+                    {
+                        if (string.IsNullOrWhiteSpace(origin)) return false;
+                        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+                        return uri.Host is "localhost" or "127.0.0.1" || uri.Host.EndsWith(".local");
+                    })
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After");
+                }
             });
         });
 

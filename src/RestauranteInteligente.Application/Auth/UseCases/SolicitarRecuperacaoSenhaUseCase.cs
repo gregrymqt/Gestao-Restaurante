@@ -36,7 +36,7 @@ public sealed class SolicitarRecuperacaoSenhaUseCase
         if (user != null)
         {
             var otp = await _tokenService.GerarOtpAsync(normalizedEmail, TimeSpan.FromMinutes(15), ct);
-            _logger.LogInformation("Código de recuperação gerado para o usuário '{Email}': [OTP={Otp}].", normalizedEmail, otp);
+            _logger.LogInformation("Código de recuperação gerado com sucesso para o usuário '{Email}'.", normalizedEmail);
         }
         else
         {

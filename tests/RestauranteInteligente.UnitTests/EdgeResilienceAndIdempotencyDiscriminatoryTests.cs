@@ -127,6 +127,37 @@ public sealed class EdgeResilienceAndIdempotencyDiscriminatoryTests
     }
 
     [Fact]
+    public async Task RateLimitingMiddleware_RecuperacaoSenhaAnonima_DeveAplicarPoliticaRestritivaAntiBruteForce10()
+    {
+        // Arrange: Cliente não autenticado tentando recuperar ou redefinir senha
+        var context = new DefaultHttpContext();
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = "/api/v1/auth/solicitar-recuperacao";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.195");
+
+        var rateLimiterMock = new Mock<IRateLimiterService>();
+        rateLimiterMock.Setup(r => r.CheckRateLimitAsync(
+            "anon:recovery:ip:203.0.113.195",
+            10,
+            TimeSpan.FromMinutes(1),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync(new RateLimitResult(IsAllowed: true, CurrentCount: 1, Limit: 10, RetryAfter: TimeSpan.Zero));
+
+        var middleware = new RateLimitingMiddleware((_) => Task.CompletedTask, NullLogger<RateLimitingMiddleware>.Instance);
+
+        // Act
+        await middleware.InvokeAsync(context, rateLimiterMock.Object);
+
+        // Assert
+        rateLimiterMock.Verify(r => r.CheckRateLimitAsync(
+            "anon:recovery:ip:203.0.113.195",
+            10,
+            TimeSpan.FromMinutes(1),
+            It.IsAny<CancellationToken>()),
+            Times.Once, "os endpoints de recuperação de senha devem ser discriminados com cota restritiva anti-brute force de 10 req/min");
+    }
+
+    [Fact]
     public async Task RateLimitingMiddleware_AnonimoGeral_DeveAplicarPoliticaGeral60()
     {
         // Arrange: Cliente anônimo consultando catálogo

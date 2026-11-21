@@ -93,7 +93,6 @@ export const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? ({
           outlineWidth: 0,
-          outline: 'none',
           outlineStyle: 'none',
         } as unknown as TextStyle)
       : {}),

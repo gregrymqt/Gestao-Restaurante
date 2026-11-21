@@ -108,7 +108,6 @@ export const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? ({
           outlineStyle: 'none',
-          outline: 'none',
           outlineWidth: 0,
           transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
         } as unknown as TextStyle)
