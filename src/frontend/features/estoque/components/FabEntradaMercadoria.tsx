@@ -1,23 +1,27 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { ThemedText } from '@/components/primitives/ThemedText';
+import { Plus } from 'lucide-react-native';
 import { tokens } from '@/components/primitives/tokens';
 import { createShadow } from '@/shared/utils/shadows';
 
 interface FabEntradaMercadoriaProps {
   onPress: () => void;
+  accessibilityLabel?: string;
 }
 
-export function FabEntradaMercadoria({ onPress }: FabEntradaMercadoriaProps) {
+export function FabEntradaMercadoria({
+  onPress,
+  accessibilityLabel = 'Cadastrar novo item',
+}: FabEntradaMercadoriaProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
       style={styles.fab}
       accessibilityRole="button"
-      accessibilityLabel="Cadastrar novo insumo"
+      accessibilityLabel={accessibilityLabel}
     >
-      <ThemedText style={styles.fabIcon}>+</ThemedText>
+      <Plus size={26} color={tokens.colors.white} strokeWidth={2.5} />
     </TouchableOpacity>
   );
 }
@@ -41,11 +45,5 @@ const styles = StyleSheet.create({
       elevation: 6,
     }),
     zIndex: 100,
-  },
-  fabIcon: {
-    color: tokens.colors.white,
-    fontSize: 32,
-    fontWeight: '300',
-    marginTop: -2,
   },
 });

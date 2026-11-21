@@ -1,5 +1,15 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Beef,
+  CupSoda,
+  CakeSlice,
+  UtensilsCrossed,
+  Pencil,
+  AlertTriangle,
+  CheckCircle2,
+  Search,
+} from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { shadows } from '@/shared/utils/shadows';
@@ -9,13 +19,47 @@ import { FichaTecnicaFinanceGrid } from './FichaTecnicaFinanceGrid';
 
 interface FichasTecnicasListProps {
   fichas: FichaTecnicaItem[];
+  onEditarFicha?: (ficha: FichaTecnicaItem) => void;
 }
 
-export function FichasTecnicasList({ fichas }: FichasTecnicasListProps) {
+function getIconeFicha(nomeProduto: string, categoria?: string) {
+  const texto = `${nomeProduto} ${categoria || ''}`.toLowerCase();
+  if (
+    texto.includes('burger') ||
+    texto.includes('hambúrguer') ||
+    texto.includes('hamburguer') ||
+    texto.includes('angus') ||
+    texto.includes('carne') ||
+    texto.includes('bacon')
+  ) {
+    return <Beef size={22} color={tokens.colors.primary} />;
+  }
+  if (
+    texto.includes('suco') ||
+    texto.includes('refrigerante') ||
+    texto.includes('bebida') ||
+    texto.includes('lata')
+  ) {
+    return <CupSoda size={22} color={tokens.colors.primary} />;
+  }
+  if (
+    texto.includes('brownie') ||
+    texto.includes('pudim') ||
+    texto.includes('sobremesa') ||
+    texto.includes('doce') ||
+    texto.includes('torta') ||
+    texto.includes('bolo')
+  ) {
+    return <CakeSlice size={22} color={tokens.colors.primary} />;
+  }
+  return <UtensilsCrossed size={22} color={tokens.colors.primary} />;
+}
+
+export function FichasTecnicasList({ fichas, onEditarFicha }: FichasTecnicasListProps) {
   if (fichas.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <ThemedText style={styles.emptyIcon}>🔍</ThemedText>
+        <Search size={32} color={tokens.colors.textMuted} style={styles.emptyIcon} />
         <ThemedText variant="body" style={styles.emptyTitle}>
           Nenhuma ficha técnica encontrada
         </ThemedText>
@@ -42,9 +86,7 @@ export function FichasTecnicasList({ fichas }: FichasTecnicasListProps) {
           <View key={ficha.id} style={styles.card}>
             <View style={styles.topInfoRow}>
               <View style={styles.thumbnailBox}>
-                <ThemedText style={styles.thumbnailEmoji}>
-                  {ficha.sku === '#PDV-01' ? '🍔' : ficha.sku === '#PDV-02' ? '🍟' : '🥤'}
-                </ThemedText>
+                {getIconeFicha(ficha.nomeProduto, ficha.categoria)}
               </View>
 
               <View style={styles.headerDetails}>
@@ -54,7 +96,7 @@ export function FichasTecnicasList({ fichas }: FichasTecnicasListProps) {
                   </ThemedText>
                   <View style={styles.bomBadge}>
                     <ThemedText variant="caption" style={styles.bomBadgeText}>
-                      {ficha.versaoBom}
+                      {ficha.versaoBom || 'v1.0 (Ativa)'}
                     </ThemedText>
                   </View>
                 </View>
@@ -64,9 +106,22 @@ export function FichasTecnicasList({ fichas }: FichasTecnicasListProps) {
                 </ThemedText>
 
                 <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                  Preparo: {ficha.tempoPreparoMin} min
+                  Preparo: {ficha.tempoPreparoMin || 10} min
                 </ThemedText>
               </View>
+
+              {/* Botão de Edição de Ficha Técnica (Área de Toque 44x44px) */}
+              {onEditarFicha && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => onEditarFicha(ficha)}
+                  style={styles.btnEditarFicha}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Editar ficha técnica de ${ficha.nomeProduto}`}
+                >
+                  <Pencil size={18} color={tokens.colors.primary} />
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Ingredientes / BOM Pills Modular */}
@@ -84,11 +139,21 @@ export function FichasTecnicasList({ fichas }: FichasTecnicasListProps) {
             />
 
             {/* Capacidade no Turno */}
-            <View style={[styles.capacidadeBox, ficha.insumoLimitanteNome ? styles.capacidadeAlerta : styles.capacidadeOk]}>
-              <ThemedText style={styles.capacidadeIcon}>
-                {ficha.insumoLimitanteNome ? '⚠️' : '✓'}
-              </ThemedText>
-              <ThemedText variant="caption" style={ficha.insumoLimitanteNome ? styles.capacidadeTextoAlerta : styles.capacidadeTextoOk}>
+            <View
+              style={[
+                styles.capacidadeBox,
+                ficha.insumoLimitanteNome ? styles.capacidadeAlerta : styles.capacidadeOk,
+              ]}
+            >
+              {ficha.insumoLimitanteNome ? (
+                <AlertTriangle size={15} color={tokens.colors.status.orangeText} style={styles.capacidadeIcon} />
+              ) : (
+                <CheckCircle2 size={15} color={tokens.colors.status.greenText} style={styles.capacidadeIcon} />
+              )}
+              <ThemedText
+                variant="caption"
+                style={ficha.insumoLimitanteNome ? styles.capacidadeTextoAlerta : styles.capacidadeTextoOk}
+              >
                 Capacidade Máxima: {ficha.capacidadeTurnoPorcoes} porções{' '}
                 {ficha.insumoLimitanteNome ? `(limitado por ${ficha.insumoLimitanteNome})` : '(100% abastecido)'}
               </ThemedText>
@@ -119,7 +184,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyIcon: {
-    fontSize: 32,
     marginBottom: tokens.spacing.sm,
   },
   emptyTitle: {
@@ -151,25 +215,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  thumbnailEmoji: {
-    fontSize: 22,
-  },
   headerDetails: {
     flex: 1,
   },
   skuBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.spacing.xs,
+    gap: 6,
+    marginBottom: 2,
   },
   skuText: {
     fontWeight: '700',
+    fontSize: 10,
   },
   bomBadge: {
-    backgroundColor: '#F1F3F4',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: tokens.radii.sm,
+    borderRadius: 4,
   },
   bomBadgeText: {
     fontSize: 10,
@@ -177,34 +240,44 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
   },
   nomeProduto: {
-    fontSize: tokens.typography.fontMd,
     fontWeight: '800',
     color: tokens.colors.textPrimary,
-    marginTop: 1,
+    fontSize: tokens.typography.fontMd,
+  },
+  btnEditarFicha: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.primaryLight,
   },
   capacidadeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: tokens.radii.sm,
-    paddingVertical: 6,
-    paddingHorizontal: tokens.spacing.sm,
-    gap: 6,
+    padding: tokens.spacing.sm,
+    borderRadius: tokens.radii.md,
+    marginTop: tokens.spacing.xs,
   },
   capacidadeAlerta: {
-    backgroundColor: tokens.colors.status.redBg,
+    backgroundColor: '#FEF3C7',
   },
   capacidadeOk: {
-    backgroundColor: tokens.colors.status.greenBg,
+    backgroundColor: '#ECFDF5',
   },
   capacidadeIcon: {
-    fontSize: 12,
+    marginRight: 6,
   },
   capacidadeTextoAlerta: {
-    color: tokens.colors.status.redText,
+    color: '#B45309',
     fontWeight: '700',
+    fontSize: 11,
+    flex: 1,
   },
   capacidadeTextoOk: {
     color: tokens.colors.status.greenText,
     fontWeight: '700',
+    fontSize: 11,
+    flex: 1,
   },
 });

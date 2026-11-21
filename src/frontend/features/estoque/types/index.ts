@@ -2,6 +2,8 @@ export type AbaEstoqueAtiva = 'insumos' | 'fichas';
 
 export type StatusNivelEstoque = 'critico' | 'atencao' | 'normal';
 
+export type FiltroRapidoEstoque = 'todos' | 'criticos' | 'seguros';
+
 export interface InsumoEstoque {
   id: string;
   nome: string;
@@ -33,6 +35,7 @@ export interface FichaTecnicaItem {
   produtoId: string;
   nomeProduto: string;
   sku: string;
+  categoria?: string;
   versaoBom?: string;
   tempoPreparoMin?: number;
   imagemUrl?: string;
@@ -42,6 +45,21 @@ export interface FichaTecnicaItem {
   margemBrutaPercentual: number;
   capacidadeTurnoPorcoes: number;
   insumoLimitanteNome?: string;
+}
+
+export interface FichaTecnicaInput {
+  id?: string;
+  produtoId?: string;
+  nomeProduto: string;
+  sku?: string;
+  categoria?: string;
+  tempoPreparoMin: number;
+  precoBalcao: number;
+  ingredientes: Array<{
+    insumoId: string;
+    nome: string;
+    quantidade: string;
+  }>;
 }
 
 export interface EntradaEstoqueInput {

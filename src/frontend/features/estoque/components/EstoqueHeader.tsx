@@ -1,14 +1,26 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  Store,
+  ChefHat,
+  ClipboardList,
+  Boxes,
+  Search,
+  X,
+  WifiOff,
+  Plus,
+} from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 
 interface EstoqueHeaderProps {
   totalInsumos: number;
   totalFichas: number;
   busca: string;
   onBuscaChange: (texto: string) => void;
-  onScanBarcode?: () => void;
+  abaAtiva: 'insumos' | 'fichas';
+  onNovoItem: () => void;
 }
 
 export function EstoqueHeader({
@@ -16,15 +28,21 @@ export function EstoqueHeader({
   totalFichas,
   busca,
   onBuscaChange,
-  onScanBarcode,
+  abaAtiva,
+  onNovoItem,
 }: EstoqueHeaderProps) {
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+
+  const textoInsumos = `${totalInsumos} ${totalInsumos === 1 ? 'Insumo Cadastrado' : 'Insumos Cadastrados'}`;
+  const textoFichas = `${totalFichas} ${totalFichas === 1 ? 'Ficha (BOM)' : 'Fichas (BOM)'}`;
+
   return (
     <View style={styles.container}>
       {/* Top Branding & Status Row */}
       <View style={styles.topBrandingRow}>
         <View style={styles.brandGroup}>
           <View style={styles.storeLogoBox}>
-            <ThemedText style={styles.storeLogoIcon}>🏪</ThemedText>
+            <Store size={20} color={tokens.colors.primary} />
           </View>
           <View>
             <ThemedText variant="body" style={styles.brandTitle}>
@@ -43,7 +61,7 @@ export function EstoqueHeader({
         </View>
 
         <View style={styles.avatarCircle}>
-          <ThemedText style={styles.avatarEmoji}>👨‍🍳</ThemedText>
+          <ChefHat size={18} color={tokens.colors.primary} />
         </View>
       </View>
 
@@ -58,35 +76,61 @@ export function EstoqueHeader({
             Gestão de Inventário
           </ThemedText>
 
-          <View style={styles.ledgerBadge}>
-            <View style={styles.ledgerDot} />
-            <ThemedText variant="caption" style={styles.ledgerText}>
-              Sincronizado
-            </ThemedText>
+          <View style={styles.titleActions}>
+            <View style={[styles.ledgerBadge, !isApiOnline && styles.ledgerBadgeOffline]}>
+              {isApiOnline ? (
+                <>
+                  <View style={styles.ledgerDot} />
+                  <ThemedText variant="caption" style={styles.ledgerText}>
+                    Sincronizado
+                  </ThemedText>
+                </>
+              ) : (
+                <>
+                  <WifiOff size={12} color="#D97706" style={styles.offlineIcon} />
+                  <ThemedText variant="caption" style={styles.ledgerTextOffline}>
+                    Offline (Somente Leitura)
+                  </ThemedText>
+                </>
+              )}
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={onNovoItem}
+              style={styles.btnNovoHeader}
+              accessibilityRole="button"
+              accessibilityLabel={abaAtiva === 'insumos' ? 'Cadastrar novo insumo' : 'Cadastrar nova ficha técnica'}
+            >
+              <Plus size={14} color={tokens.colors.white} />
+              <ThemedText variant="caption" style={styles.btnNovoHeaderText}>
+                {abaAtiva === 'insumos' ? '+ Insumo' : '+ Ficha'}
+              </ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* Counters Chips */}
+      {/* Counters Chips com Pluralização Rigorosa */}
       <View style={styles.countersRow}>
         <View style={styles.counterChip}>
-          <ThemedText style={styles.chipIcon}>📋</ThemedText>
+          <ClipboardList size={14} color={tokens.colors.primary} />
           <ThemedText variant="caption" style={styles.chipText}>
-            {totalInsumos} Insumos Cadastrados
+            {textoInsumos}
           </ThemedText>
         </View>
 
         <View style={styles.counterChip}>
-          <ThemedText style={styles.chipIcon}>🥗</ThemedText>
+          <Boxes size={14} color={tokens.colors.primary} />
           <ThemedText variant="caption" style={styles.chipText}>
-            {totalFichas} Fichas (BOM)
+            {textoFichas}
           </ThemedText>
         </View>
       </View>
 
-      {/* Search Input Bar with Barcode Scanner Icon */}
+      {/* Search Input Bar com Limpeza Rápida */}
       <View style={styles.searchBarContainer}>
-        <ThemedText style={styles.searchIcon}>🔍</ThemedText>
+        <Search size={18} color={tokens.colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar insumo, SKU ou código..."
@@ -96,172 +140,50 @@ export function EstoqueHeader({
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onScanBarcode}
-          style={styles.scanButton}
-        >
-          <ThemedText style={styles.scanIcon}>📷</ThemedText>
-        </TouchableOpacity>
+        {busca.trim().length > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onBuscaChange('')}
+            style={styles.clearButton}
+            accessibilityRole="button"
+            accessibilityLabel="Limpar busca"
+          >
+            <X size={16} color={tokens.colors.textMuted} />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: tokens.spacing.md,
-    paddingTop: tokens.spacing.sm,
-    paddingBottom: tokens.spacing.sm,
-  },
-  topBrandingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: tokens.spacing.md,
-  },
-  brandGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  storeLogoBox: {
-    width: 38,
-    height: 38,
-    borderRadius: tokens.radii.sm,
-    backgroundColor: tokens.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  storeLogoIcon: {
-    fontSize: 20,
-  },
-  brandTitle: {
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  statusLive: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 1,
-  },
-  statusDotLive: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: tokens.colors.status.greenText,
-  },
-  statusLiveText: {
-    color: tokens.colors.status.greenText,
-    fontWeight: '800',
-    fontSize: tokens.typography.fontXs,
-    letterSpacing: 0.3,
-  },
-  avatarCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#E8EAED',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: tokens.colors.card,
-  },
-  avatarEmoji: {
-    fontSize: 20,
-  },
-  titleSection: {
-    marginBottom: tokens.spacing.xs,
-  },
-  moduleTag: {
-    fontSize: tokens.typography.fontXs,
-    fontWeight: '800',
-    color: tokens.colors.primaryDark,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  mainTitle: {
-    fontSize: tokens.typography.fontXxl,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  ledgerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.status.greenBg,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: tokens.radii.full,
-    gap: 5,
-  },
-  ledgerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: tokens.colors.status.greenText,
-  },
-  ledgerText: {
-    color: tokens.colors.status.greenText,
-    fontWeight: '700',
-    fontSize: tokens.typography.fontXs,
-  },
-  countersRow: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    marginTop: tokens.spacing.xs,
-    marginBottom: tokens.spacing.md,
-  },
-  counterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.card,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 5,
-    borderRadius: tokens.radii.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    gap: 5,
-  },
-  chipIcon: {
-    fontSize: 12,
-  },
-  chipText: {
-    color: tokens.colors.textSecondary,
-    fontWeight: '600',
-    fontSize: tokens.typography.fontXs,
-  },
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.card,
-    borderRadius: tokens.radii.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingHorizontal: tokens.spacing.sm,
-    height: 48,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: tokens.spacing.xs,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: tokens.typography.fontSm,
-    color: tokens.colors.textPrimary,
-    paddingVertical: 0,
-  },
-  scanButton: {
-    padding: tokens.spacing.xs,
-    marginLeft: tokens.spacing.xs,
-  },
-  scanIcon: {
-    fontSize: 18,
-  },
+  container: { paddingHorizontal: tokens.spacing.md, paddingTop: tokens.spacing.sm, paddingBottom: tokens.spacing.sm },
+  topBrandingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing.md },
+  brandGroup: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
+  storeLogoBox: { width: 38, height: 38, borderRadius: tokens.radii.sm, backgroundColor: tokens.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  brandTitle: { fontWeight: '800', color: tokens.colors.textPrimary },
+  statusLive: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
+  statusDotLive: { width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.colors.status.greenText },
+  statusLiveText: { fontSize: 10, fontWeight: '700', color: tokens.colors.status.greenText },
+  avatarCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: tokens.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  titleSection: { marginBottom: tokens.spacing.sm },
+  moduleTag: { color: tokens.colors.primary, fontWeight: '800', fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  titleActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mainTitle: { fontSize: 20, fontWeight: '800', color: tokens.colors.textPrimary, flexShrink: 1 },
+  btnNovoHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: tokens.radii.sm, gap: 4 },
+  btnNovoHeaderText: { color: tokens.colors.white, fontWeight: '700', fontSize: 11 },
+  ledgerBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F4EA', paddingHorizontal: 8, paddingVertical: 4, borderRadius: tokens.radii.full, gap: 4 },
+  ledgerBadgeOffline: { backgroundColor: '#FEF3C7' },
+  ledgerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.colors.status.greenText },
+  offlineIcon: { marginRight: 2 },
+  ledgerText: { fontSize: 10, fontWeight: '700', color: tokens.colors.status.greenText },
+  ledgerTextOffline: { fontSize: 10, fontWeight: '700', color: '#D97706' },
+  countersRow: { flexDirection: 'row', gap: tokens.spacing.sm, marginBottom: tokens.spacing.sm },
+  counterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.card, borderWidth: 1, borderColor: tokens.colors.border, paddingHorizontal: tokens.spacing.sm, paddingVertical: 6, borderRadius: tokens.radii.sm, gap: 6 },
+  chipText: { fontWeight: '600', color: tokens.colors.textSecondary, fontSize: 11 },
+  searchBarContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.card, borderWidth: 1, borderColor: tokens.colors.border, borderRadius: tokens.radii.md, paddingHorizontal: tokens.spacing.sm, height: 44 },
+  searchIcon: { marginRight: 6 },
+  searchInput: { flex: 1, height: 44, fontSize: tokens.typography.fontSm, color: tokens.colors.textPrimary },
+  clearButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
 });

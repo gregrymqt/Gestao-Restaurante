@@ -8,11 +8,15 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { AppDialog } from '@/shared/components/AppDialog';
+import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { CadastrarInsumoInput } from '../types';
 import { ModalNovoInsumoPills, CATEGORIAS_PADRAO } from './ModalNovoInsumoPills';
+import { modalBottomSheetStyles as sheetStyles } from './modalBottomSheetStyles';
 
 interface ModalNovoInsumoProps {
   visible: boolean;
@@ -27,6 +31,9 @@ export function ModalNovoInsumo({
   onConfirmar,
   isEnviando = false,
 }: ModalNovoInsumoProps) {
+  const insets = useSafeAreaInsets();
+  const isApiOnline = useConnectionStore((state) => state.isApiOnline);
+
   const [nome, setNome] = useState('');
   const [categoria, setCategoria] = useState(CATEGORIAS_PADRAO[0]);
   const [unidadeMedida, setUnidadeMedida] = useState('UN');
@@ -53,19 +60,16 @@ export function ModalNovoInsumo({
       AppDialog.warning('Campo Obrigatório', 'Informe o nome do insumo.');
       return;
     }
-
     const custo = parseFloat(custoTexto.replace(',', '.'));
     if (isNaN(custo) || custo < 0) {
       AppDialog.warning('Valor Inválido', 'Informe um custo unitário válido (>= 0).');
       return;
     }
-
     const minimo = parseFloat(minimoTexto.replace(',', '.'));
     if (isNaN(minimo) || minimo < 0) {
       AppDialog.warning('Valor Inválido', 'Informe um estoque mínimo válido (>= 0).');
       return;
     }
-
     const saldoInicial = saldoInicialTexto.trim()
       ? parseFloat(saldoInicialTexto.replace(',', '.'))
       : undefined;
@@ -84,36 +88,45 @@ export function ModalNovoInsumo({
         estoqueMinimo: minimo,
         saldoInicial,
       });
-      resetForm();
-      onClose();
-    } catch (error: any) {
-      const msg = error?.response?.data?.error || error?.message || 'Erro ao cadastrar insumo.';
+      handleClose();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const msg = err?.response?.data?.error || err?.message || 'Erro ao cadastrar insumo.';
       AppDialog.error('Erro ao Salvar Insumo', String(msg));
     }
   };
 
+  const isDesabilitado = isEnviando || !isApiOnline;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <View style={styles.sheetContainer}>
-          <View style={styles.dragPill} />
+      <View style={sheetStyles.overlay}>
+        <View style={sheetStyles.sheetContainer}>
+          <View style={sheetStyles.dragIndicator} />
 
-          <View style={styles.header}>
-            <View>
-              <ThemedText style={styles.title}>Novo Insumo / Matéria-Prima</ThemedText>
-              <ThemedText style={styles.subtitle}>Cadastre ingredientes para receitas e controle de saldos</ThemedText>
+          <View style={sheetStyles.header}>
+            <View style={sheetStyles.headerTitleWrap}>
+              <ThemedText style={sheetStyles.title}>Novo Insumo / Matéria-Prima</ThemedText>
+              <ThemedText style={sheetStyles.subtitle}>
+                Cadastre ingredientes para receitas e controle de saldos
+              </ThemedText>
             </View>
-            <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-              <ThemedText style={styles.closeBtnText}>✕</ThemedText>
+            <TouchableOpacity onPress={handleClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+              <X size={20} color={tokens.colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={sheetStyles.formScroll}
+            contentContainerStyle={sheetStyles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.inputGroup}>
-              <ThemedText style={styles.label}>Nome do Insumo *</ThemedText>
+              <ThemedText style={sheetStyles.label}>Nome do Insumo *</ThemedText>
               <TextInput
-                style={styles.textInput}
-                placeholder="Ex: Bacon Fatiado, Molho Barbecue, Queijo Gouda"
+                style={sheetStyles.input}
+                placeholder="Ex: Bacon, Molho Barbecue..."
                 placeholderTextColor={tokens.colors.textMuted}
                 value={nome}
                 onChangeText={setNome}
@@ -129,9 +142,9 @@ export function ModalNovoInsumo({
 
             <View style={styles.rowInputs}>
               <View style={[styles.inputGroup, styles.flex1]}>
-                <ThemedText style={styles.label}>Custo Unit. (R$) *</ThemedText>
+                <ThemedText style={sheetStyles.label}>Custo Unit. (R$) *</ThemedText>
                 <TextInput
-                  style={styles.textInput}
+                  style={sheetStyles.input}
                   placeholder="0,00"
                   placeholderTextColor={tokens.colors.textMuted}
                   keyboardType="numeric"
@@ -141,9 +154,9 @@ export function ModalNovoInsumo({
               </View>
 
               <View style={[styles.inputGroup, styles.flex1]}>
-                <ThemedText style={styles.label}>Estoque Mínimo *</ThemedText>
+                <ThemedText style={sheetStyles.label}>Estoque Mínimo *</ThemedText>
                 <TextInput
-                  style={styles.textInput}
+                  style={sheetStyles.input}
                   placeholder="0"
                   placeholderTextColor={tokens.colors.textMuted}
                   keyboardType="numeric"
@@ -154,10 +167,10 @@ export function ModalNovoInsumo({
             </View>
 
             <View style={styles.inputGroup}>
-              <ThemedText style={styles.label}>Saldo Inicial no Estoque (Opcional)</ThemedText>
+              <ThemedText style={sheetStyles.label}>Saldo Inicial no Estoque (Opcional)</ThemedText>
               <TextInput
-                style={styles.textInput}
-                placeholder="Ex: 10 (gera lançamento inicial no livro-razão)"
+                style={sheetStyles.input}
+                placeholder="Ex: 10 (lançamento inicial)"
                 placeholderTextColor={tokens.colors.textMuted}
                 keyboardType="numeric"
                 value={saldoInicialTexto}
@@ -166,16 +179,22 @@ export function ModalNovoInsumo({
             </View>
           </ScrollView>
 
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.btnCancelar} onPress={handleClose} disabled={isEnviando}>
-              <ThemedText style={styles.btnCancelarText}>Cancelar</ThemedText>
+          <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <TouchableOpacity style={sheetStyles.cancelarButton} onPress={handleClose} disabled={isEnviando}>
+              <ThemedText style={sheetStyles.cancelarText}>Cancelar</ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.btnConfirmar} onPress={handleSalvar} disabled={isEnviando}>
+            <TouchableOpacity
+              style={[sheetStyles.confirmarButton, isDesabilitado && sheetStyles.buttonDisabled]}
+              onPress={handleSalvar}
+              disabled={isDesabilitado}
+            >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} size="small" />
               ) : (
-                <ThemedText style={styles.btnConfirmarText}>Cadastrar Insumo</ThemedText>
+                <ThemedText style={sheetStyles.confirmarText}>
+                  {!isApiOnline ? 'Conexão necessária' : 'Cadastrar Insumo'}
+                </ThemedText>
               )}
             </TouchableOpacity>
           </View>
@@ -186,75 +205,8 @@ export function ModalNovoInsumo({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: tokens.colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    paddingBottom: 24,
-  },
-  dragPill: {
-    width: 44,
-    height: 5,
-    backgroundColor: tokens.colors.border,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.border,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: tokens.colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: tokens.colors.textSecondary,
-    marginTop: 2,
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  closeBtnText: {
-    fontSize: 18,
-    color: tokens.colors.textSecondary,
-  },
-  formScroll: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
   inputGroup: {
     marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: tokens.colors.textPrimary,
-    marginBottom: 6,
-  },
-  textInput: {
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: tokens.colors.textPrimary,
   },
   rowInputs: {
     flexDirection: 'row',
@@ -262,38 +214,5 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
-  },
-  footer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
-  },
-  btnCancelar: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-  },
-  btnCancelarText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: tokens.colors.textSecondary,
-  },
-  btnConfirmar: {
-    flex: 2,
-    backgroundColor: tokens.colors.primary,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  btnConfirmarText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: tokens.colors.white,
   },
 });

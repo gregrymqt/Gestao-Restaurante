@@ -5,9 +5,9 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Search } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { AppDialog } from '@/shared/components/AppDialog';
@@ -17,19 +17,28 @@ import { useRegistrarBaixaEstoque } from '../hooks/useRegistrarBaixaEstoque';
 import { useCadastrarInsumo } from '../hooks/useCadastrarInsumo';
 import { EstoqueHeader } from '../components/EstoqueHeader';
 import { SegmentedEstoqueControl } from '../components/SegmentedEstoqueControl';
+import { FiltrosRapidosInsumos } from '../components/FiltrosRapidosInsumos';
 import { InsumoSaldoCard } from '../components/InsumoSaldoCard';
 import { FichasTecnicasList } from '../components/FichasTecnicasList';
-import { FabEntradaMercadoria } from '../components/FabEntradaMercadoria';
 import { ModalEntradaEstoque } from '../components/ModalEntradaEstoque';
 import { ModalBaixaEstoque } from '../components/ModalBaixaEstoque';
 import { ModalNovoInsumo } from '../components/ModalNovoInsumo';
-import { CadastrarInsumoInput, EntradaEstoqueInput, BaixaEstoqueInput, InsumoEstoque } from '../types';
+import { ModalFichaTecnica } from '../components/ModalFichaTecnica';
+import {
+  CadastrarInsumoInput,
+  EntradaEstoqueInput,
+  BaixaEstoqueInput,
+  InsumoEstoque,
+  FichaTecnicaInput,
+} from '../types';
 
 export function EstoqueScreen() {
   const insets = useSafeAreaInsets();
   const {
     abaAtiva,
     setAbaAtiva,
+    filtroRapido,
+    setFiltroRapido,
     busca,
     setBusca,
     insumos,
@@ -37,6 +46,8 @@ export function EstoqueScreen() {
     fichas,
     totalInsumos,
     totalFichas,
+    totalCriticos,
+    totalSeguros,
     isLoading,
     isRefetching,
     refetch,
@@ -44,6 +55,12 @@ export function EstoqueScreen() {
     isModalEntradaOpen,
     abrirModalEntrada,
     fecharModalEntrada,
+    isModalFichaOpen,
+    fichaEdicao,
+    abrirModalNovaFicha,
+    abrirModalEditarFicha,
+    fecharModalFicha,
+    salvarFichaMutation,
   } = useInsumosEstoque();
 
   const [isModalNovoInsumoOpen, setIsModalNovoInsumoOpen] = useState(false);
@@ -84,7 +101,27 @@ export function EstoqueScreen() {
   const handleConfirmarNovoInsumo = async (dados: CadastrarInsumoInput) => {
     await cadastrarInsumoMutation.mutateAsync(dados);
     setIsModalNovoInsumoOpen(false);
-    AppDialog.success('Insumo Cadastrado! 📦', `O insumo "${dados.nome}" foi cadastrado com sucesso.`);
+    AppDialog.success('Insumo Cadastrado', `O insumo "${dados.nome}" foi cadastrado com sucesso.`);
+  };
+
+  const handleConfirmarFicha = async (dados: FichaTecnicaInput) => {
+    try {
+      await salvarFichaMutation.mutateAsync(dados);
+      AppDialog.success(
+        dados.id ? 'Ficha Técnica Atualizada' : 'Ficha Técnica Cadastrada',
+        `A ficha de "${dados.nomeProduto}" foi salva com sucesso.`
+      );
+    } catch {
+      AppDialog.error('Erro ao Salvar Ficha', 'Não foi possível salvar a ficha técnica.');
+    }
+  };
+
+  const handleNovoItem = () => {
+    if (abaAtiva === 'insumos') {
+      setIsModalNovoInsumoOpen(true);
+    } else {
+      abrirModalNovaFicha();
+    }
   };
 
   return (
@@ -101,12 +138,14 @@ export function EstoqueScreen() {
           />
         }
       >
-        {/* Header com Branding, Contadores e Busca */}
+        {/* Header com Branding, Contadores Sincronizados, Busca e Botão + Novo */}
         <EstoqueHeader
           busca={busca}
           onBuscaChange={setBusca}
           totalInsumos={totalInsumos}
           totalFichas={totalFichas}
+          abaAtiva={abaAtiva}
+          onNovoItem={handleNovoItem}
         />
 
         {/* Segmented Control: Insumos vs Fichas Técnicas */}
@@ -124,46 +163,25 @@ export function EstoqueScreen() {
           </View>
         ) : abaAtiva === 'insumos' ? (
           <>
-            {/* Seção Níveis de Estoque com Legenda */}
-            <View style={styles.secaoNiveisHeader}>
-              <ThemedText variant="title" style={styles.secaoTitulo}>
-                Níveis de Estoque
-              </ThemedText>
-
-              <View style={styles.legendaRow}>
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.redText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Crítico
-                  </ThemedText>
-                </View>
-
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.orangeText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Atenção
-                  </ThemedText>
-                </View>
-
-                <View style={styles.legendaItem}>
-                  <View style={[styles.legendaDot, { backgroundColor: tokens.colors.status.greenText }]} />
-                  <ThemedText variant="caption" style={styles.legendaTexto}>
-                    Normal
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
+            {/* Pílulas de Filtro Rápido (Todos, Críticos, Seguros) */}
+            <FiltrosRapidosInsumos
+              filtroAtivo={filtroRapido}
+              onSelectFiltro={setFiltroRapido}
+              totalTodos={totalInsumos}
+              totalCriticos={totalCriticos}
+              totalSeguros={totalSeguros}
+            />
 
             {/* Lista de Insumos */}
             <View style={styles.insumosList}>
               {insumos.length === 0 ? (
                 <View style={styles.emptyBuscaBox}>
-                  <ThemedText style={styles.emptyIcon}>🔍</ThemedText>
+                  <Search size={28} color={tokens.colors.textMuted} style={styles.emptyIcon} />
                   <ThemedText variant="body" style={styles.emptyTitulo}>
                     Nenhum insumo encontrado
                   </ThemedText>
                   <ThemedText variant="caption" color={tokens.colors.textMuted}>
-                    Verifique o termo buscado ou adicione novos insumos.
+                    Verifique o filtro selecionado ou adicione novos insumos.
                   </ThemedText>
                 </View>
               ) : (
@@ -183,12 +201,12 @@ export function EstoqueScreen() {
           </>
         ) : (
           /* Aba Fichas Técnicas */
-          <FichasTecnicasList fichas={fichas} />
+          <FichasTecnicasList
+            fichas={fichas}
+            onEditarFicha={abrirModalEditarFicha}
+          />
         )}
       </ScrollView>
-
-      {/* FAB Flutuante para Cadastro de Novo Insumo (Despoluição visual YAGNI) */}
-      <FabEntradaMercadoria onPress={() => setIsModalNovoInsumoOpen(true)} />
 
       {/* Modal Deslizante para Entrada no Estoque */}
       <ModalEntradaEstoque
@@ -219,65 +237,26 @@ export function EstoqueScreen() {
         onConfirmar={handleConfirmarNovoInsumo}
         isEnviando={cadastrarInsumoMutation.isPending}
       />
+
+      {/* Modal para Cadastro e Edição de Ficha Técnica (BOM) */}
+      <ModalFichaTecnica
+        visible={isModalFichaOpen}
+        fichaEdicao={fichaEdicao}
+        todosInsumos={todosInsumos}
+        onClose={fecharModalFicha}
+        onSalvar={handleConfirmarFicha}
+        isEnviando={salvarFichaMutation.isPending}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.background,
-  },
-  scrollContent: {
-    paddingBottom: 80,
-  },
-  loadingContainer: {
-    padding: tokens.spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 200,
-  },
-  loadingText: {
-    marginTop: tokens.spacing.sm,
-  },
-  secaoNiveisHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: tokens.spacing.md,
-    marginBottom: tokens.spacing.xs + 2,
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  secaoTitulo: {
-    fontSize: tokens.typography.fontMd,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  legendaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.spacing.sm,
-  },
-  legendaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  legendaDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  legendaTexto: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: tokens.colors.textSecondary,
-  },
-  insumosList: {
-    paddingHorizontal: tokens.spacing.md,
-    gap: tokens.spacing.xs,
-  },
+  container: { flex: 1, backgroundColor: tokens.colors.background },
+  scrollContent: { paddingBottom: 40 },
+  loadingContainer: { padding: tokens.spacing.xxl, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
+  loadingText: { marginTop: tokens.spacing.sm },
+  insumosList: { paddingHorizontal: tokens.spacing.md, gap: tokens.spacing.xs },
   emptyBuscaBox: {
     backgroundColor: tokens.colors.card,
     borderRadius: tokens.radii.md,
@@ -288,12 +267,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: tokens.spacing.md,
   },
-  emptyIcon: {
-    fontSize: 28,
-    marginBottom: 6,
-  },
-  emptyTitulo: {
-    fontWeight: '700',
-    marginBottom: 2,
-  },
+  emptyIcon: { marginBottom: 6 },
+  emptyTitulo: { fontWeight: '700', marginBottom: 2 },
 });

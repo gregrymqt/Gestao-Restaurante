@@ -1,0 +1,120 @@
+import { StyleSheet } from 'react-native';
+import { tokens } from '@/components/primitives/tokens';
+
+export const modalBottomSheetStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: tokens.colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    flexDirection: 'column',
+  },
+  dragIndicator: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: tokens.colors.border,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.xs + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  title: {
+    fontSize: tokens.typography.fontLg,
+    fontWeight: '800',
+    color: tokens.colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: tokens.colors.textSecondary,
+    marginTop: 2,
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+  },
+  formScroll: {
+    flex: 1,
+    paddingHorizontal: tokens.spacing.md,
+  },
+  formScrollContent: {
+    paddingTop: tokens.spacing.sm,
+    paddingBottom: tokens.spacing.md,
+  },
+  label: {
+    fontWeight: '700',
+    color: tokens.colors.textPrimary,
+    marginBottom: 4,
+    marginTop: tokens.spacing.xs,
+  },
+  input: {
+    height: 46,
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    borderRadius: tokens.radii.md,
+    paddingHorizontal: tokens.spacing.sm,
+    fontSize: tokens.typography.fontMd,
+    color: tokens.colors.textPrimary,
+    marginBottom: 4,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.md,
+    paddingTop: tokens.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    backgroundColor: tokens.colors.card,
+  },
+  cancelarButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: tokens.colors.textMuted,
+  },
+  confirmarButton: {
+    flex: 2,
+    height: 48,
+    backgroundColor: tokens.colors.primary,
+    borderRadius: tokens.radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmarText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: tokens.colors.white,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+});
