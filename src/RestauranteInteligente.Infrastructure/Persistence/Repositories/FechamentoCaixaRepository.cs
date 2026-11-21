@@ -36,4 +36,18 @@ public sealed class FechamentoCaixaRepository : IFechamentoCaixaRepository
     {
         await _context.FechamentosCaixa.AddAsync(fechamentoCaixa, ct);
     }
+
+    public async Task AdicionarMovimentacaoAsync(MovimentacaoCaixa movimentacao, CancellationToken ct = default)
+    {
+        await _context.MovimentacoesCaixa.AddAsync(movimentacao, ct);
+    }
+
+    public async Task<IReadOnlyList<MovimentacaoCaixa>> ObterMovimentacoesPorCaixaIdAsync(Guid fechamentoCaixaId, CancellationToken ct = default)
+    {
+        return await _context.MovimentacoesCaixa
+            .AsNoTracking()
+            .Where(m => m.FechamentoCaixaId == fechamentoCaixaId)
+            .OrderBy(m => m.DataHora)
+            .ToListAsync(ct);
+    }
 }

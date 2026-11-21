@@ -127,7 +127,7 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     color: tokens.colors.textPrimary,
     ...(Platform.OS === 'web'
-      ? ({ outlineStyle: 'none', outline: 'none' } as any)
+      ? { outlineWidth: 0 }
       : {}),
   },
   inputValorFocadoSuprimento: {
@@ -173,7 +173,7 @@ export const styles = StyleSheet.create({
     fontSize: tokens.typography.fontSm,
     color: tokens.colors.textPrimary,
     ...(Platform.OS === 'web'
-      ? ({ outlineStyle: 'none', outline: 'none' } as any)
+      ? { outlineWidth: 0 }
       : {}),
   },
   inputErrorBorder: {

@@ -1,3 +1,4 @@
+import { apiClient } from '@/services/api';
 import {
   ShiftMetrics,
   TerminalStatus,
@@ -7,21 +8,8 @@ import {
 
 export const perfilService = {
   async obterMetricasTurno(): Promise<ShiftMetrics> {
-    // Retorna métricas agregadas do turno operacional em andamento
-    return {
-      turnoNumero: '#108',
-      inicioTurno: '08:30',
-      tempoDecorrido: 'Há 3h 15m',
-      totalVendas: 24,
-      ticketMedio: 53.35,
-      volumeTotal: 1280.5,
-      tendenciaPercentual: 18,
-      tenderBreakdown: {
-        pix: 720.0,
-        cartao: 440.5,
-        dinheiro: 120.0,
-      },
-    };
+    const response = await apiClient.get<ShiftMetrics>('/caixa/resumo-turno');
+    return response.data;
   },
 
   async obterStatusTerminal(sseConectado: boolean): Promise<TerminalStatus> {
@@ -37,19 +25,32 @@ export const perfilService = {
 
   async registrarMovimentacao(
     dados: MovimentacaoCaixaInput,
-    saldoAtual: number
+    _saldoAtual?: number
   ): Promise<MovimentacaoCaixaResult> {
-    const delta = dados.tipo === 'SUPRIMENTO' ? dados.valor : -dados.valor;
-    const novoSaldo = Math.max(0, saldoAtual + delta);
-    const protocolo = `${dados.tipo.substring(0, 3)}-${Date.now().toString(36).toUpperCase()}`;
+    const rota = dados.tipo === 'SUPRIMENTO' ? '/caixa/suprimento' : '/caixa/sangria';
+    const response = await apiClient.post<{
+      id: string;
+      tipo: string;
+      valor: number;
+      motivo: string;
+      saldoAtualDinheiro: number;
+      protocolo: string;
+      dataHora: string;
+      sucesso?: boolean;
+      mensagem?: string;
+    }>(rota, {
+      valor: dados.valor,
+      motivo: dados.motivo,
+    });
+
+    const data = response.data;
+    const rotulo = dados.tipo === 'SUPRIMENTO' ? 'Suprimento de troco' : 'Sangria de caixa';
 
     return {
-      sucesso: true,
-      protocolo,
-      novoSaldoDinheiro: novoSaldo,
-      mensagem: `${
-        dados.tipo === 'SUPRIMENTO' ? 'Suprimento de troco' : 'Sangria de caixa'
-      } registrada com sucesso sob protocolo ${protocolo}.`,
+      sucesso: data.sucesso ?? true,
+      protocolo: data.protocolo,
+      novoSaldoDinheiro: data.saldoAtualDinheiro,
+      mensagem: data.mensagem || `${rotulo} registrado com sucesso sob protocolo ${data.protocolo}.`,
     };
   },
 };

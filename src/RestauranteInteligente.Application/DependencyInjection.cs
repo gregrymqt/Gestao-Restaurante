@@ -26,8 +26,11 @@ public static class DependencyInjection
         services.AddScoped<ObterStatusCaixaUseCase>();
         services.AddScoped<AbrirCaixaUseCase>();
         services.AddScoped<FecharCaixaUseCase>();
+        services.AddScoped<RegistrarMovimentacaoCaixaUseCase>();
+        services.AddScoped<ObterResumoTurnoUseCase>();
         services.AddScoped<CalcularCapacidadeProducaoUseCase>();
         services.AddScoped<SolicitarPrevisaoDemandaUseCase>();
+        services.AddScoped<RegistrarOrdemCompraUseCase>();
         services.AddScoped<CadastrarRestauranteUseCase>();
         services.AddScoped<ObterStatusAssinaturaUseCase>();
         services.AddScoped<AtivarAssinaturaPlanoUseCase>();

@@ -9,12 +9,10 @@ import {
 } from '../utils/previsoesHelpers';
 import {
   DADOS_PREVISAO_PADRAO,
-  FICHAS_TECNICAS_MOCK,
-  normalizarTexto,
   gerarProjecaoFallbackParaData,
 } from './previsoesMockData';
 
-export { DADOS_PREVISAO_PADRAO, FICHAS_TECNICAS_MOCK };
+export { DADOS_PREVISAO_PADRAO };
 
 export const previsoesService = {
   async obterCapacidadeProducao(dataAlvo?: string): Promise<RelatorioCapacidadeProducao> {
@@ -56,21 +54,44 @@ export const previsoesService = {
     produtoId: string,
     nomeProduto?: string
   ): Promise<FichaTecnicaIngrediente[]> {
-    if (FICHAS_TECNICAS_MOCK[produtoId]) {
-      return FICHAS_TECNICAS_MOCK[produtoId];
-    }
+    try {
+      const response = await apiClient.get<Array<{
+        id: string;
+        nome: string;
+        ingredientes: Array<{ insumoId: string; nome: string; quantidade: string }>;
+        custoInsumos: number;
+        capacidadeTurnoPorcoes: number;
+      }>>('/estoque/fichas-tecnicas');
 
-    const nomeNorm = normalizarTexto(nomeProduto || '');
-    if (nomeNorm.includes('brownie')) return FICHAS_TECNICAS_MOCK['prod-brownie-sorvete'];
-    if (nomeNorm.includes('smash') && nomeNorm.includes('bacon'))
-      return FICHAS_TECNICAS_MOCK['prod-smash-bacon'];
-    if (nomeNorm.includes('smash')) return FICHAS_TECNICAS_MOCK['prod-smash-duplo'];
-    if (nomeNorm.includes('batata')) return FICHAS_TECNICAS_MOCK['prod-batata-rustica'];
-    if (nomeNorm.includes('suco') || nomeNorm.includes('laranja'))
-      return FICHAS_TECNICAS_MOCK['prod-suco-laranja'];
-    if (nomeNorm.includes('refrigerante')) return FICHAS_TECNICAS_MOCK['prod-refrigerante'];
-    if (nomeNorm.includes('pudim')) return FICHAS_TECNICAS_MOCK['prod-pudim'];
-    if (nomeNorm.includes('cheese')) return FICHAS_TECNICAS_MOCK['prod-cheeseburger'];
+      if (Array.isArray(response.data)) {
+        const fichaEncontrada = response.data.find(
+          (f) =>
+            f.id === produtoId ||
+            (nomeProduto && f.nome.toLowerCase() === nomeProduto.toLowerCase())
+        );
+
+        if (fichaEncontrada && Array.isArray(fichaEncontrada.ingredientes)) {
+          return fichaEncontrada.ingredientes.map((ing) => {
+            const partes = (ing.quantidade || '').trim().split(' ');
+            const qtdNum = parseFloat(partes[0]) || 1;
+            const unidade = partes.length > 1 ? partes[1] : 'un';
+
+            return {
+              insumoId: ing.insumoId,
+              nomeInsumo: ing.nome,
+              quantidadePorPorcao: qtdNum,
+              unidadeMedida: unidade,
+              estoqueAtual: 0,
+              estoqueNecessario: qtdNum,
+              capacidadeMaxItem: fichaEncontrada.capacidadeTurnoPorcoes || 0,
+              isGargalo: false,
+            };
+          });
+        }
+      }
+    } catch {
+      // Fallback gracioso para dados locais caso backend offline
+    }
 
     return [];
   },
@@ -79,9 +100,26 @@ export const previsoesService = {
     insumos: Array<{ insumoId: string; nomeInsumo: string; quantidade: number; unidadeMedida?: string }>;
     valorTotal: number;
   }): Promise<{ sucesso: boolean; protocolo: string }> {
+    const response = await apiClient.post<{
+      id: string;
+      protocolo: string;
+      status: string;
+      valorTotal: number;
+      criadoEm: string;
+      sucesso?: boolean;
+    }>('/previsoes/ordens-compra', {
+      insumos: pedido.insumos.map((i) => ({
+        insumoId: i.insumoId,
+        nomeInsumo: i.nomeInsumo,
+        quantidade: i.quantidade,
+        unidadeMedida: i.unidadeMedida,
+      })),
+      valorTotal: pedido.valorTotal,
+    });
+
     return {
-      sucesso: true,
-      protocolo: `OC-${Date.now().toString(36).toUpperCase()}`,
+      sucesso: response.data.sucesso ?? true,
+      protocolo: response.data.protocolo,
     };
   },
 };

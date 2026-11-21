@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     letterSpacing: 8,
     color: tokens.colors.textPrimary,
     ...(Platform.OS === 'web'
-      ? ({ outlineStyle: 'none', outline: 'none' } as any)
+      ? { outlineWidth: 0 }
       : {}),
   },
   pinInputFocused: {
