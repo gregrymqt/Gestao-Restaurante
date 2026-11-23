@@ -67,7 +67,7 @@ export function formatarTempoSla(minutos: number, segundos: number): string {
     const mins = minutos % 60;
     return `${horas}h ${String(mins).padStart(2, '0')}m`;
   }
-  return `${String(minutos).padStart(2, '0')}m ${String(segundos).padStart(2, '0')}s`;
+  return `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
 }
 
 export function calcularSlaTicket(dataHoraIso: string, agoraMs: number = Date.now()): SlaCalculadoKds {
