@@ -71,9 +71,11 @@ export const previsoesService = {
 
       if (Array.isArray(response.data)) {
         const fichaEncontrada = response.data.find(
-          (f) =>
+          (f: { id: string; nome: string; [key: string]: unknown }) =>
             f.id === produtoId ||
-            (nomeProduto && f.nome.toLowerCase() === nomeProduto.toLowerCase())
+            (f as { produtoId?: string }).produtoId === produtoId ||
+            (nomeProduto && f.nome && f.nome.trim().toLowerCase() === nomeProduto.trim().toLowerCase()) ||
+            (nomeProduto && f.nome && (f.nome.toLowerCase().includes(nomeProduto.toLowerCase()) || nomeProduto.toLowerCase().includes(f.nome.toLowerCase())))
         );
 
         if (fichaEncontrada && Array.isArray(fichaEncontrada.ingredientes)) {

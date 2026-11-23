@@ -1,0 +1,25 @@
+{
+  "auth": {
+    "loginUrl": "/api/v1/auth/login",
+    "body": {
+      "email": "gestor@restaurante.com",
+      "password": "123456"
+    },
+    "tokenPath": "token"
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/produtos",
+      "auth": true,
+      "expectedStatus": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/caixa/status",
+      "auth": true,
+      "expectedStatus": 200,
+      "requiredFields": ["status"]
+    }
+  ]
+}

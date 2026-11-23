@@ -134,13 +134,14 @@ export function RevisaoComandaSheet({ visible, onClose }: RevisaoComandaSheetPro
                       style={styles.itemModificadores}
                     >
                       {item.modificadores
-                        .map((m) =>
-                          Number(m.precoAdicional) > 0
-                            ? `+ ${m.nome} (+R$ ${Number(m.precoAdicional)
+                        .map((m) => {
+                          const nomeLimpo = m.nome.trim().replace(/^\+\s*/, '');
+                          return Number(m.precoAdicional) > 0
+                            ? `+ ${nomeLimpo} (+R$ ${Number(m.precoAdicional)
                                 .toFixed(2)
                                 .replace('.', ',')})`
-                            : m.nome
-                        )
+                            : nomeLimpo;
+                        })
                         .join(' • ')}
                     </ThemedText>
                   )}

@@ -142,20 +142,30 @@ export function FichasTecnicasList({ fichas, onEditarFicha }: FichasTecnicasList
             <View
               style={[
                 styles.capacidadeBox,
-                ficha.insumoLimitanteNome ? styles.capacidadeAlerta : styles.capacidadeOk,
+                (ficha.insumoLimitanteNome || (ficha.capacidadeTurnoPorcoes ?? 0) <= 0)
+                  ? styles.capacidadeAlerta
+                  : styles.capacidadeOk,
               ]}
             >
-              {ficha.insumoLimitanteNome ? (
+              {(ficha.insumoLimitanteNome || (ficha.capacidadeTurnoPorcoes ?? 0) <= 0) ? (
                 <AlertTriangle size={15} color={tokens.colors.status.orangeText} style={styles.capacidadeIcon} />
               ) : (
                 <CheckCircle2 size={15} color={tokens.colors.status.greenText} style={styles.capacidadeIcon} />
               )}
               <ThemedText
                 variant="caption"
-                style={ficha.insumoLimitanteNome ? styles.capacidadeTextoAlerta : styles.capacidadeTextoOk}
+                style={
+                  (ficha.insumoLimitanteNome || (ficha.capacidadeTurnoPorcoes ?? 0) <= 0)
+                    ? styles.capacidadeTextoAlerta
+                    : styles.capacidadeTextoOk
+                }
               >
                 Capacidade Máxima: {ficha.capacidadeTurnoPorcoes} porções{' '}
-                {ficha.insumoLimitanteNome ? `(limitado por ${ficha.insumoLimitanteNome})` : '(100% abastecido)'}
+                {(ficha.capacidadeTurnoPorcoes ?? 0) <= 0
+                  ? `(esgotado${ficha.insumoLimitanteNome ? ` por falta de ${ficha.insumoLimitanteNome}` : ''})`
+                  : ficha.insumoLimitanteNome
+                  ? `(limitado por ${ficha.insumoLimitanteNome})`
+                  : '(100% abastecido)'}
               </ThemedText>
             </View>
           </View>
