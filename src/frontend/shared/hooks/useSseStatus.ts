@@ -12,7 +12,7 @@ interface SseStatusState {
 }
 
 export const useSseStatus = create<SseStatusState>((set) => ({
-  status: 'DISCONNECTED',
+  status: 'CONNECTING',
   lastEventTimestamp: null,
   activeToast: null,
 

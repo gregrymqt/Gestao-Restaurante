@@ -1,5 +1,12 @@
 # Log de Execução
 
+## [2026-11-22] Correção de Anomalias de UI, Formatação de Comanda e Sincronização
+- Resolvido mojibake UTF-8 em `GruposModificadores` no Postgres e sanitizado prefixo duplicado `+` na comanda (`RevisaoComandaSheet.tsx`).
+- Corrigido cálculo de capacidade em `FichasTecnicasList.tsx` para indicar esgotamento quando `capacidadeTurnoPorcoes <= 0`.
+- Ampliada busca de ficha técnica em `previsoesService.ts` com correspondência estendida de ID e nome de produto.
+- Ajustado estado inicial de conexão SSE em `useSseStatus.ts` para `CONNECTING`, eliminando falso selo `Offline` no boot do KDS.
+- Tipagem validada via `npx tsc --noEmit` com 0 erros.
+
 ## [2026-11-21] Lote 1: Domínio e Persistência Backend (.NET 9)
 - Criadas entidades de domínio `MovimentacaoCaixa`, `OrdemCompra` e `ItemOrdemCompra` com invariantes multi-tenant e numéricas.
 - Interfaces `IFechamentoCaixaRepository` e `IOrdemCompraRepository` definidas e mapeadas em `AppDbContext` e repositórios EF Core.
