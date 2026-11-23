@@ -18,12 +18,14 @@ export function useInsumosEstoque() {
   const queryClient = useQueryClient();
   const { aba } = useLocalSearchParams<{ aba?: string }>();
   const [abaAtiva, setAbaAtiva] = useState<AbaEstoqueAtiva>(() =>
-    aba === 'fichas' ? 'fichas' : 'insumos'
+    aba === 'fichas' ? 'fichas' : aba === 'ordens' ? 'ordens' : 'insumos'
   );
 
   useEffect(() => {
     if (aba === 'fichas') {
       setAbaAtiva('fichas');
+    } else if (aba === 'ordens') {
+      setAbaAtiva('ordens');
     }
   }, [aba]);
   const [filtroRapido, setFiltroRapido] = useState<FiltroRapidoEstoque>('todos');

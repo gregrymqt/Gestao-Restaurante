@@ -52,3 +52,42 @@ export interface DataOpcaoFiltro {
   sublabel: string;
   dataAlvo: string;
 }
+
+export type StatusOrdemCompra = 'PENDENTE' | 'APROVADA' | 'RECEBIDA' | 'CANCELADA';
+
+export interface ItemOrdemCompraDetalhe {
+  id: string;
+  insumoId: string;
+  nomeInsumo: string;
+  unidadeMedida: string;
+  quantidade: number;
+  precoUnitarioEstimado: number;
+  subtotalEstimado: number;
+}
+
+export interface OrdemCompraDetalhe {
+  id: string;
+  protocolo: string;
+  status: StatusOrdemCompra;
+  valorTotalEstimado: number;
+  fornecedor?: string | null;
+  observacao?: string | null;
+  criadoEm: string;
+  atualizadoEm?: string | null;
+  itens: ItemOrdemCompraDetalhe[];
+}
+
+export interface AtualizarStatusOrdemCompraInput {
+  novoStatus: StatusOrdemCompra;
+  fornecedor?: string;
+  observacao?: string;
+}
+
+export interface ReceberOrdemCompraResponse {
+  ordemCompraId: string;
+  protocolo: string;
+  status: string;
+  totalItensCreditados: number;
+  dataHoraRecebimento: string;
+  mensagem: string;
+}

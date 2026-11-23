@@ -55,14 +55,17 @@ export function ModalHistoricoVendas({ visible, onClose }: ModalHistoricoVendasP
 
           <View style={styles.tituloBox}>
             <ThemedText variant="subtitle" weight="bold" style={styles.titulo}>
-              Histórico de Vendas
+              Histórico Geral de Vendas
             </ThemedText>
             <ThemedText variant="caption" style={styles.subtitulo}>
-              {totalVendas} {totalVendas === 1 ? 'pedido concluído' : 'pedidos concluídos'}
+              {totalVendas} {totalVendas === 1 ? 'pedido acumulado' : 'pedidos acumulados no terminal'}
             </ThemedText>
           </View>
 
           <View style={styles.faturamentoBadge}>
+            <ThemedText variant="caption" style={styles.faturamentoLabel}>
+              Total Acumulado
+            </ThemedText>
             <ThemedText variant="caption" weight="bold" style={styles.faturamentoValor}>
               {totalFormatado}
             </ThemedText>
@@ -164,6 +167,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: tokens.radii.md,
+    alignItems: 'flex-end',
+  },
+  faturamentoLabel: {
+    color: '#2E7D32',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   faturamentoValor: {
     color: '#2E7D32',

@@ -1,4 +1,4 @@
-export type AbaEstoqueAtiva = 'insumos' | 'fichas';
+export type AbaEstoqueAtiva = 'insumos' | 'ordens' | 'fichas';
 
 export type StatusNivelEstoque = 'critico' | 'atencao' | 'normal';
 

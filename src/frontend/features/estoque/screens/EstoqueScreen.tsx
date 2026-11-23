@@ -20,10 +20,10 @@ import { SegmentedEstoqueControl } from '../components/SegmentedEstoqueControl';
 import { FiltrosRapidosInsumos } from '../components/FiltrosRapidosInsumos';
 import { InsumoSaldoCard } from '../components/InsumoSaldoCard';
 import { FichasTecnicasList } from '../components/FichasTecnicasList';
-import { ModalEntradaEstoque } from '../components/ModalEntradaEstoque';
-import { ModalBaixaEstoque } from '../components/ModalBaixaEstoque';
-import { ModalNovoInsumo } from '../components/ModalNovoInsumo';
-import { ModalFichaTecnica } from '../components/ModalFichaTecnica';
+import { OrdensCompraTab } from '../components/OrdensCompraTab';
+import { EstoqueModalsContainer } from '../components/EstoqueModalsContainer';
+import { useOrdensCompra } from '@/features/previsoes/hooks/useOrdensCompra';
+import { OrdemCompraDetalhe } from '@/features/previsoes/types';
 import {
   CadastrarInsumoInput,
   EntradaEstoqueInput,
@@ -63,6 +63,20 @@ export function EstoqueScreen() {
     salvarFichaMutation,
   } = useInsumosEstoque();
 
+  const {
+    ordens,
+    contadores: contadoresOrdens,
+    isLoading: isLoadingOrdens,
+    isRefetching: isRefetchingOrdens,
+    refetch: refetchOrdens,
+    filtroStatus: filtroStatusOrdens,
+    setFiltroStatus: setFiltroStatusOrdens,
+    atualizarStatusMutation,
+    receberOrdemMutation,
+  } = useOrdensCompra();
+
+  const [ordemCompradaFoco, setOrdemCompradaFoco] = useState<OrdemCompraDetalhe | null>(null);
+  const [isModalCompradaOpen, setIsModalCompradaOpen] = useState(false);
   const [isModalNovoInsumoOpen, setIsModalNovoInsumoOpen] = useState(false);
   const [insumoBaixaSelecionado, setInsumoBaixaSelecionado] = useState<InsumoEstoque | null>(null);
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false);
@@ -71,14 +85,48 @@ export function EstoqueScreen() {
   const registrarBaixaMutation = useRegistrarBaixaEstoque();
   const cadastrarInsumoMutation = useCadastrarInsumo();
 
+  const handleConfirmarComprada = async (dados: { fornecedor?: string; observacao?: string }) => {
+    if (!ordemCompradaFoco) return;
+    try {
+      await atualizarStatusMutation.mutateAsync({
+        id: ordemCompradaFoco.id,
+        input: { novoStatus: 'APROVADA', fornecedor: dados.fornecedor, observacao: dados.observacao },
+      });
+      setIsModalCompradaOpen(false);
+      setOrdemCompradaFoco(null);
+      AppDialog.success('Ordem Aprovada', 'Marcada como comprada com sucesso!');
+    } catch {
+      AppDialog.error('Erro', 'Não foi possível atualizar o status da ordem.');
+    }
+  };
+
+  const handleReceberOrdem = (ordem: OrdemCompraDetalhe) => {
+    AppDialog.confirm('Receber Mercadoria', `Confirmar entrada de ${ordem.protocolo} no estoque?`, async () => {
+      try {
+        const res = await receberOrdemMutation.mutateAsync({ id: ordem.id });
+        AppDialog.success('Mercadoria Recebida', res.mensagem);
+      } catch {
+        AppDialog.error('Erro', 'Não foi possível receber a mercadoria.');
+      }
+    });
+  };
+
+  const handleCancelarOrdem = (ordem: OrdemCompraDetalhe) => {
+    AppDialog.confirm('Cancelar Ordem', `Deseja cancelar ${ordem.protocolo}?`, async () => {
+      try {
+        await atualizarStatusMutation.mutateAsync({ id: ordem.id, input: { novoStatus: 'CANCELADA' } });
+        AppDialog.info('Cancelada', `Ordem ${ordem.protocolo} cancelada.`);
+      } catch {
+        AppDialog.error('Erro', 'Não foi possível cancelar a ordem.');
+      }
+    });
+  };
+
   const handleConfirmarEntrada = async (dados: EntradaEstoqueInput) => {
     try {
       const res = await registrarEntradaMutation.mutateAsync(dados);
       fecharModalEntrada();
-      AppDialog.success(
-        'Entrada Registrada com Sucesso',
-        `Entrada de +${dados.quantidade} confirmada com sucesso!\nNovo saldo: ${res.novoSaldo}.\nProtocolo: ${res.protocoloLedger}`
-      );
+      AppDialog.success('Entrada Registrada', `+${dados.quantidade} adicionadas. Novo saldo: ${res.novoSaldo}.`);
     } catch {
       AppDialog.error('Erro ao Registrar Entrada', 'Não foi possível registrar a entrada de estoque.');
     }
@@ -89,10 +137,7 @@ export function EstoqueScreen() {
       await registrarBaixaMutation.mutateAsync(dados);
       setIsModalBaixaOpen(false);
       setInsumoBaixaSelecionado(null);
-      AppDialog.success(
-        'Baixa Registrada com Sucesso',
-        `A baixa de ${dados.quantidade} foi debitada do estoque e registrada no histórico.`
-      );
+      AppDialog.success('Baixa Registrada', `Baixa de ${dados.quantidade} debitada com sucesso.`);
     } catch {
       AppDialog.error('Erro ao Registrar Baixa', 'Não foi possível registrar a baixa de estoque.');
     }
@@ -107,10 +152,7 @@ export function EstoqueScreen() {
   const handleConfirmarFicha = async (dados: FichaTecnicaInput) => {
     try {
       await salvarFichaMutation.mutateAsync(dados);
-      AppDialog.success(
-        dados.id ? 'Ficha Técnica Atualizada' : 'Ficha Técnica Cadastrada',
-        `A ficha de "${dados.nomeProduto}" foi salva com sucesso.`
-      );
+      AppDialog.success('Ficha Salva', `A ficha de "${dados.nomeProduto}" foi salva com sucesso.`);
     } catch {
       AppDialog.error('Erro ao Salvar Ficha', 'Não foi possível salvar a ficha técnica.');
     }
@@ -148,10 +190,11 @@ export function EstoqueScreen() {
           onNovoItem={handleNovoItem}
         />
 
-        {/* Segmented Control: Insumos vs Fichas Técnicas */}
+        {/* Segmented Control: Insumos vs Ordens vs Fichas */}
         <SegmentedEstoqueControl
           abaAtiva={abaAtiva}
           onSelectAba={setAbaAtiva}
+          badgeOrdensPendentes={contadoresOrdens.pendentes}
         />
 
         {isLoading && todosInsumos.length === 0 ? (
@@ -199,53 +242,37 @@ export function EstoqueScreen() {
               )}
             </View>
           </>
-        ) : (
-          /* Aba Fichas Técnicas */
-          <FichasTecnicasList
-            fichas={fichas}
-            onEditarFicha={abrirModalEditarFicha}
+        ) : abaAtiva === 'ordens' ? (
+          <OrdensCompraTab
+            ordens={ordens}
+            isLoading={isLoadingOrdens}
+            isRefetching={isRefetchingOrdens}
+            refetch={refetchOrdens}
+            filtroStatus={filtroStatusOrdens}
+            setFiltroStatus={setFiltroStatusOrdens}
+            contadores={contadoresOrdens}
+            onMarcarComprada={(ordem) => { setOrdemCompradaFoco(ordem); setIsModalCompradaOpen(true); }}
+            onReceberOrdem={handleReceberOrdem}
+            onCancelarOrdem={handleCancelarOrdem}
           />
+        ) : (
+          <FichasTecnicasList fichas={fichas} onEditarFicha={abrirModalEditarFicha} />
         )}
       </ScrollView>
 
-      {/* Modal Deslizante para Entrada no Estoque */}
-      <ModalEntradaEstoque
-        visible={isModalEntradaOpen}
-        insumoInicial={insumoSelecionado}
-        todosInsumos={todosInsumos}
-        onClose={fecharModalEntrada}
-        onConfirmar={handleConfirmarEntrada}
-        isEnviando={registrarEntradaMutation.isPending}
-      />
-
-      {/* Modal Deslizante para Baixa / Ajuste Manual */}
-      <ModalBaixaEstoque
-        visible={isModalBaixaOpen}
-        insumo={insumoBaixaSelecionado}
-        onClose={() => {
-          setIsModalBaixaOpen(false);
-          setInsumoBaixaSelecionado(null);
-        }}
-        onConfirmar={handleConfirmarBaixa}
-        isEnviando={registrarBaixaMutation.isPending}
-      />
-
-      {/* Modal para Cadastro de Novo Insumo */}
-      <ModalNovoInsumo
-        visible={isModalNovoInsumoOpen}
-        onClose={() => setIsModalNovoInsumoOpen(false)}
-        onConfirmar={handleConfirmarNovoInsumo}
-        isEnviando={cadastrarInsumoMutation.isPending}
-      />
-
-      {/* Modal para Cadastro e Edição de Ficha Técnica (BOM) */}
-      <ModalFichaTecnica
-        visible={isModalFichaOpen}
-        fichaEdicao={fichaEdicao}
-        todosInsumos={todosInsumos}
-        onClose={fecharModalFicha}
-        onSalvar={handleConfirmarFicha}
-        isEnviando={salvarFichaMutation.isPending}
+      <EstoqueModalsContainer
+        isModalEntradaOpen={isModalEntradaOpen} insumoSelecionado={insumoSelecionado} todosInsumos={todosInsumos}
+        onFecharModalEntrada={fecharModalEntrada} onConfirmarEntrada={handleConfirmarEntrada} isEnviandoEntrada={registrarEntradaMutation.isPending}
+        isModalBaixaOpen={isModalBaixaOpen} insumoBaixa={insumoBaixaSelecionado}
+        onFecharModalBaixa={() => { setIsModalBaixaOpen(false); setInsumoBaixaSelecionado(null); }}
+        onConfirmarBaixa={handleConfirmarBaixa} isEnviandoBaixa={registrarBaixaMutation.isPending}
+        isModalNovoInsumoOpen={isModalNovoInsumoOpen} onFecharModalNovoInsumo={() => setIsModalNovoInsumoOpen(false)}
+        onConfirmarNovoInsumo={handleConfirmarNovoInsumo} isEnviandoNovoInsumo={cadastrarInsumoMutation.isPending}
+        isModalFichaOpen={isModalFichaOpen} fichaEdicao={fichaEdicao} onFecharModalFicha={fecharModalFicha}
+        onConfirmarFicha={handleConfirmarFicha} isEnviandoFicha={salvarFichaMutation.isPending}
+        isModalCompradaOpen={isModalCompradaOpen} ordemCompradaFoco={ordemCompradaFoco}
+        onFecharModalComprada={() => { setIsModalCompradaOpen(false); setOrdemCompradaFoco(null); }}
+        onConfirmarComprada={handleConfirmarComprada} isEnviandoComprada={atualizarStatusMutation.isPending}
       />
     </View>
   );

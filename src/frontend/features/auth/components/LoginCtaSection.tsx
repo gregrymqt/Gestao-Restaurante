@@ -28,7 +28,12 @@ export function LoginCtaSection({
         accessibilityLabel="Acessar painel do restaurante"
       >
         {isLoading ? (
-          <ActivityIndicator color={tokens.colors.white} />
+          <View style={styles.ctaContent}>
+            <ActivityIndicator size="small" color={tokens.colors.white} />
+            <ThemedText variant="body" weight="bold" style={styles.ctaText}>
+              Autenticando...
+            </ThemedText>
+          </View>
         ) : (
           <View style={styles.ctaContent}>
             <ThemedText variant="body" weight="bold" style={styles.ctaText}>

@@ -21,6 +21,9 @@ public sealed class OrdemCompra : IRestauranteEntity
     public decimal ValorTotalEstimado { get; private set; }
     public Guid UsuarioId { get; private set; }
     public DateTimeOffset CriadoEm { get; private set; } = DateTimeOffset.UtcNow;
+    public string? Fornecedor { get; private set; }
+    public string? Observacao { get; private set; }
+    public DateTimeOffset? AtualizadoEm { get; private set; }
 
     public IReadOnlyCollection<ItemOrdemCompra> Itens => _itens.AsReadOnly();
 
@@ -66,6 +69,42 @@ public sealed class OrdemCompra : IRestauranteEntity
 
         var statusNormalizado = novoStatus.Trim().ToUpperInvariant();
         Status = statusNormalizado;
+        AtualizadoEm = DateTimeOffset.UtcNow;
+    }
+
+    public void Aprovar(string? fornecedor = null, string? observacao = null)
+    {
+        if (Status != StatusPendente)
+            throw new InvalidOperationException($"Não é permitido aprovar uma ordem de compra com status '{Status}'. Apenas ordens pendentes podem ser aprovadas.");
+
+        Status = StatusAprovada;
+        Fornecedor = string.IsNullOrWhiteSpace(fornecedor) ? null : fornecedor.Trim();
+        Observacao = string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim();
+        AtualizadoEm = DateTimeOffset.UtcNow;
+    }
+
+    public void MarcarRecebida()
+    {
+        if (Status != StatusAprovada && Status != StatusPendente)
+            throw new InvalidOperationException($"Não é permitido receber uma ordem de compra com status '{Status}'. A ordem deve estar pendente ou aprovada.");
+
+        Status = StatusRecebida;
+        AtualizadoEm = DateTimeOffset.UtcNow;
+    }
+
+    public void Cancelar(string? motivo = null)
+    {
+        if (Status == StatusRecebida)
+            throw new InvalidOperationException("Não é permitido cancelar uma ordem de compra que já foi recebida e integrada ao estoque.");
+
+        Status = StatusCancelada;
+        if (!string.IsNullOrWhiteSpace(motivo))
+        {
+            Observacao = string.IsNullOrWhiteSpace(Observacao)
+                ? $"Cancelada: {motivo.Trim()}"
+                : $"{Observacao} | Cancelada: {motivo.Trim()}";
+        }
+        AtualizadoEm = DateTimeOffset.UtcNow;
     }
 
     private void RecalcularTotal()

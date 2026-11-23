@@ -1,5 +1,11 @@
 # Log de Execução
 
+## [2026-11-23] Módulo de Gestão e Recebimento de Ordens de Compra
+- Backend: Criados endpoints `GET /ordens-compra`, `PATCH /status` e recebimento atômico `POST /receber` com ordenação anti-deadlock e ledger append-only.
+- Frontend: Implementada aba `Ordens` no `EstoqueScreen`, segmented control com badge, card com expansão de itens e modal de compra com fornecedor.
+- Dashboard: Conectado atalho direto no Card de Estoque Crítico para visualização e acompanhamento das ordens emitidas.
+- Qualidade: 100% dos 254 testes unitários backend e 7 testes frontend aprovados sem falhas; conformidade estrita com o teto de 300 linhas por arquivo.
+
 ## [2026-11-22] Correção de Anomalias de UI, Formatação de Comanda e Sincronização
 - Resolvido mojibake UTF-8 em `GruposModificadores` no Postgres e sanitizado prefixo duplicado `+` na comanda (`RevisaoComandaSheet.tsx`).
 - Corrigido cálculo de capacidade em `FichasTecnicasList.tsx` para indicar esgotamento quando `capacidadeTurnoPorcoes <= 0`.

@@ -395,8 +395,11 @@ CREATE TABLE "OrdensCompra" (
     "Protocolo" VARCHAR(50) NOT NULL,
     "Status" VARCHAR(20) NOT NULL,
     "ValorTotalEstimado" NUMERIC(18,2) NOT NULL,
+    "Fornecedor" VARCHAR(200) NULL,
+    "Observacao" TEXT NULL,
     "UsuarioId" UUID NOT NULL,
     "CriadoEm" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "AtualizadoEm" TIMESTAMPTZ NULL,
     CONSTRAINT "FK_OrdensCompra_Restaurantes" FOREIGN KEY ("RestauranteId")
         REFERENCES "Restaurantes"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_OrdensCompra_Usuarios" FOREIGN KEY ("UsuarioId")
