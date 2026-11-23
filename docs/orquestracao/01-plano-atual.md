@@ -1,114 +1,79 @@
-# Plano Atual: Implementação de Sinal de Aborto Cooperativo no Frontend (Services, Hooks e Interceptors)
+# Plano Atual: Gestão e Recebimento de Ordens de Compra de Insumos Críticos
 
 Status: Concluído
-Data: 2026-11-21
+Data: 2026-11-23
 
 ## 1. Contexto e Invariantes
-- **Padrão Cooperativo Duplo:** Injeção do `AbortSignal` nativo do TanStack Query v5 nos hooks de leitura (`useQuery`) e criação/cleanup de `AbortController` nativo em hooks com `useEffect` (`usePerfil`, `useHistoricoVendas`).
-- **Resiliência e Higiene de Rede:** Requisições abortadas intencionalmente (`ERR_CANCELED` / `CanceledError`) não devem acionar o detector de queda de servidor (`setApiOnline(false)`), nem rotinas de deslogamento por 401, nem emitir Toasts de erro ao operador.
-- **Integridade de Cache e Fallbacks:** Services com fallbacks mock não devem engolir cancelamentos de requisições em voo; se `axios.isCancel(err)`, relançar o erro (`throw err`) para que o React Query gerencie o ciclo de vida sem poluir o cache com dados falsos.
-- **Mutações Seguras:** Mutações de negócio (vendas, caixa, estoque, assinaturas) suportam `signal?: AbortSignal` opcional sem cancelamento automático agressivo em unmounts transitórios.
-- **Teto Arquitetural:** Respeitar o limite de 300 linhas por arquivo e tipagem estrita (proibido `any`).
+- **Multi-Tenant em Dupla Camada:** Toda consulta/comando restringe `RestauranteId` via `IRestauranteEntity` e interceptor transacional RLS.
+- **Ledger de Estoque Imutável:** O recebimento de mercadoria gera registros `MovimentacoesEstoque` append-only (`Tipo = Entrada`, `Origem = Compra`), mantendo `Insumos.QuantidadeEstoque` atomicamente atualizado.
+- **Anti-Deadlock na Entrada de Insumos:** Ordenar sempre por `InsumoId ASC` antes de invocar bloqueio pessimista `ObterPorIdsParaAtualizacaoAsync` (`SELECT ... FOR UPDATE`).
+- **Clean Architecture (.NET 9):** Regras de transição (`PENDENTE` -> `APROVADA` -> `RECEBIDA`) e cálculo no `Domain`. Use Cases dedicados para Listagem, Atualização de Status e Recebimento Atômico.
+- **Frontend React Native (Expo SDK 58):** Aba dedicada em `features/estoque` integrada ao `SegmentedEstoqueControl`, `<FlashList>`, suporte obrigatório a `signal?: AbortSignal` e teto rígido de 300 linhas por arquivo.
 
 ---
 
 ## 2. Tarefas Atômicas de Execução
 
-### Lote 1: Camada de Rede Base & Interceptor de Erro
-- [x] Atualizar `src/frontend/shared/services/api.ts:L63-L110`:
-  - Importar `isCancel` de `axios`.
-  - No interceptor de resposta (`apiClient.interceptors.response.use`), verificar se `axios.isCancel(error)`. Caso afirmativo, rejeitar imediatamente (`return Promise.reject(error)`) sem alterar o status da API para offline (`useConnectionStore.getState().setApiOnline(false)`).
-  - Na função `extractErrorMessage`, verificar `if (axios.isCancel(err)) return ''` ou tratar cancelamento para não exibir mensagem de erro no UI.
+### Lote 1: Domínio e Repositórios (.NET)
+- [x] Atualizar `src/RestauranteInteligente.Domain/Entities/OrdemCompra.cs:L20-L75`:
+  - Adicionar propriedades `Fornecedor`, `Observacao`, `AtualizadoEm`.
+  - Adicionar métodos `Aprovar(string? fornecedor, string? observacao)`, `MarcarRecebida()` e `Cancelar(string? motivo)`.
+- [x] Atualizar `src/RestauranteInteligente.Domain/Common/Interfaces/IOrdemCompraRepository.cs:L8-L13`:
+  - Declarar `Task<IReadOnlyList<OrdemCompra>> ListarAsync(string? status = null, CancellationToken ct = default)`.
+  - Declarar `Task<OrdemCompra?> ObterParaAtualizacaoAsync(Guid id, CancellationToken ct = default)`.
+- [x] Atualizar `src/RestauranteInteligente.Infrastructure/Persistence/Configurations/OrdemCompraConfiguration.cs:L20-L61`:
+  - Mapear colunas `Fornecedor` (varchar 150 nullable), `Observacao` (varchar 500 nullable), `AtualizadoEm` (timestamptz nullable).
+- [x] Atualizar `src/RestauranteInteligente.Infrastructure/Persistence/Repositories/OrdemCompraRepository.cs:L19-L40`:
+  - Implementar `ListarAsync` com `.Include(o => o.Itens).ThenInclude(i => i.Insumo).AsNoTracking()` e ordenação `CriadoEm DESC`.
+  - Implementar `ObterParaAtualizacaoAsync` com `.Include(o => o.Itens).ThenInclude(i => i.Insumo)`.
 
-### Lote 2: Propagação de AbortSignal nos 11 Feature Services
-- [x] Atualizar `src/frontend/features/admin/services/adminService.ts:L92-L151`:
-  - Adicionar parâmetro opcional `signal?: AbortSignal` a `listarTenants`, `estenderTrial` e `alterarStatus`.
-  - Repassar `{ signal }` nas opções das chamadas `apiClient.get` e `apiClient.post`.
-  - No catch de `listarTenants`, verificar `if (axios.isCancel(err)) throw err;`.
-- [x] Atualizar `src/frontend/features/assinatura/services/assinaturaService.ts:L30-L49`:
-  - Adicionar parâmetro opcional `signal?: AbortSignal` a `obterStatus` e `assinarPlano`.
-  - Repassar `{ signal }` nas chamadas `apiClient.get` e `apiClient.post`.
-- [x] Atualizar `src/frontend/features/auth/services/authService.ts:L74-L278`:
-  - Adicionar `signal?: AbortSignal` em `obterOperadoresRecentes`, `loginComPin`, `login`, `cadastrarRestaurante`, `validarPin`, `definirPin`, `solicitarRecuperacaoSenha` e `redefinirSenha`.
-  - Repassar `{ signal }` para o `apiClient`.
-- [x] Atualizar `src/frontend/features/caixa/services/caixaService.ts:L77-L115`:
-  - Adicionar `signal?: AbortSignal` a `abrirCaixa`, `obterSessaoAtiva` e `fecharCaixa`.
-  - Repassar `{ signal }` para o `apiClient`.
-- [x] Atualizar `src/frontend/features/dashboard/services/dashboardService.ts:L55-L94`:
-  - Adicionar `signal?: AbortSignal` a `obterResumoExecutivo`.
-  - Repassar `{ signal }` para `apiClient.get`.
-  - No catch, verificar `if (axios.isCancel(e)) throw e;` antes de devolver fallback mock.
-- [x] Atualizar `src/frontend/features/estoque/services/estoqueService.ts:L71-L165`:
-  - Adicionar `signal?: AbortSignal` a `obterInsumos`, `obterFichasTecnicas`, `registrarEntradaEstoque`, `cadastrarInsumo`, `registrarBaixaEstoque` e `salvarFichaTecnica`.
-  - Repassar `{ signal }` em todas as chamadas `apiClient`.
-  - No catch de `obterInsumos` e `obterFichasTecnicas`, checar `if (axios.isCancel(err)) throw err;`.
-- [x] Atualizar `src/frontend/features/kds/services/kdsService.ts:L5-L19`:
-  - Adicionar `signal?: AbortSignal` a `listarPedidosAtivos` e `atualizarStatusPedido`.
-  - Repassar `{ signal }` para o `apiClient`.
-- [x] Atualizar `src/frontend/features/perfil/services/equipeService.ts:L21-L58`:
-  - Adicionar `signal?: AbortSignal` a `listarEquipe`, `cadastrarOperador`, `desativarOperador` e `ativarOperador`.
-  - Repassar `{ signal }` para o `apiClient`.
-- [x] Atualizar `src/frontend/features/perfil/services/perfilService.ts:L10-L59`:
-  - Adicionar `signal?: AbortSignal` a `obterMetricasTurno`, `obterStatusTerminal` e `registrarMovimentacao`.
-  - Repassar `{ signal }` para o `apiClient`.
-- [x] Atualizar `src/frontend/features/previsoes/services/previsoesService.ts:L18-L128`:
-  - Adicionar `signal?: AbortSignal` a `obterCapacidadeProducao`, `obterFichaTecnica` e `enviarOrdemCompra`.
-  - Repassar `{ signal }` para o `apiClient`.
-  - No catch de `obterCapacidadeProducao` e `obterFichaTecnica`, checar `if (axios.isCancel(e)) throw e;`.
-- [x] Atualizar `src/frontend/features/vendas/services/vendasService.ts:L38-L90`:
-  - Adicionar `signal?: AbortSignal` a `obterProdutos`, `registrarVenda`, `obterHistorico`, `obterModificadoresProduto` e `criarProduto`.
-  - Repassar `{ signal }` para o `apiClient`.
-  - No catch de `obterProdutos` e `obterHistorico`, checar `if (axios.isCancel(err)) throw err;`.
+### Lote 2: Casos de Uso e Injeção de Dependência (.NET)
+- [x] Criar DTOs em `src/RestauranteInteligente.Application/Previsoes/DTOs/OrdemCompraDetalheDtos.cs`:
+  - Declarar `ItemOrdemCompraDetalheDto`, `OrdemCompraDetalheDto`, `AtualizarStatusOrdemCompraInputDto` e `ReceberOrdemCompraOutputDto`.
+- [x] Criar `src/RestauranteInteligente.Application/Previsoes/UseCases/ListarOrdensCompraUseCase.cs`:
+  - Obter ordens do tenant e mapear para lista de `OrdemCompraDetalheDto`.
+- [x] Criar `src/RestauranteInteligente.Application/Previsoes/UseCases/AtualizarStatusOrdemCompraUseCase.cs`:
+  - Validar transições de status (`APROVADA`, `CANCELADA`) e comitar via Unit of Work.
+- [x] Criar `src/RestauranteInteligente.Application/Previsoes/UseCases/ReceberOrdemCompraUseCase.cs`:
+  - Transação explícita com Unit of Work.
+  - Ordenar insumos por `InsumoId ASC` antes de `_insumoRepository.ObterPorIdsParaAtualizacaoAsync`.
+  - Creditar estoque em cada insumo, registrar `MovimentacaoEstoque(Entrada, Compra)` no ledger e atualizar status da ordem para `RECEBIDA`.
+- [x] Atualizar `src/RestauranteInteligente.Application/DependencyInjection.cs:L30-L45`:
+  - Registrar os três novos use cases no container de serviços.
 
-### Lote 3: Injeção de Sinal nos Hooks de Consulta (`useQuery`)
-- [x] Atualizar `src/frontend/features/admin/hooks/useAdminTenants.ts:L40-L49`:
-  - Ajustar `queryFn: ({ signal }) => adminService.listarTenants({ ... }, signal)`.
-- [x] Atualizar `src/frontend/features/assinatura/hooks/useAssinatura.ts:L24-L35`:
-  - Ajustar `queryFn: ({ signal }) => assinaturaService.obterStatus(signal)`.
-- [x] Atualizar `src/frontend/features/caixa/hooks/useCaixaAtual.ts:L13-L17`:
-  - Ajustar `queryFn: ({ signal }) => caixaService.obterSessaoAtiva(signal)`.
-- [x] Atualizar `src/frontend/features/dashboard/hooks/useDashboardExecutivo.ts:L15-L19`:
-  - Ajustar `queryFn: ({ signal }) => dashboardService.obterResumoExecutivo(signal)`.
-- [x] Atualizar `src/frontend/features/estoque/hooks/useInsumosEstoque.ts:L45-L63`:
-  - Ajustar `queryFn: ({ signal }) => estoqueService.obterInsumos(signal)`.
-  - Ajustar `queryFn: ({ signal }) => estoqueService.obterFichasTecnicas(signal)`.
-- [x] Atualizar `src/frontend/features/kds/hooks/useKdsPedidos.ts:L11-L16`:
-  - Ajustar `queryFn: ({ signal }) => kdsService.listarPedidosAtivos(signal)`.
-- [x] Atualizar `src/frontend/features/previsoes/hooks/useCapacidadeProducao.ts:L30-L45`:
-  - Ajustar `queryFn: ({ signal }) => previsoesService.obterCapacidadeProducao(dataAlvo, signal)`.
-- [x] Atualizar `src/frontend/features/vendas/hooks/useCatalogoProdutos.ts:L52-L65`:
-  - Ajustar `queryFn: ({ signal }) => vendasService.obterProdutos(signal)`.
-- [x] Atualizar `src/frontend/features/vendas/hooks/useModificadoresProduto.ts:L12-L25`:
-  - Ajustar `queryFn: ({ signal }) => vendasService.obterModificadoresProduto(produtoId, signal)`.
+### Lote 3: Endpoints da API (.NET)
+- [x] Atualizar `src/RestauranteInteligente.Api/Controllers/PrevisoesController.cs:L18-L121`:
+  - Injetar `ListarOrdensCompraUseCase`, `AtualizarStatusOrdemCompraUseCase` e `ReceberOrdemCompraUseCase`.
+  - Adicionar endpoint `GET /api/v1/previsoes/ordens-compra?status=...`.
+  - Adicionar endpoint `PATCH /api/v1/previsoes/ordens-compra/{id:guid}/status`.
+  - Adicionar endpoint `POST /api/v1/previsoes/ordens-compra/{id:guid}/receber`.
 
-### Lote 4: Hooks de Efeito Direto (`useEffect` com `AbortController`)
-- [x] Atualizar `src/frontend/features/perfil/hooks/usePerfil.ts:L43-L47`:
-  - Instanciar `const controller = new AbortController();` dentro do `useEffect`.
-  - Passar `controller.signal` para `perfilService.obterMetricasTurno` e `perfilService.obterStatusTerminal`.
-  - Adicionar proteção para não exibir erros nem console warning se `axios.isCancel(err)`.
-  - Retornar cleanup `return () => controller.abort();`.
-- [x] Atualizar `src/frontend/features/vendas/hooks/useHistoricoVendas.ts:L11-L35`:
-  - Adaptar `carregarHistorico` para aceitar `signal?: AbortSignal`.
-  - No `useEffect`, criar `AbortController`, passar para a chamada e abortar no cleanup.
-  - Eliminar uso de `err: any` e suprimir `setErro` quando `axios.isCancel(err)`.
+### Lote 4: Camada de Serviços e Hooks no Frontend
+- [x] Atualizar `src/frontend/features/previsoes/types/index.ts`:
+  - Adicionar tipos `OrdemCompraDetalhe`, `ItemOrdemCompraDetalhe`, `AtualizarStatusOrdemCompraInput`, `ReceberOrdemCompraResponse`.
+- [x] Atualizar `src/frontend/features/previsoes/services/previsoesService.ts:L108-L156`:
+  - Implementar `listarOrdensCompra`, `atualizarStatusOrdemCompra` e `receberOrdemCompra` com `signal?: AbortSignal`.
+- [x] Criar `src/frontend/features/previsoes/hooks/useOrdensCompra.ts`:
+  - Hook TanStack Query `useOrdensCompra(statusFiltro)` e mutations para atualizar status e receber mercadoria.
 
-### Lote 5: Hooks de Mutação (`useMutation`)
-- [x] Atualizar hooks de mutação para permitir o repasse opcional de `signal`:
-  - `src/frontend/features/vendas/hooks/useRegistrarVenda.ts:L20-L27`
-  - `src/frontend/features/caixa/hooks/useFecharCaixa.ts:L15-L25`
-  - `src/frontend/features/caixa/hooks/useMovimentacaoCaixa.ts:L15-L25`
-  - `src/frontend/features/estoque/hooks/useCadastrarInsumo.ts:L10-L20`
-  - `src/frontend/features/estoque/hooks/useRegistrarBaixaEstoque.ts:L10-L20`
-  - `src/frontend/features/estoque/hooks/useRegistrarEntradaEstoque.ts:L10-L20`
-  - `src/frontend/features/vendas/hooks/useCriarProduto.ts:L15-L25`
+### Lote 5: Componentes e Telas no Frontend
+- [x] Atualizar `src/frontend/features/estoque/components/SegmentedEstoqueControl.tsx:L1-L60`:
+  - Incluir segmento `'ordens'` (rótulo: "Ordens").
+- [x] Criar `src/frontend/features/estoque/components/OrdensCompraTab.tsx`:
+  - Pílulas de filtro (`Todas`, `Pendentes`, `Compradas`, `Recebidas`).
+  - Card de ordem com listagem de itens, protocolo, data, valor e ações contextuais ("Marcar como Comprada", "Receber Mercadoria", "Cancelar").
+- [x] Criar `src/frontend/features/estoque/components/ModalMarcarComprada.tsx`:
+  - Formulário para informar fornecedor e observações antes de mudar status para `APROVADA`.
+- [x] Atualizar `src/frontend/features/estoque/screens/EstoqueScreen.tsx:L35-L165`:
+  - Suportar aba `'ordens'` renderizando `OrdensCompraTab`.
+- [x] Atualizar `src/frontend/features/dashboard/components/AlertaEstoqueCriticoCard.tsx:L110-L151` e `DashboardScreen.tsx:L30-L130`:
+  - Substituir estado local volátil de ordem pendente por redirecionamento direto para a aba de Ordens no Estoque.
 
-### Lote 6: Testes Automatizados e Auditoria de Qualidade
-- [x] Atualizar `src/frontend/__tests__/servicesErrorHandling.test.ts`:
-  - Adicionar suite cobrindo cancelamento com `AbortController`:
-    - Validar rejeição como `CanceledError` quando o sinal é acionado.
-    - Validar que `apiClient` não altera `useConnectionStore.getState().isApiOnline` para `false` ao cancelar.
-    - Validar que fallbacks de mock não são ativados em cancelamentos.
-- [x] Executar validação silenciosa de testes e linter:
-  - `Push-Location src/frontend; $env:EXPO_PUBLIC_API_URL="http://localhost:5000/api/v1"; npx tsx --test __tests__/servicesErrorHandling.test.ts; Pop-Location`
+### Lote 6: Testes Automatizados e Build
+- [x] Criar testes unitários em `tests/RestauranteInteligente.UnitTests/Previsoes/ReceberOrdemCompraUseCaseTests.cs`.
+- [x] Criar testes unitários em `tests/RestauranteInteligente.UnitTests/Previsoes/AtualizarStatusOrdemCompraUseCaseTests.cs`.
+- [x] Atualizar `src/frontend/__tests__/servicesErrorHandling.test.ts` cobrindo os novos métodos do `previsoesService`.
+- [x] Validar compilação e execução de testes:
   - `dotnet test --verbosity minimal`
+  - `Push-Location src/frontend; $env:EXPO_PUBLIC_API_URL="http://localhost:5000/api/v1"; npx tsx --test __tests__/servicesErrorHandling.test.ts; Pop-Location`
   - `graft build`

@@ -14,14 +14,14 @@ export const DADOS_DASHBOARD_PADRAO: DashboardExecutivoData = {
   },
   insumosCriticos: [
     {
-      id: 'ins-01',
+      id: '33333333-3333-3333-3333-333333333333',
       nome: 'Carne Bovina Moída (Blend)',
       quantidadeAtual: 3.2,
       quantidadeMinima: 5.0,
       unidadeMedida: 'kg',
     },
     {
-      id: 'ins-02',
+      id: '22222222-2222-2222-2222-222222222222',
       nome: 'Pão de Hambúrguer Brioche',
       quantidadeAtual: 18,
       quantidadeMinima: 30,

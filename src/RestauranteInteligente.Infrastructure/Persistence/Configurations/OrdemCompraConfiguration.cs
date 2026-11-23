@@ -34,6 +34,18 @@ public sealed class OrdemCompraConfiguration : IEntityTypeConfiguration<OrdemCom
             .HasColumnType("timestamptz")
             .IsRequired();
 
+        builder.Property(o => o.Fornecedor)
+            .HasMaxLength(150)
+            .IsRequired(false);
+
+        builder.Property(o => o.Observacao)
+            .HasMaxLength(500)
+            .IsRequired(false);
+
+        builder.Property(o => o.AtualizadoEm)
+            .HasColumnType("timestamptz")
+            .IsRequired(false);
+
         builder.HasOne<Restaurante>()
             .WithMany()
             .HasForeignKey(o => o.RestauranteId)

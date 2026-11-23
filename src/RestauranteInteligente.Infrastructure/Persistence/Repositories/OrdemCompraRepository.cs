@@ -34,7 +34,35 @@ public sealed class OrdemCompraRepository : IOrdemCompraRepository
     {
         return await _context.OrdensCompra
             .Include(o => o.Itens)
+                .ThenInclude(i => i.Insumo)
             .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == id, ct);
+    }
+
+    public async Task<IReadOnlyList<OrdemCompra>> ListarAsync(string? status = null, CancellationToken ct = default)
+    {
+        var query = _context.OrdensCompra
+            .Include(o => o.Itens)
+                .ThenInclude(i => i.Insumo)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var statusNormalizado = status.Trim().ToUpperInvariant();
+            query = query.Where(o => o.Status == statusNormalizado);
+        }
+
+        return await query
+            .OrderByDescending(o => o.CriadoEm)
+            .ToListAsync(ct);
+    }
+
+    public async Task<OrdemCompra?> ObterParaAtualizacaoAsync(Guid id, CancellationToken ct = default)
+    {
+        return await _context.OrdensCompra
+            .Include(o => o.Itens)
+                .ThenInclude(i => i.Insumo)
+            .AsTracking()
             .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
 }

@@ -13,13 +13,14 @@ import {
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
+import { AbaEstoqueAtiva } from '../types';
 
 interface EstoqueHeaderProps {
   totalInsumos: number;
   totalFichas: number;
   busca: string;
   onBuscaChange: (texto: string) => void;
-  abaAtiva: 'insumos' | 'fichas';
+  abaAtiva: AbaEstoqueAtiva;
   onNovoItem: () => void;
 }
 
@@ -95,18 +96,20 @@ export function EstoqueHeader({
               )}
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={onNovoItem}
-              style={styles.btnNovoHeader}
-              accessibilityRole="button"
-              accessibilityLabel={abaAtiva === 'insumos' ? 'Cadastrar novo insumo' : 'Cadastrar nova ficha técnica'}
-            >
-              <Plus size={14} color={tokens.colors.white} />
-              <ThemedText variant="caption" style={styles.btnNovoHeaderText}>
-                {abaAtiva === 'insumos' ? '+ Insumo' : '+ Ficha'}
-              </ThemedText>
-            </TouchableOpacity>
+            {abaAtiva !== 'ordens' && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onNovoItem}
+                style={styles.btnNovoHeader}
+                accessibilityRole="button"
+                accessibilityLabel={abaAtiva === 'insumos' ? 'Cadastrar novo insumo' : 'Cadastrar nova ficha técnica'}
+              >
+                <Plus size={14} color={tokens.colors.white} />
+                <ThemedText variant="caption" style={styles.btnNovoHeaderText}>
+                  {abaAtiva === 'insumos' ? '+ Insumo' : '+ Ficha'}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>

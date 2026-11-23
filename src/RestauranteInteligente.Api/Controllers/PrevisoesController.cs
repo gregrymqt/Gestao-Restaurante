@@ -14,15 +14,24 @@ public sealed class PrevisoesController : ControllerBase
     private readonly CalcularCapacidadeProducaoUseCase? _useCase;
     private readonly SolicitarPrevisaoDemandaUseCase? _solicitarPrevisaoDemandaUseCase;
     private readonly RegistrarOrdemCompraUseCase? _registrarOrdemCompraUseCase;
+    private readonly ListarOrdensCompraUseCase? _listarOrdensCompraUseCase;
+    private readonly AtualizarStatusOrdemCompraUseCase? _atualizarStatusOrdemCompraUseCase;
+    private readonly ReceberOrdemCompraUseCase? _receberOrdemCompraUseCase;
 
     public PrevisoesController(
         CalcularCapacidadeProducaoUseCase? useCase = null,
         SolicitarPrevisaoDemandaUseCase? solicitarPrevisaoDemandaUseCase = null,
-        RegistrarOrdemCompraUseCase? registrarOrdemCompraUseCase = null)
+        RegistrarOrdemCompraUseCase? registrarOrdemCompraUseCase = null,
+        ListarOrdensCompraUseCase? listarOrdensCompraUseCase = null,
+        AtualizarStatusOrdemCompraUseCase? atualizarStatusOrdemCompraUseCase = null,
+        ReceberOrdemCompraUseCase? receberOrdemCompraUseCase = null)
     {
         _useCase = useCase;
         _solicitarPrevisaoDemandaUseCase = solicitarPrevisaoDemandaUseCase;
         _registrarOrdemCompraUseCase = registrarOrdemCompraUseCase;
+        _listarOrdensCompraUseCase = listarOrdensCompraUseCase;
+        _atualizarStatusOrdemCompraUseCase = atualizarStatusOrdemCompraUseCase;
+        _receberOrdemCompraUseCase = receberOrdemCompraUseCase;
     }
 
     /// <summary>
@@ -112,6 +121,98 @@ public sealed class PrevisoesController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return UnprocessableEntity(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Lista as ordens de compra emitidas para o restaurante autenticado com suporte a filtro por status.
+    /// </summary>
+    [HttpGet("ordens-compra")]
+    [ProducesResponseType(typeof(IReadOnlyList<OrdemCompraDetalheDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ListarOrdensCompra([FromQuery] string? status, CancellationToken ct)
+    {
+        if (_listarOrdensCompraUseCase == null)
+            return StatusCode(501, new { error = "Caso de uso de listagem de ordens de compra não configurado." });
+
+        try
+        {
+            var resultado = await _listarOrdensCompraUseCase.ExecutarAsync(status, ct);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Atualiza o status de uma ordem de compra (Aprovação/Compra ou Cancelamento).
+    /// </summary>
+    [HttpPatch("ordens-compra/{id:guid}/status")]
+    [ProducesResponseType(typeof(OrdemCompraDetalheDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> AtualizarStatusOrdemCompra(
+        [FromRoute] Guid id,
+        [FromBody] AtualizarStatusOrdemCompraInputDto request,
+        CancellationToken ct)
+    {
+        if (_atualizarStatusOrdemCompraUseCase == null)
+            return StatusCode(501, new { error = "Caso de uso de atualização de status não configurado." });
+
+        if (request == null)
+            return BadRequest(new { error = "Os dados da atualização de status são obrigatórios." });
+
+        try
+        {
+            var resultado = await _atualizarStatusOrdemCompraUseCase.ExecutarAsync(id, request, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return UnprocessableEntity(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Recebe a mercadoria de uma ordem de compra, creditando o estoque físico atomicamente no Ledger.
+    /// </summary>
+    [HttpPost("ordens-compra/{id:guid}/receber")]
+    [ProducesResponseType(typeof(ReceberOrdemCompraOutputDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ReceberOrdemCompra([FromRoute] Guid id, CancellationToken ct)
+    {
+        if (_receberOrdemCompraUseCase == null)
+            return StatusCode(501, new { error = "Caso de uso de recebimento de ordem de compra não configurado." });
+
+        try
+        {
+            var resultado = await _receberOrdemCompraUseCase.ExecutarAsync(id, ct);
+            return Ok(resultado);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {

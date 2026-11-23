@@ -61,6 +61,9 @@ test('Tratamento de Erros e extractErrorMessage no Frontend', async (t) => {
     assert.strictEqual(typeof kdsService.atualizarStatusPedido, 'function');
     assert.strictEqual(typeof perfilService.registrarMovimentacao, 'function');
     assert.strictEqual(typeof previsoesService.enviarOrdemCompra, 'function');
+    assert.strictEqual(typeof previsoesService.listarOrdensCompra, 'function');
+    assert.strictEqual(typeof previsoesService.atualizarStatusOrdemCompra, 'function');
+    assert.strictEqual(typeof previsoesService.receberOrdemCompra, 'function');
     assert.strictEqual(typeof vendasService.registrarVenda, 'function');
     assert.strictEqual(typeof vendasService.criarProduto, 'function');
   });

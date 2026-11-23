@@ -2,6 +2,9 @@ import { apiClient, extractErrorMessage, isCancel } from '@/services/api';
 import {
   RelatorioCapacidadeProducao,
   FichaTecnicaIngrediente,
+  OrdemCompraDetalhe,
+  AtualizarStatusOrdemCompraInput,
+  ReceberOrdemCompraResponse,
 } from '../types';
 import {
   obterPrecoVendaProduto,
@@ -112,6 +115,17 @@ export const previsoesService = {
     },
     signal?: AbortSignal
   ): Promise<{ sucesso: boolean; protocolo: string }> {
+    const isGuid = (val?: string) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    const normalizarInsumoId = (id: string) => {
+      if (isGuid(id)) return id;
+      if (id === 'ins-01') return '33333333-3333-3333-3333-333333333333';
+      if (id === 'ins-02') return '22222222-2222-2222-2222-222222222222';
+      return '33333333-3333-3333-3333-333333333333';
+    };
+
     try {
       const response = await apiClient.post<{
         id: string;
@@ -124,7 +138,7 @@ export const previsoesService = {
         '/previsoes/ordens-compra',
         {
           insumos: pedido.insumos.map((i) => ({
-            insumoId: i.insumoId,
+            insumoId: normalizarInsumoId(i.insumoId),
             nomeInsumo: i.nomeInsumo,
             quantidade: i.quantidade,
             unidadeMedida: i.unidadeMedida,
@@ -141,6 +155,51 @@ export const previsoesService = {
     } catch (err: unknown) {
       if (isCancel(err)) throw err;
       throw new Error(extractErrorMessage(err, 'Não foi possível emitir a ordem de compra.'));
+    }
+  },
+
+  async listarOrdensCompra(status?: string, signal?: AbortSignal): Promise<OrdemCompraDetalhe[]> {
+    try {
+      const response = await apiClient.get<OrdemCompraDetalhe[]>('/previsoes/ordens-compra', {
+        params: status ? { status } : undefined,
+        signal,
+      });
+      return response.data;
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
+      throw new Error(extractErrorMessage(err, 'Não foi possível carregar as ordens de compra.'));
+    }
+  },
+
+  async atualizarStatusOrdemCompra(
+    id: string,
+    input: AtualizarStatusOrdemCompraInput,
+    signal?: AbortSignal
+  ): Promise<OrdemCompraDetalhe> {
+    try {
+      const response = await apiClient.patch<OrdemCompraDetalhe>(
+        `/previsoes/ordens-compra/${id}/status`,
+        input,
+        { signal }
+      );
+      return response.data;
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
+      throw new Error(extractErrorMessage(err, 'Não foi possível atualizar o status da ordem de compra.'));
+    }
+  },
+
+  async receberOrdemCompra(id: string, signal?: AbortSignal): Promise<ReceberOrdemCompraResponse> {
+    try {
+      const response = await apiClient.post<ReceberOrdemCompraResponse>(
+        `/previsoes/ordens-compra/${id}/receber`,
+        {},
+        { signal }
+      );
+      return response.data;
+    } catch (err: unknown) {
+      if (isCancel(err)) throw err;
+      throw new Error(extractErrorMessage(err, 'Não foi possível receber a mercadoria da ordem de compra.'));
     }
   },
 };

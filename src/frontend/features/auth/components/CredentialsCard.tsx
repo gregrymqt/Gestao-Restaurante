@@ -14,6 +14,8 @@ interface CredentialsCardProps {
   onPalavraPasseChange: (texto: string) => void;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function CredentialsCard({
   identificador,
   onIdentificadorChange,
@@ -24,6 +26,7 @@ export function CredentialsCard({
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const isIdentificadorPreenchido = identificador.trim().length > 0;
+  const isEmailValido = EMAIL_REGEX.test(identificador.trim());
   const isSenhaValida = palavraPasse.length >= 6;
 
   return (
@@ -48,7 +51,12 @@ export function CredentialsCard({
           E-mail Corporativo ou Usuário
         </ThemedText>
 
-        <View style={styles.inputBox}>
+        <View
+          style={[
+            styles.inputBox,
+            isIdentificadorPreenchido && !isEmailValido && styles.inputBoxError,
+          ]}
+        >
           <Ionicons name="mail-outline" size={18} color={tokens.colors.textMuted} />
           <TextInput
             style={styles.textInput}
@@ -61,9 +69,19 @@ export function CredentialsCard({
             keyboardType="email-address"
           />
           {isIdentificadorPreenchido && (
-            <Ionicons name="checkmark-circle" size={18} color={tokens.colors.status.greenText} />
+            <Ionicons
+              name={isEmailValido ? 'checkmark-circle' : 'alert-circle-outline'}
+              size={18}
+              color={isEmailValido ? tokens.colors.status.greenText : tokens.colors.status.redText}
+            />
           )}
         </View>
+
+        {isIdentificadorPreenchido && !isEmailValido && (
+          <ThemedText variant="caption" style={styles.errorText}>
+            Informe um endereço de e-mail válido (ex: gestor@restaurante.com)
+          </ThemedText>
+        )}
       </View>
 
       {/* Campo 2: Senha */}
@@ -194,6 +212,14 @@ const styles = StyleSheet.create({
   supportTextValid: {
     color: tokens.colors.status.greenText,
     fontWeight: '600',
+  },
+  inputBoxError: {
+    borderColor: tokens.colors.status.redText,
+  },
+  errorText: {
+    color: tokens.colors.status.redText,
+    fontSize: 11,
+    marginTop: 4,
   },
   esqueceuLink: {
     color: tokens.colors.primary,

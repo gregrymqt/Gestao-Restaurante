@@ -27,6 +27,8 @@ import { ModalCadastroRestaurante } from '../components/ModalCadastroRestaurante
 import { PinLoginModal } from '../components/PinLoginModal';
 import { RestauranteTenant, OperadorRecente } from '../types';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const currentTenant = useAuthStore((state) => state.tenant);
@@ -81,8 +83,19 @@ export function LoginScreen() {
       return;
     }
 
-    if (!palavraPasse.trim()) {
-      AppDialog.warning('Campo Obrigatório', 'Informe sua senha de acesso.');
+    if (!EMAIL_REGEX.test(identificador.trim())) {
+      AppDialog.warning(
+        'E-mail Inválido',
+        'Informe um formato de e-mail corporativo válido (ex: gestor@restaurante.com).'
+      );
+      return;
+    }
+
+    if (palavraPasse.length < 6) {
+      AppDialog.warning(
+        'Senha Inválida',
+        'A senha de acesso deve possuir no mínimo 6 caracteres.'
+      );
       return;
     }
 
@@ -147,7 +160,7 @@ export function LoginScreen() {
         <LoginCtaSection
           onIniciarTurno={handleAcessarPainel}
           isLoading={loginMutation.isPending}
-          disabled={!identificador.trim() || !palavraPasse.trim()}
+          disabled={!EMAIL_REGEX.test(identificador.trim()) || palavraPasse.length < 6}
         />
 
         {/* Card Onboarding SaaS de Novo Inquilino (14 Dias Grátis) */}
