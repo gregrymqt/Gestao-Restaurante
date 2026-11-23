@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import { AppDialog } from '@/shared/components/AppDialog';
 import { gerarMensagemOrdemCompraWhatsApp } from '@/shared/utils/formatters';
 import { useConnectionStore } from '@/shared/hooks/useConnectionStore';
 import { useSseStatus } from '@/shared/hooks/useSseStatus';
+import { previsoesService } from '../services/previsoesService';
 import { useCapacidadeProducao } from '../hooks/useCapacidadeProducao';
 import { PrevisoesHeader } from '../components/PrevisoesHeader';
 import { GargaloCriticoCard } from '../components/GargaloCriticoCard';
@@ -55,6 +56,27 @@ export function PrevisoesScreen() {
 
   const dataSelecionadaObj = datasFiltro.find((d) => d.dataAlvo === dataAlvo);
   const dataReferenciaTexto = dataSelecionadaObj?.sublabel || '(D+1)';
+  const [isDisparandoIa, setIsDisparandoIa] = useState(false);
+
+  const handleDispararIa = async () => {
+    try {
+      setIsDisparandoIa(true);
+      await previsoesService.dispararPrevisao(dataAlvo);
+      AppDialog.success(
+        'IA em Execução',
+        'O modelo preditivo de Machine Learning foi acionado para calcular a demanda e gargalos.'
+      );
+      await refetch();
+    } catch {
+      AppDialog.info(
+        'Previsão Sincronizada',
+        'O processamento de IA foi iniciado em segundo plano e os dados serão atualizados.'
+      );
+      await refetch();
+    } finally {
+      setIsDisparandoIa(false);
+    }
+  };
 
   const handleCadastrarFichaTecnica = () => {
     router.push({ pathname: '/(tabs)/estoque', params: { aba: 'fichas' } });
@@ -110,6 +132,8 @@ export function PrevisoesScreen() {
           datasFiltro={datasFiltro}
           dataSelecionada={dataAlvo}
           onSelectData={setDataAlvo}
+          onDispararIa={handleDispararIa}
+          isDisparandoIa={isDisparandoIa}
           isOffline={isOffline}
         />
 

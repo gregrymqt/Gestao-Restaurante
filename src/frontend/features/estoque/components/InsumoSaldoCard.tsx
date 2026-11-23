@@ -126,12 +126,12 @@ export function InsumoSaldoCard({
           disabled={isZerado}
           style={[styles.baixaButton, isZerado && styles.baixaButtonDisabled]}
           accessibilityRole="button"
-          accessibilityLabel={`Ajuste ou baixa para ${item.nome}`}
+          accessibilityLabel={`Ajuste / Baixa para ${item.nome}`}
           accessibilityState={{ disabled: isZerado }}
         >
           <ArrowDownRight
             size={16}
-            color={isZerado ? tokens.colors.textMuted : tokens.colors.status.redText}
+            color={isZerado ? '#4B5563' : tokens.colors.status.redText}
             style={styles.btnIcon}
           />
           <ThemedText
@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
   seguroText: { color: tokens.colors.status.greenText, fontWeight: '600', fontSize: 11 },
   botoesGrid: { flexDirection: 'row', gap: tokens.spacing.sm, width: '100%' },
   baixaButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 44, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: tokens.radii.sm, paddingHorizontal: 8 },
-  baixaButtonDisabled: { opacity: 0.38, backgroundColor: '#F3F4F6', borderColor: tokens.colors.border },
+  baixaButtonDisabled: { backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#D1D5DB' },
   baixaButtonText: { color: tokens.colors.status.redText, fontWeight: '700', fontSize: 12 },
-  baixaButtonTextDisabled: { color: tokens.colors.textMuted },
+  baixaButtonTextDisabled: { color: '#4B5563' },
   entradaButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 44, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', borderRadius: tokens.radii.sm, paddingHorizontal: 8 },
   entradaButtonCritico: { backgroundColor: tokens.colors.primary, borderColor: tokens.colors.primary },
   entradaButtonText: { color: tokens.colors.status.greenText, fontWeight: '700', fontSize: 12 },

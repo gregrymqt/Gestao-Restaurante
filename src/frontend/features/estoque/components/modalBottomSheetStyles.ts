@@ -115,6 +115,11 @@ export const modalBottomSheetStyles = StyleSheet.create({
     color: tokens.colors.white,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  buttonDisabledText: {
+    color: '#6B7280',
   },
 });

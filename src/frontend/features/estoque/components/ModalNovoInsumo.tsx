@@ -111,7 +111,7 @@ export function ModalNovoInsumo({
                 Cadastre ingredientes para receitas e controle de saldos
               </ThemedText>
             </View>
-            <TouchableOpacity onPress={handleClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+            <TouchableOpacity onPress={handleClose} style={sheetStyles.closeBtn} accessibilityRole="button" accessibilityLabel="Fechar modal">
               <X size={20} color={tokens.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -180,7 +180,13 @@ export function ModalNovoInsumo({
           </ScrollView>
 
           <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TouchableOpacity style={sheetStyles.cancelarButton} onPress={handleClose} disabled={isEnviando}>
+            <TouchableOpacity
+              style={sheetStyles.cancelarButton}
+              onPress={handleClose}
+              disabled={isEnviando}
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar cadastro de insumo"
+            >
               <ThemedText style={sheetStyles.cancelarText}>Cancelar</ThemedText>
             </TouchableOpacity>
 
@@ -188,11 +194,16 @@ export function ModalNovoInsumo({
               style={[sheetStyles.confirmarButton, isDesabilitado && sheetStyles.buttonDisabled]}
               onPress={handleSalvar}
               disabled={isDesabilitado}
+              accessibilityRole="button"
+              accessibilityLabel="Cadastrar insumo"
+              accessibilityState={{ disabled: isDesabilitado }}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} size="small" />
               ) : (
-                <ThemedText style={sheetStyles.confirmarText}>
+                <ThemedText
+                  style={[sheetStyles.confirmarText, isDesabilitado && sheetStyles.buttonDisabledText]}
+                >
                   {!isApiOnline ? 'Conexão necessária' : 'Cadastrar Insumo'}
                 </ThemedText>
               )}

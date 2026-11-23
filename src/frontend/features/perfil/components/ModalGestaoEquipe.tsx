@@ -127,15 +127,19 @@ export function ModalGestaoEquipe({ visible, onClose }: ModalGestaoEquipeProps) 
               <TouchableOpacity
                 onPress={onClose}
                 style={styles.closeButton}
+                accessibilityRole="button"
                 accessibilityLabel="Fechar modal de equipe"
               >
                 <Ionicons name="close" size={24} color={tokens.colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.sectionTabs}>
+            <View style={styles.sectionTabs} accessibilityRole="tablist">
               <TouchableOpacity
                 onPress={() => setAbaAtiva('lista')}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: abaAtiva === 'lista' }}
+                accessibilityLabel={`Aba Colaboradores, ${colaboradores.length} cadastrados`}
                 style={[styles.tabButton, abaAtiva === 'lista' && styles.tabButtonActive]}
               >
                 <ThemedText
@@ -149,6 +153,9 @@ export function ModalGestaoEquipe({ visible, onClose }: ModalGestaoEquipeProps) 
 
               <TouchableOpacity
                 onPress={() => setAbaAtiva('novo')}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: abaAtiva === 'novo' }}
+                accessibilityLabel="Aba Novo Colaborador"
                 style={[styles.tabButton, abaAtiva === 'novo' && styles.tabButtonActive]}
               >
                 <ThemedText

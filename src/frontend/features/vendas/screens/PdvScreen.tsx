@@ -99,6 +99,12 @@ export function PdvScreen() {
         <HeaderOperacional
           isOffline={!isApiOnline}
           onPressVoltar={() => router.push('/(tabs)')}
+          onPressPerfil={() =>
+            AppDialog.info(
+              'Operador Ativo',
+              'Operador: Caixa 01\nTerminal: PDV 01\nTurno: Diurno (Aberto)'
+            )
+          }
           onPressNovoProduto={() => setIsNovoProdutoOpen(true)}
           onPressHistorico={() => setIsHistoricoOpen(true)}
           onPressKds={() => router.push('/kds')}
@@ -193,7 +199,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingTop: tokens.spacing.sm,
-    paddingBottom: 96, // Espaço para não cobrir itens sob a barra flutuante
+    paddingBottom: 140, // Espaço ampliado para garantir que a barra flutuante e tab bar não sobreponham os cards
   },
   emptyContainer: {
     flex: 1,

@@ -161,7 +161,7 @@ export function CaixaScreen() {
               <ThemedText
                 variant="subtitle"
                 weight="bold"
-                color={tokens.colors.white}
+                color={acaoDesabilitada ? '#6B7280' : tokens.colors.white}
                 style={styles.textoBotao}
               >
                 {textoAcao}
@@ -234,8 +234,9 @@ const styles = StyleSheet.create({
     marginBottom: tokens.spacing.sm,
   },
   botaoEncerrarDesabilitado: {
-    backgroundColor: tokens.colors.textMuted,
-    opacity: 0.6,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   botaoEncerrarPressionado: {
     backgroundColor: tokens.colors.primaryDark,

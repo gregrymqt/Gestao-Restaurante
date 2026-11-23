@@ -65,9 +65,9 @@ export function formatarTempoSla(minutos: number, segundos: number): string {
   if (minutos >= 60) {
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
-    return mins > 0 ? `${horas}h ${mins}m` : `${horas}h`;
+    return `${horas}h ${String(mins).padStart(2, '0')}m`;
   }
-  return `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  return `${String(minutos).padStart(2, '0')}m ${String(segundos).padStart(2, '0')}s`;
 }
 
 export function calcularSlaTicket(dataHoraIso: string, agoraMs: number = Date.now()): SlaCalculadoKds {
@@ -171,7 +171,7 @@ export function obterProximaAcaoKds(status: StatusPreparoKds): ProximaAcaoKds | 
       return {
         proximoStatus: 'ENTREGUE',
         label: 'Entregar Pedido',
-        cor: '#EA580C',
+        cor: '#16A34A',
       };
     default:
       return null;

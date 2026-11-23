@@ -94,7 +94,7 @@ export function ModalDetalheVenda({ venda, visible, onClose }: ModalDetalheVenda
                     {modificadores.length > 0 && (
                       <View style={styles.tagsContainer}>
                         {modificadores.map((m, mIdx) => {
-                          const nome = m.Nome || m.nome || '';
+                          const nomeLimpo = (m.Nome || m.nome || '').trim().replace(/^\+\s*/, '');
                           const preco = Number(m.PrecoAdicional ?? m.precoAdicional ?? 0);
                           const isAdicional = preco > 0;
                           return (
@@ -113,8 +113,8 @@ export function ModalDetalheVenda({ venda, visible, onClose }: ModalDetalheVenda
                                 ]}
                               >
                                 {isAdicional
-                                  ? `+ ${nome} (+R$ ${preco.toFixed(2).replace('.', ',')})`
-                                  : nome}
+                                  ? `+ ${nomeLimpo} (+R$ ${preco.toFixed(2).replace('.', ',')})`
+                                  : nomeLimpo}
                               </ThemedText>
                             </View>
                           );

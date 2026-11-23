@@ -20,7 +20,7 @@ export function QuickCashActions({
         style={styles.toolButton}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Entrada de Suprimento"
+        accessibilityLabel="Suprimento - Entrada no Caixa"
         onPress={onAbrirSuprimento}
       >
         <Plus size={16} color={tokens.colors.status.greenText} />
@@ -31,7 +31,7 @@ export function QuickCashActions({
         style={styles.toolButton}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Sangria de Caixa"
+        accessibilityLabel="Sangria Caixa - Retirada"
         onPress={onAbrirSangria}
       >
         <Minus size={16} color={tokens.colors.status.redText} />

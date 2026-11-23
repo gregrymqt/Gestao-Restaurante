@@ -69,6 +69,7 @@ export function ModalMarcarComprada({
               onPress={onClose}
               disabled={isSubmitting}
               style={styles.closeButton}
+              accessibilityRole="button"
               accessibilityLabel="Fechar modal"
             >
               <X size={20} color={tokens.colors.textMuted} />
@@ -133,6 +134,8 @@ export function ModalMarcarComprada({
               style={styles.cancelButton}
               onPress={onClose}
               disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar pedido"
             >
               <ThemedText variant="body" color={tokens.colors.textSecondary}>
                 Cancelar
@@ -143,6 +146,9 @@ export function ModalMarcarComprada({
               style={[styles.confirmButton, isSubmitting && styles.buttonDisabled]}
               onPress={handleSalvar}
               disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar pedido"
+              accessibilityState={{ disabled: isSubmitting }}
             >
               {isSubmitting ? (
                 <ActivityIndicator size="small" color={tokens.colors.white} />

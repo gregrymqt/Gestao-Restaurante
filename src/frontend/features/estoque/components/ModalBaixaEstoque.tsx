@@ -95,7 +95,7 @@ export function ModalBaixaEstoque({
                 Descarte por perda, quebra ou acerto de contagem física
               </ThemedText>
             </View>
-            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button" accessibilityLabel="Fechar modal">
               <X size={20} color={tokens.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -193,7 +193,7 @@ export function ModalBaixaEstoque({
           </ScrollView>
 
           <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TouchableOpacity style={sheetStyles.cancelarButton} onPress={onClose} disabled={isEnviando}>
+            <TouchableOpacity style={sheetStyles.cancelarButton} onPress={onClose} disabled={isEnviando} accessibilityRole="button" accessibilityLabel="Cancelar baixa">
               <ThemedText variant="body" style={sheetStyles.cancelarText}>
                 Cancelar
               </ThemedText>
@@ -207,11 +207,17 @@ export function ModalBaixaEstoque({
               ]}
               onPress={handleConfirmar}
               disabled={!isFormValido}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar baixa"
+              accessibilityState={{ disabled: !isFormValido }}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
-                <ThemedText variant="body" style={sheetStyles.confirmarText}>
+                <ThemedText
+                  variant="body"
+                  style={[sheetStyles.confirmarText, !isFormValido && sheetStyles.buttonDisabledText]}
+                >
                   {!isApiOnline ? 'Conexão necessária' : 'Confirmar Baixa'}
                 </ThemedText>
               )}

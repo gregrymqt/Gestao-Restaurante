@@ -149,7 +149,7 @@ export function ModalFichaTecnica({
                 Vincule insumos com cálculo em tempo real de custo e margem
               </ThemedText>
             </View>
-            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button" accessibilityLabel="Fechar modal">
               <X size={20} color={tokens.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -233,7 +233,13 @@ export function ModalFichaTecnica({
           </ScrollView>
 
           <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TouchableOpacity onPress={onClose} disabled={isEnviando} style={sheetStyles.cancelarButton}>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isEnviando}
+              style={sheetStyles.cancelarButton}
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar edição de ficha técnica"
+            >
               <ThemedText variant="body" style={sheetStyles.cancelarText}>
                 Cancelar
               </ThemedText>
@@ -242,12 +248,18 @@ export function ModalFichaTecnica({
             <TouchableOpacity
               onPress={handleSalvar}
               disabled={!isFormValido}
+              accessibilityRole="button"
+              accessibilityLabel="Salvar ficha técnica"
+              accessibilityState={{ disabled: !isFormValido }}
               style={[sheetStyles.confirmarButton, !isFormValido && sheetStyles.buttonDisabled]}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
-                <ThemedText variant="body" style={sheetStyles.confirmarText}>
+                <ThemedText
+                  variant="body"
+                  style={[sheetStyles.confirmarText, !isFormValido && sheetStyles.buttonDisabledText]}
+                >
                   {!isApiOnline ? 'Conexão necessária' : 'Salvar Ficha Técnica'}
                 </ThemedText>
               )}

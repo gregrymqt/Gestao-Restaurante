@@ -72,8 +72,8 @@ export function BarraFlutuanteCheckout({
           <ThemedText
             variant="subtitle"
             weight="bold"
-            color={tokens.colors.white}
-            style={styles.textoCobrar}
+            color={isVazio ? '#A8A2AE' : tokens.colors.white}
+            style={[styles.textoCobrar, isVazio && styles.textoCobrarDesabilitado]}
           >
             Cobrar →
           </ThemedText>
@@ -142,15 +142,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   botaoCobrarDesabilitado: {
-    opacity: 0.45,
-    backgroundColor: tokens.colors.textMuted,
-  },
-  botaoCobrarPressionado: {
-    opacity: 0.85,
-    backgroundColor: tokens.colors.primaryDark,
+    opacity: 1,
+    backgroundColor: '#353338',
+    borderWidth: 1,
+    borderColor: '#4A4650',
   },
   textoCobrar: {
     fontSize: tokens.typography.fontMd,
     fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  textoCobrarDesabilitado: {
+    color: '#A8A2AE',
+  },
+  botaoCobrarPressionado: {
+    opacity: 0.85,
+    backgroundColor: tokens.colors.primaryDark,
   },
 });

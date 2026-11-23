@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { ClipboardList } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
@@ -40,7 +40,11 @@ export function OrdensCompraTab({
   return (
     <View style={styles.container}>
       {/* Pílulas de Filtro Rápido */}
-      <View style={styles.filtrosRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filtrosRow}
+      >
         {filtros.map((f) => {
           const ativo = filtroStatus === f.id;
           return (
@@ -48,6 +52,9 @@ export function OrdensCompraTab({
               key={f.id}
               activeOpacity={0.8}
               onPress={() => setFiltroStatus(f.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filtrar ordens ${f.label}`}
+              accessibilityState={{ selected: ativo }}
               style={[styles.filtroPilula, ativo && styles.filtroPilulaAtiva]}
             >
               <ThemedText
@@ -60,7 +67,7 @@ export function OrdensCompraTab({
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* Conteúdo da Lista */}
       {isLoading && ordens.length === 0 ? (
