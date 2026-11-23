@@ -91,9 +91,14 @@ export function normalizarTexto(texto: string): string {
 }
 
 export function gerarProjecaoFallbackParaData(dataAlvo?: string): RelatorioCapacidadeProducao {
-  const isD1 = !dataAlvo || dataAlvo.endsWith('22');
+  const hoje = new Date();
+  const d1 = new Date(hoje);
+  d1.setDate(d1.getDate() + 1);
+  const d1Str = `${d1.getFullYear()}-${String(d1.getMonth() + 1).padStart(2, '0')}-${String(d1.getDate()).padStart(2, '0')}`;
+  const d1Dia = String(d1.getDate()).padStart(2, '0');
+  const isD1 = !dataAlvo || dataAlvo === d1Str || dataAlvo.endsWith(d1Dia) || dataAlvo.endsWith('22') || dataAlvo.endsWith('24');
   return {
-    dataReferencia: dataAlvo || '2026-11-22',
+    dataReferencia: dataAlvo || d1Str,
     itensCapacidade: [
       {
         produtoId: '55555555-5555-5555-5555-555555555552',

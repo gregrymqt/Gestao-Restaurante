@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   statusLiveText: { fontSize: 10, fontWeight: '700', color: tokens.colors.status.greenText },
   avatarCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: tokens.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   titleSection: { marginBottom: tokens.spacing.sm },
-  moduleTag: { color: tokens.colors.primary, fontWeight: '800', fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
+  moduleTag: { color: '#C92A14', fontWeight: '800', fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   titleActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   mainTitle: { fontSize: 20, fontWeight: '800', color: tokens.colors.textPrimary, flexShrink: 1 },

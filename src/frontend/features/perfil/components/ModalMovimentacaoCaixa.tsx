@@ -254,6 +254,8 @@ export function ModalMovimentacaoCaixa({
                 style={styles.cancelarButton}
                 onPress={onClose}
                 disabled={isSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar movimentação de caixa"
               >
                 <ThemedText variant="body" style={styles.cancelarText}>
                   Cancelar
@@ -269,11 +271,18 @@ export function ModalMovimentacaoCaixa({
                 ]}
                 onPress={handleConfirmar}
                 disabled={isSubmitting || valorNumerico <= 0 || saldoInsuficiente}
+                accessibilityRole="button"
+                accessibilityLabel={isSuprimento ? 'Confirmar entrada de suprimento' : 'Confirmar retirada de sangria'}
+                accessibilityState={{ disabled: isSubmitting || valorNumerico <= 0 || saldoInsuficiente }}
               >
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <ThemedText variant="body" weight="bold" color="#FFFFFF">
+                  <ThemedText
+                    variant="body"
+                    weight="bold"
+                    color={(isSubmitting || valorNumerico <= 0 || saldoInsuficiente) ? '#6B7280' : '#FFFFFF'}
+                  >
                     {isSuprimento ? 'Confirmar Entrada' : 'Confirmar Retirada'}
                   </ThemedText>
                 )}

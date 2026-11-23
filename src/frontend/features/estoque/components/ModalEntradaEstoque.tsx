@@ -123,7 +123,7 @@ export function ModalEntradaEstoque({
                 Lançamento de mercadoria com auditoria de saldo
               </ThemedText>
             </View>
-            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button">
+            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} accessibilityRole="button" accessibilityLabel="Fechar modal">
               <X size={20} color={tokens.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -217,7 +217,7 @@ export function ModalEntradaEstoque({
           </ScrollView>
 
           <View style={[sheetStyles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TouchableOpacity onPress={onClose} disabled={isEnviando} style={sheetStyles.cancelarButton}>
+            <TouchableOpacity onPress={onClose} disabled={isEnviando} style={sheetStyles.cancelarButton} accessibilityRole="button" accessibilityLabel="Cancelar entrada">
               <ThemedText variant="body" style={sheetStyles.cancelarText}>
                 Cancelar
               </ThemedText>
@@ -226,12 +226,18 @@ export function ModalEntradaEstoque({
             <TouchableOpacity
               onPress={handleConfirmar}
               disabled={!isFormValido}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar entrada"
+              accessibilityState={{ disabled: !isFormValido }}
               style={[sheetStyles.confirmarButton, !isFormValido && sheetStyles.buttonDisabled]}
             >
               {isEnviando ? (
                 <ActivityIndicator color={tokens.colors.white} />
               ) : (
-                <ThemedText variant="body" style={sheetStyles.confirmarText}>
+                <ThemedText
+                  variant="body"
+                  style={[sheetStyles.confirmarText, !isFormValido && sheetStyles.buttonDisabledText]}
+                >
                   {!isApiOnline ? 'Conexão necessária' : 'Confirmar Entrada'}
                 </ThemedText>
               )}

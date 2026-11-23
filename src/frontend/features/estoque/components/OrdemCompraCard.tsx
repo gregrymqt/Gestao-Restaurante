@@ -132,6 +132,8 @@ export function OrdemCompraCard({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => onCancelarOrdem(ordem)}
+              accessibilityRole="button"
+              accessibilityLabel={`Cancelar ordem ${ordem.protocolo}`}
               style={styles.btnCancelar}
             >
               <ThemedText variant="caption" weight="bold" color="#DC2626">
@@ -142,6 +144,8 @@ export function OrdemCompraCard({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => onMarcarComprada(ordem)}
+              accessibilityRole="button"
+              accessibilityLabel={`Marcar ordem ${ordem.protocolo} como comprada`}
               style={styles.btnComprada}
             >
               <ThemedText variant="caption" weight="bold" color={tokens.colors.white}>
@@ -155,6 +159,8 @@ export function OrdemCompraCard({
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => onReceberOrdem(ordem)}
+            accessibilityRole="button"
+            accessibilityLabel={`Dar entrada e receber mercadoria da ordem ${ordem.protocolo}`}
             style={styles.btnReceber}
           >
             <PackageCheck size={16} color={tokens.colors.white} />

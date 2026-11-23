@@ -22,6 +22,26 @@ import { useModificadoresProduto } from '../hooks/useModificadoresProduto';
 
 const GRUPOS_VAZIOS: GrupoModificador[] = [];
 
+function sanitizarTexto(texto?: string | null): string {
+  if (!texto) return '';
+  return texto
+    .replace(/Observa[\?\uFFFD\u00C3\u00A7\u00C3\u00B5]+es/gi, 'Observações')
+    .replace(/Observa\?\?es/gi, 'Observações')
+    .replace(/n[\?\uFFFD\u00C3\u00A3]o/gi, 'não')
+    .replace(/n\?o/gi, 'não')
+    .replace(/Ã§Ãµ/g, 'çõ')
+    .replace(/Ã£/g, 'ã')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ãº/g, 'ú')
+    .trim();
+}
+
+function sanitizarNomeOpcao(nome: string): string {
+  return sanitizarTexto(nome).replace(/^\+\s*/, '').trim();
+}
+
 interface ModalModificadoresProdutoProps {
   produto: Produto | null;
   visible: boolean;
@@ -123,7 +143,7 @@ export function ModalModificadoresProduto({
         listaFinal.push({
           opcaoId: op.id,
           grupoId: grupo.id,
-          nome: op.nome,
+          nome: sanitizarNomeOpcao(op.nome),
           precoAdicional: Number(op.precoAdicional) || 0,
           insumoId: op.insumoId || null,
           quantidadeInsumo: Number(op.quantidadeInsumo) || 0,
@@ -196,7 +216,7 @@ export function ModalModificadoresProduto({
                     <View style={styles.grupoHeader}>
                       <View style={styles.grupoTituloRow}>
                         <ThemedText variant="subtitle" weight="bold" style={styles.grupoNome}>
-                          {grupo.nome}
+                          {sanitizarTexto(grupo.nome)}
                         </ThemedText>
                         <View
                           style={[
@@ -225,7 +245,7 @@ export function ModalModificadoresProduto({
 
                       {grupo.descricao ? (
                         <ThemedText variant="caption" style={styles.grupoDescricao}>
-                          {grupo.descricao}
+                          {sanitizarTexto(grupo.descricao)}
                         </ThemedText>
                       ) : null}
                     </View>
@@ -267,7 +287,7 @@ export function ModalModificadoresProduto({
                                 ]}
                               >
                                 {isSelecionada ? '✓ ' : ''}
-                                {opcao.nome}
+                                {sanitizarNomeOpcao(opcao.nome)}
                               </ThemedText>
 
                               {temPreco && (

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Sparkles } from 'lucide-react-native';
 import { ThemedText } from '@/components/primitives/ThemedText';
 import { tokens } from '@/components/primitives/tokens';
 import { DataOpcaoFiltro } from '../types';
@@ -8,6 +9,8 @@ interface PrevisoesHeaderProps {
   datasFiltro: DataOpcaoFiltro[];
   dataSelecionada: string;
   onSelectData: (dataAlvo: string) => void;
+  onDispararIa?: () => void;
+  isDisparandoIa?: boolean;
   isOffline?: boolean;
 }
 
@@ -15,6 +18,8 @@ export function PrevisoesHeader({
   datasFiltro,
   dataSelecionada,
   onSelectData,
+  onDispararIa,
+  isDisparandoIa = false,
   isOffline = false,
 }: PrevisoesHeaderProps) {
   return (
@@ -23,6 +28,28 @@ export function PrevisoesHeader({
         <ThemedText variant="title" style={styles.title}>
           Previsões de Demanda
         </ThemedText>
+
+        {onDispararIa && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Recalcular Previsões com Inteligência Artificial"
+            activeOpacity={0.8}
+            disabled={isDisparandoIa}
+            onPress={onDispararIa}
+            style={[styles.btnRecalcular, isDisparandoIa && styles.btnRecalcularDesabilitado]}
+          >
+            {isDisparandoIa ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <View style={styles.btnRecalcularInner}>
+                <Sparkles size={13} color="#FFFFFF" />
+                <ThemedText variant="caption" weight="bold" color="#FFFFFF" style={styles.btnRecalcularText}>
+                  Recalcular IA
+                </ThemedText>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.badgesRow}>
@@ -88,7 +115,31 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.spacing.md,
   },
   titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: tokens.spacing.xs,
+  },
+  btnRecalcular: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: tokens.radii.full,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+  btnRecalcularDesabilitado: {
+    opacity: 0.6,
+  },
+  btnRecalcularInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  btnRecalcularText: {
+    fontSize: 12,
   },
   title: {
     fontSize: tokens.typography.fontXxl,
@@ -176,8 +227,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.white,
   },
   pillSubtext: {
-    color: tokens.colors.textMuted,
+    color: tokens.colors.textSecondary,
     fontSize: 10,
+    fontWeight: '600',
   },
   pillSubtextActive: {
     color: '#FCE8E6',

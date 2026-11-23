@@ -71,6 +71,7 @@ export function ContextoOperacionalHeader({
       {/* Direita: Dot de Status + Avatar */}
       <View style={styles.dirRow}>
         <View
+          accessibilityRole="image"
           style={[styles.dotStatus, dotEstilo]}
           accessibilityLabel={isOffline ? 'Conexão offline' : isAberta ? 'Caixa aberto' : 'Caixa fechado'}
         />

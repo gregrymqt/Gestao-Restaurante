@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: tokens.colors.textMuted,
+    color: tokens.colors.textSecondary,
     letterSpacing: 0.5,
   },
   shiftTag: {

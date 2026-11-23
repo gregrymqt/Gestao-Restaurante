@@ -230,6 +230,11 @@ export const styles = StyleSheet.create({
     backgroundColor: '#A82A2A',
   },
   buttonDisabled: {
-    opacity: 0.5,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  buttonDisabledText: {
+    color: '#6B7280',
   },
 });

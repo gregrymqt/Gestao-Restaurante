@@ -39,7 +39,7 @@ export function ColunaKdsKanban({
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.lista}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={styles.lista}>
         {pedidos.length === 0 ? (
           <View style={styles.vazioBox}>
             <MaterialCommunityIcons name="chef-hat" size={24} color={tokens.colors.textSecondary} />
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
   },
   lista: {
     padding: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xxl * 2,
   },
   vazioBox: {
     paddingVertical: 40,

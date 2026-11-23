@@ -22,7 +22,7 @@ export function SegmentedEstoqueControl({
   const isFichas = abaAtiva === 'fichas';
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityRole="tablist">
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => onSelectAba('insumos')}

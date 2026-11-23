@@ -76,7 +76,7 @@ export function PerfilScreen() {
       {/* Conteúdo com Rolagem Fluida */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 64 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Banner de Conexão em Tempo Real */}

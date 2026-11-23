@@ -28,7 +28,7 @@ export function BotoesMovimentacaoTurno({
         disabled={disabled}
         onPress={onSuprimento}
         accessibilityRole="button"
-        accessibilityLabel="Registrar suprimento de troco"
+        accessibilityLabel="Suprimento - Registrar troco"
         hitSlop={8}
       >
         <Ionicons name="add-circle-outline" size={18} color={tokens.colors.status.greenText} />
@@ -53,7 +53,7 @@ export function BotoesMovimentacaoTurno({
         disabled={disabled}
         onPress={onSangria}
         accessibilityRole="button"
-        accessibilityLabel="Registrar sangria de caixa"
+        accessibilityLabel="Sangria - Registrar retirada"
         hitSlop={8}
       >
         <Ionicons name="remove-circle-outline" size={18} color={tokens.colors.status.redText} />

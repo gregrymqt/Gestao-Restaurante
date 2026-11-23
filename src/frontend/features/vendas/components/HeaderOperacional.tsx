@@ -125,7 +125,7 @@ export function HeaderOperacional({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Perfil do Operador"
+          accessibilityLabel="OP - Perfil do Operador"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
           onPress={onPressPerfil}
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   comandaNumero: {
     fontSize: 12,
-    color: tokens.colors.primary,
+    color: tokens.colors.primaryDark,
   },
   rightRow: {
     flexDirection: 'row',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 11,
-    color: tokens.colors.primary,
+    color: tokens.colors.primaryDark,
   },
   pressed: {
     opacity: 0.75,

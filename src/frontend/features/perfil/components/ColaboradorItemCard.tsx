@@ -35,6 +35,8 @@ export function ColaboradorItemCard({ item, onAlternarStatus }: ColaboradorItemC
       </View>
       <TouchableOpacity
         onPress={() => onAlternarStatus(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.ativo ? 'Desativar' : 'Reativar'} colaborador ${item.nome}`}
         style={[
           styles.statusActionBtn,
           item.ativo ? styles.btnDesativar : styles.btnAtivar,
