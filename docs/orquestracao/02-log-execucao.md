@@ -1,5 +1,11 @@
 # Log de Execução
 
+## [2026-11-23] Auditoria Visual, Funcional e WCAG AA das Telas /estoque, /perfil e /caixa
+- Telas auditadas via subagente browser com pontuação 100/100 no Lighthouse em Acessibilidade e Best Practices.
+- Corrigidos contrastes (badges, botões desabilitados), inconsistências de rótulos acessíveis e atributos ARIA inválidos.
+- PR #27 e PR #28 criados e mesclados na branch `main`.
+- Pipeline de CI/CD validado no GitHub Actions com 100% dos jobs (Backend, Frontend, Postgres RLS, ML e Docker) aprovados.
+
 ## [2026-11-23] Módulo de Gestão e Recebimento de Ordens de Compra
 - Backend: Criados endpoints `GET /ordens-compra`, `PATCH /status` e recebimento atômico `POST /receber` com ordenação anti-deadlock e ledger append-only.
 - Frontend: Implementada aba `Ordens` no `EstoqueScreen`, segmented control com badge, card com expansão de itens e modal de compra com fornecedor.
